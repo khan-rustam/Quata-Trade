@@ -1,70 +1,83 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Section, SectionHeading, Step } from "@/components/public/marketing";
 import { Button } from "@/components/ui/button";
 import { Keyhole } from "@/components/brand/keyhole";
+import { Reveal } from "@/components/motion/reveal";
 
 export const metadata: Metadata = {
   title: "How it works — QuataTrade",
   description: "Buyer and seller flows on QuataTrade, and how escrow protects every trade.",
 };
 
+const STEP_NUMBERS = [1, 2, 3, 4] as const;
+
 export default function HowItWorksPage(): React.JSX.Element {
+  const t = useTranslations("howItWorks");
+
   return (
     <>
       <Section narrow>
-        <SectionHeading
-          eyebrow="How it works"
-          title="Trade crypto with people, safely"
-          subtitle="QuataTrade is a peer-to-peer marketplace. You trade directly with another person, and escrow holds the crypto until the deal is done."
-        />
+        <Reveal>
+          <SectionHeading eyebrow={t("heroEyebrow")} title={t("heroTitle")} subtitle={t("heroSubtitle")} />
+        </Reveal>
       </Section>
 
       <div className="border-y border-border bg-surface-1">
         <Section>
-          <h2 className="font-display text-2xl font-bold">If you&rsquo;re buying USDT</h2>
+          <Reveal>
+            <h2 className="font-display text-2xl font-bold">{t("buyHeading")}</h2>
+          </Reveal>
           <div className="mt-6 grid gap-4 md:grid-cols-4">
-            <Step n={1} title="Pick an offer">Browse sellers by price and payment method, and open a trade for the amount you want.</Step>
-            <Step n={2} title="Seller&rsquo;s crypto locks">The seller&rsquo;s USDT is locked in escrow the moment your trade opens.</Step>
-            <Step n={3} title="Pay & submit proof">Pay the seller with MoMo, Orange Money, or QuataPay, then submit your reference and details.</Step>
-            <Step n={4} title="Receive crypto">When the seller confirms your payment, escrow releases the USDT to your wallet.</Step>
+            {STEP_NUMBERS.map((n, i) => (
+              <Reveal key={n} delay={i * 0.07}>
+                <Step n={n} title={t(`buyStep${n}Title`)}>{t(`buyStep${n}Body`)}</Step>
+              </Reveal>
+            ))}
           </div>
         </Section>
       </div>
 
       <Section>
-        <h2 className="font-display text-2xl font-bold">If you&rsquo;re selling USDT</h2>
+        <Reveal>
+          <h2 className="font-display text-2xl font-bold">{t("sellHeading")}</h2>
+        </Reveal>
         <div className="mt-6 grid gap-4 md:grid-cols-4">
-          <Step n={1} title="Create an offer">Set your rate, limits, and which payment methods you accept.</Step>
-          <Step n={2} title="Crypto locks in escrow">When a buyer opens a trade, your USDT for that amount locks automatically.</Step>
-          <Step n={3} title="Get paid">The buyer pays you off-platform and submits proof in the trade room.</Step>
-          <Step n={4} title="Confirm & release">Confirm the money is in YOUR account, then release. Escrow sends the crypto to the buyer minus the fee.</Step>
+          {STEP_NUMBERS.map((n, i) => (
+            <Reveal key={n} delay={i * 0.07}>
+              <Step n={n} title={t(`sellStep${n}Title`)}>{t(`sellStep${n}Body`)}</Step>
+            </Reveal>
+          ))}
         </div>
       </Section>
 
       <div className="border-y border-border bg-surface-1">
         <Section narrow>
-          <div className="flex items-start gap-4 rounded-xl border border-accent-400/30 bg-accent-400/5 p-5">
-            <Keyhole size={28} className="mt-0.5 shrink-0 text-accent-400" />
-            <div>
-              <h3 className="font-display text-lg font-medium">Why escrow matters</h3>
-              <p className="mt-1 text-sm leading-relaxed text-text-2">
-                Escrow means the seller&rsquo;s crypto is held safely until they confirm your payment landed. If there&rsquo;s
-                a problem, either side can open a dispute — escrow freezes and a real person reviews the evidence.
-                A screenshot is not money; the seller&rsquo;s confirmation is what releases funds.
-              </p>
-              <Link href="/legal/trade-rules" className="mt-2 inline-block text-sm text-accent-400 hover:underline">
-                Read the full trade &amp; escrow rules →
-              </Link>
+          <Reveal>
+            <div className="flex items-start gap-4 rounded-xl border border-accent-400/30 bg-accent-400/5 p-5">
+              <Keyhole size={28} className="mt-0.5 shrink-0 text-accent-400" />
+              <div>
+                <h3 className="font-display text-lg font-medium">{t("escrowTitle")}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-text-2">{t("escrowBody")}</p>
+                <Link
+                  href="/legal/trade-rules"
+                  className="mt-2 inline-block text-sm text-accent-400 hover:underline"
+                >
+                  {t("escrowLink")}
+                </Link>
+              </div>
             </div>
-          </div>
+          </Reveal>
         </Section>
       </div>
 
       <Section className="text-center">
-        <Link href="/register">
-          <Button size="lg">Create your account</Button>
-        </Link>
+        <Reveal>
+          <Link href="/register">
+            <Button size="lg">{t("ctaButton")}</Button>
+          </Link>
+        </Reveal>
       </Section>
     </>
   );

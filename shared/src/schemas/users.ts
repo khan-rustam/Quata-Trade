@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { KYC_STATUSES, USER_STATUSES } from "../constants.js";
-import { zUuid } from "./common.js";
+import { AVATAR_STYLES, KYC_STATUSES, REPUTATION_TIERS, USER_STATUSES } from "../constants.js";
+import { zEmail, zUuid } from "./common.js";
 
 export const zUserProfile = z.object({
   id: zUuid,
@@ -8,15 +8,23 @@ export const zUserProfile = z.object({
   phone: z.string().nullable(),
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),
+  displayName: z.string().nullable(), // opt-in public handle; null = use masked name
+  bio: z.string().nullable(),
+  avatarStyle: z.enum(AVATAR_STYLES).nullable(),
+  avatarSeed: z.string().nullable(),
   country: z.string(),
   emailVerified: z.boolean(),
   phoneVerified: z.boolean(),
+  pendingEmail: z.string().nullable(), // email awaiting verification, if a change is in flight
   kycTier: z.number().int().min(0).max(3),
   kycStatus: z.enum(KYC_STATUSES),
   totpEnabled: z.boolean(),
   pinSet: z.boolean(),
   status: z.enum(USER_STATUSES),
   reputationScore: z.number().int(),
+  reputationTier: z.enum(REPUTATION_TIERS), // derived, display only
+  completedTrades: z.number().int(),
+  completionRate: z.number(), // 0..100, display only — not money
   createdAt: z.string(),
 });
 export type UserProfile = z.infer<typeof zUserProfile>;
@@ -25,9 +33,29 @@ export const zUpdateProfileRequest = z
   .object({
     firstName: z.string().trim().min(1).max(80).optional(),
     lastName: z.string().trim().min(1).max(80).optional(),
+    displayName: z.string().trim().min(2).max(24).nullable().optional(), // null clears (revert to masked)
+    bio: z.string().trim().max(280).nullable().optional(),
+    avatarStyle: z.enum(AVATAR_STYLES).nullable().optional(),
+    avatarSeed: z.string().trim().min(1).max(64).nullable().optional(),
   })
   .strict();
 export type UpdateProfileRequest = z.infer<typeof zUpdateProfileRequest>;
+
+/** Change of account email — requires password step-up; new address must be verified. */
+export const zChangeEmailRequest = z
+  .object({
+    newEmail: zEmail,
+    password: z.string().min(1).max(128),
+  })
+  .strict();
+export type ChangeEmailRequest = z.infer<typeof zChangeEmailRequest>;
+
+export const zVerifyEmailChangeRequest = z
+  .object({
+    code: z.string().trim().length(6),
+  })
+  .strict();
+export type VerifyEmailChangeRequest = z.infer<typeof zVerifyEmailChangeRequest>;
 
 export const zSession = z.object({
   id: zUuid,

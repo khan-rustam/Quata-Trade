@@ -47,6 +47,13 @@ export interface UsersTable {
   totp_enabled: Generated<boolean>;
   status: Generated<UserStatus>;
   reputation_score: Generated<number>;
+  display_name: string | null;
+  avatar_style: string | null;
+  avatar_seed: string | null;
+  bio: string | null;
+  pending_email: string | null;
+  pending_email_token_hash: string | null;
+  pending_email_expires_at: ColumnType<Date | null, Date | null | undefined, Date | null>;
   created_at: Timestamp;
   updated_at: ColumnType<Date | null, never, Date | string>;
 }

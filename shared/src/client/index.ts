@@ -7,7 +7,14 @@ import {
   type RegisterRequest,
 } from "../schemas/auth.js";
 import { zAnyRecord, zOk, type Ok } from "../schemas/common.js";
-import { zSessionsResponse, zUserProfile, type UpdateProfileRequest } from "../schemas/users.js";
+import {
+  zSessionsResponse,
+  zUserProfile,
+  type ChangeEmailRequest,
+  type UpdateProfileRequest,
+  type VerifyEmailChangeRequest,
+} from "../schemas/users.js";
+import { zPublicTrader } from "../schemas/traders.js";
 import {
   zKycStatusResponse,
   zKycUploadResponse,
@@ -153,6 +160,12 @@ export class QuataApiClient {
   updateProfile = (body: UpdateProfileRequest) => this.request("PATCH", "/api/v1/users/me", zUserProfile, body);
   sessions = () => this.request("GET", "/api/v1/users/me/sessions", zSessionsResponse);
   revokeSession = (id: string): Promise<Ok> => this.request("DELETE", `/api/v1/users/me/sessions/${id}`, zOk);
+  changeEmail = (body: ChangeEmailRequest) => this.request("POST", "/api/v1/users/me/email", zUserProfile, body);
+  verifyEmailChange = (body: VerifyEmailChangeRequest) =>
+    this.request("POST", "/api/v1/users/me/email/verify", zUserProfile, body);
+
+  // ---- traders (public merchant profile) ----
+  trader = (id: string) => this.request("GET", `/api/v1/traders/${id}`, zPublicTrader);
 
   // ---- kyc ----
   kycStatus = () => this.request("GET", "/api/v1/kyc/status", zKycStatusResponse);

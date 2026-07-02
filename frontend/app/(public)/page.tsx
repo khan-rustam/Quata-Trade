@@ -1,110 +1,125 @@
 import Link from "next/link";
-import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 import { ArrowRight, Lock, MessageSquare, ShieldCheck, Wallet } from "lucide-react";
+import type { Offer } from "@quatatrade/shared";
 import { Button } from "@/components/ui/button";
-import { Section, SectionHeading, Step, FeatureCard } from "@/components/public/marketing";
-import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
+import { Section, SectionHeading, FeatureCard } from "@/components/public/marketing";
 import { BrandMark } from "@/components/brand/logo";
+import { Hero } from "@/components/public/hero";
+import { EscrowSteps } from "@/components/public/escrow-steps";
+import { OfferPreviewCard } from "@/components/public/offer-preview-card";
+import { Reveal } from "@/components/motion/reveal";
 
-export default function LandingPage(): React.JSX.Element {
+/**
+ * Illustrative offers for the "know who you trade with" band. Clearly labelled as
+ * examples (copy: real offers appear after sign-in) — no fabricated live market
+ * data. Shapes match the real @quatatrade/shared Offer contract so the same card
+ * drops straight into the marketplace list.
+ */
+const EXAMPLE_OFFERS: Offer[] = [
+  {
+    id: "0f1a5b7c-0001-7aaa-b000-000000000001",
+    side: "SELL",
+    asset: "USDT_TRC20",
+    priceXafPerUnit: "652",
+    minTrade: "20000000",
+    maxTrade: "500000000",
+    remaining: "1200000000",
+    paymentMethods: ["MTN_MOMO", "ORANGE_MONEY"],
+    terms: null,
+    status: "ACTIVE",
+    trader: { id: "trader-aicha", displayName: "Aïcha N.", reputationScore: 96, completedTrades: 342, completionRate: 99.1, kycTier: 2 },
+    createdAt: "2026-07-01T09:12:00.000Z",
+  },
+  {
+    id: "0f1a5b7c-0002-7aaa-b000-000000000002",
+    side: "BUY",
+    asset: "USDT_TRC20",
+    priceXafPerUnit: "648",
+    minTrade: "10000000",
+    maxTrade: "250000000",
+    remaining: "600000000",
+    paymentMethods: ["ORANGE_MONEY", "QUATAPAY"],
+    terms: null,
+    status: "ACTIVE",
+    trader: { id: "trader-blaise", displayName: "Blaise K.", reputationScore: 91, completedTrades: 128, completionRate: 97.8, kycTier: 2 },
+    createdAt: "2026-07-01T08:40:00.000Z",
+  },
+  {
+    id: "0f1a5b7c-0003-7aaa-b000-000000000003",
+    side: "SELL",
+    asset: "USDT_TRC20",
+    priceXafPerUnit: "655",
+    minTrade: "50000000",
+    maxTrade: "1000000000",
+    remaining: "2400000000",
+    paymentMethods: ["MTN_MOMO", "QUATAPAY"],
+    terms: null,
+    status: "ACTIVE",
+    trader: { id: "trader-marie", displayName: "Marie T.", reputationScore: 99, completedTrades: 511, completionRate: 99.6, kycTier: 3 },
+    createdAt: "2026-07-01T07:55:00.000Z",
+  },
+];
+
+const TRUST_ICONS = [Lock, ShieldCheck, MessageSquare, Wallet] as const;
+
+export default async function LandingPage(): Promise<React.JSX.Element> {
+  const t = await getTranslations("landing");
+
   return (
     <>
-      {/* hero — the one place the Quata Flow gradient is allowed */}
-      <section className="relative overflow-hidden">
-        <div
-          className="pointer-events-none absolute inset-0 -z-10 opacity-25"
-          style={{
-            background:
-              "radial-gradient(60% 60% at 25% 15%, #0e5f55 0%, transparent 60%), radial-gradient(50% 50% at 85% 25%, #159e85 0%, transparent 55%), radial-gradient(45% 45% at 60% 95%, #2fd4a7 0%, transparent 55%)",
-          }}
-        />
-        <div className="mx-auto max-w-3xl px-4 py-20 text-center md:px-6 md:py-28">
-          <h1 className="font-display text-4xl font-bold leading-[1.12] md:text-6xl">Crypto to cash. Protected.</h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-text-2">
-            Trade USDT with real people in Cameroon using MTN Mobile Money, Orange Money, or QuataPay — every trade
-            locked in escrow until you&rsquo;re paid.
-          </p>
-          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/register">
-              <Button size="lg">
-                Start trading <ArrowRight size={16} />
-              </Button>
-            </Link>
-            <Link href="/how-it-works">
-              <Button size="lg" variant="secondary">
-                How it works
-              </Button>
-            </Link>
-          </div>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-            <span className="text-sm text-text-3">Pay with</span>
-            <PaymentMethodChip method="MTN_MOMO" />
-            <PaymentMethodChip method="ORANGE_MONEY" />
-            <PaymentMethodChip method="QUATAPAY" />
-          </div>
-          <div className="mx-auto mt-14 max-w-3xl">
-            <Image
-              src="/assets/hero-illustration.png"
-              alt="A protected USDT trade moving from crypto to cash through escrow"
-              width={1586}
-              height={992}
-              priority
-              className="h-auto w-full rounded-2xl border border-border/60 shadow-2xl shadow-black/20"
-            />
-          </div>
-        </div>
-      </section>
+      <Hero />
+      <EscrowSteps />
 
-      {/* how escrow works in 3 steps */}
-      <Section>
-        <SectionHeading eyebrow="Protected by escrow" title="How a trade stays safe" center />
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          <Step n={1} title="Crypto locks in escrow">
-            When a trade opens, the seller&rsquo;s USDT is locked. Neither side can move it until the deal completes.
-          </Step>
-          <Step n={2} title="You pay off-platform">
-            The buyer pays the seller with MoMo, Orange Money, or QuataPay, then submits proof in the trade room.
-          </Step>
-          <Step n={3} title="Escrow releases">
-            Once the seller confirms the money landed in their account, escrow releases the crypto to the buyer.
-          </Step>
-        </div>
-      </Section>
-
-      {/* trust features */}
-      <div className="border-y border-border bg-surface-1">
+      {/* Know who you trade with — the trust triple */}
+      <div className="border-y border-border bg-surface-1/40">
         <Section>
-          <SectionHeading eyebrow="Built for trust" title="Safety in every trade" />
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <FeatureCard icon={Lock} title="Escrow on every trade">
-              A screenshot isn&rsquo;t money — escrow is. Funds stay locked until the seller confirms payment.
-            </FeatureCard>
-            <FeatureCard icon={ShieldCheck} title="Verified traders">
-              Identity verification, transaction PINs, and 2FA protect your account and your funds.
-            </FeatureCard>
-            <FeatureCard icon={MessageSquare} title="Human dispute review">
-              If something goes wrong, escrow freezes and a real person reviews the evidence.
-            </FeatureCard>
-            <FeatureCard icon={Wallet} title="Your rate, your method">
-              Pick the offer, price, and payment method that work for you. No order book, no surprises.
-            </FeatureCard>
+          <SectionHeading
+            eyebrow={t("offers.eyebrow")}
+            title={t("offers.title")}
+            subtitle={t("offers.subtitle")}
+            center
+          />
+          <div className="mx-auto mt-10 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {EXAMPLE_OFFERS.map((offer, i) => (
+              <Reveal key={offer.id} delay={i * 0.08}>
+                <OfferPreviewCard offer={offer} />
+              </Reveal>
+            ))}
           </div>
+          <p className="mt-6 text-center text-xs text-text-3">{t("offers.example")}</p>
         </Section>
       </div>
 
-      {/* CTA */}
-      <Section className="text-center">
-        <div className="mx-auto flex max-w-xl flex-col items-center gap-5">
-          <BrandMark size={44} />
-          <h2 className="font-display text-3xl font-bold tracking-tight">Ready to trade with confidence?</h2>
-          <p className="text-text-2">Create your account in minutes. Crypto to cash. Protected.</p>
-          <Link href="/register">
-            <Button size="lg">
-              Get started <ArrowRight size={16} />
-            </Button>
-          </Link>
+      {/* Trust features */}
+      <Section>
+        <SectionHeading eyebrow={t("trust.eyebrow")} title={t("trust.title")} center />
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {TRUST_ICONS.map((Icon, i) => (
+            <Reveal key={i} delay={i * 0.07}>
+              <FeatureCard icon={Icon} title={t(`trust.f${i + 1}Title`)}>
+                {t(`trust.f${i + 1}Body`)}
+              </FeatureCard>
+            </Reveal>
+          ))}
         </div>
       </Section>
+
+      {/* CTA */}
+      <div className="border-t border-border">
+        <Section className="text-center">
+          <Reveal className="mx-auto flex max-w-xl flex-col items-center gap-5">
+            <BrandMark size={44} />
+            <h2 className="text-balance font-display text-3xl font-bold tracking-tight">{t("cta.title")}</h2>
+            <p className="text-text-2">{t("cta.body")}</p>
+            <Link href="/register">
+              <Button size="lg">
+                {t("cta.button")} <ArrowRight size={16} aria-hidden />
+              </Button>
+            </Link>
+          </Reveal>
+        </Section>
+      </div>
     </>
   );
 }

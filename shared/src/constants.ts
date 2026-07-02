@@ -57,6 +57,29 @@ export type OfferSide = (typeof OFFER_SIDES)[number];
 export const PAYMENT_METHODS = ["QUATAPAY", "MTN_MOMO", "ORANGE_MONEY"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
+/**
+ * Reputation tier — DERIVED for display from terminal-trade stats (see
+ * reputation.ts). NOT a PG enum and never stored; computed deterministically.
+ */
+export const REPUTATION_TIERS = ["NEW", "BRONZE", "SILVER", "GOLD"] as const;
+export type ReputationTier = (typeof REPUTATION_TIERS)[number];
+
+/**
+ * Avatar styles a user may pick (all DiceBear, rendered as SVG). App-level
+ * constraint validated by zod — `avatar_style` is a plain text column, not a PG enum.
+ */
+export const AVATAR_STYLES = [
+  "notionists",
+  "adventurer",
+  "avataaars",
+  "lorelei",
+  "micah",
+  "open-peeps",
+  "thumbs",
+  "bottts",
+] as const;
+export type AvatarStyle = (typeof AVATAR_STYLES)[number];
+
 export const KYC_STATUSES = ["NONE", "PENDING", "APPROVED", "REJECTED", "RESUBMIT"] as const;
 export type KycStatus = (typeof KYC_STATUSES)[number];
 

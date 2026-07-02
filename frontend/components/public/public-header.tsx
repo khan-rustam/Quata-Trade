@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
@@ -9,14 +10,16 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { LanguageToggle } from "@/components/layout/language-toggle";
 
 const LINKS = [
-  { href: "/how-it-works", label: "How it works" },
-  { href: "/fees", label: "Fees" },
-  { href: "/security", label: "Security" },
-  { href: "/help", label: "Help" },
-];
+  { href: "/how-it-works", key: "howItWorks" },
+  { href: "/fees", key: "fees" },
+  { href: "/security", key: "security" },
+  { href: "/help", key: "help" },
+] as const;
 
 export function PublicHeader(): React.JSX.Element {
+  const t = useTranslations("nav");
   const [open, setOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 md:px-6">
@@ -31,7 +34,7 @@ export function PublicHeader(): React.JSX.Element {
               href={l.href}
               className="rounded-lg px-3 py-2 text-sm font-medium text-text-2 transition-colors hover:text-text-1"
             >
-              {l.label}
+              {t(l.key)}
             </Link>
           ))}
         </nav>
@@ -43,16 +46,16 @@ export function PublicHeader(): React.JSX.Element {
           </div>
           <Link href="/login" className="hidden md:block">
             <Button variant="ghost" size="sm">
-              Log in
+              {t("login")}
             </Button>
           </Link>
           <Link href="/register" className="hidden md:block">
-            <Button size="sm">Get started</Button>
+            <Button size="sm">{t("register")}</Button>
           </Link>
           <button
             type="button"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-text-1 md:hidden"
-            aria-label={open ? "Close menu" : "Open menu"}
+            aria-label={open ? t("closeMenu") : t("openMenu")}
             aria-expanded={open}
             onClick={() => setOpen((o) => !o)}
           >
@@ -71,18 +74,18 @@ export function PublicHeader(): React.JSX.Element {
                 onClick={() => setOpen(false)}
                 className="rounded-lg px-3 py-2 text-sm font-medium text-text-1 hover:bg-surface-2"
               >
-                {l.label}
+                {t(l.key)}
               </Link>
             ))}
             <div className="mt-2 flex items-center gap-2">
               <Link href="/login" className="flex-1" onClick={() => setOpen(false)}>
                 <Button variant="secondary" className="w-full" size="sm">
-                  Log in
+                  {t("login")}
                 </Button>
               </Link>
               <Link href="/register" className="flex-1" onClick={() => setOpen(false)}>
                 <Button className="w-full" size="sm">
-                  Get started
+                  {t("register")}
                 </Button>
               </Link>
             </div>
