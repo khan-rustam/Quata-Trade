@@ -93,11 +93,11 @@ export default function RegisterPage(): React.JSX.Element {
           />
           <span>
             I agree to the{" "}
-            <Link href="/terms" className="text-accent-400 hover:underline">
+            <Link href="/legal/terms" className="text-accent-400 hover:underline">
               Terms
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="text-accent-400 hover:underline">
+            <Link href="/legal/privacy" className="text-accent-400 hover:underline">
               Privacy Policy
             </Link>
             .

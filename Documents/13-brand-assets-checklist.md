@@ -100,6 +100,41 @@
   payment marks are custom.
 - **In-app payment chips** — rendered with brand-colored dots in code (no image needed).
 
+## AI image-generation prompts (copy-paste ready)
+
+> Paste the **STYLE PREAMBLE** first, then the per-asset prompt, into ChatGPT image / DALL·E /
+> Midjourney / Figma AI. For flat vector illustrations, ask for **SVG output** or "flat vector,
+> solid shapes" then trace to SVG. Logos are best done by a designer or by asking the AI for
+> **"simple flat vector, SVG, on transparent background, minimal, geometric."** Always re-export
+> to the exact sizes in the tables above.
+
+**STYLE PREAMBLE (prepend to every prompt):**
+> Brand: QuataTrade, a modern fintech for Central Africa. Palette: mint-teal `#2FD4A7`, deep teal
+> `#0E5F55`, near-black teal-tinted background `#0E1416`, soft off-white `#E7EDEB`. Flat, clean,
+> geometric, generous negative space, subtle grain texture, high trust, calm — NOT crypto-bro, no
+> neon, no laser eyes, no glowing coins, no 3D render, no gradients behind text. Warm and
+> Cameroon-first. Transparent background unless stated.
+
+| Asset | Prompt (after the preamble) |
+|---|---|
+| **Logo / wordmark** | "A minimalist wordmark logo reading 'QuataTrade' in a geometric bold sans-serif (Space Grotesk style). The letter Q's tail is drawn as a small key, and the Q's inner counter reads as a keyhole. One color: mint-teal on transparent. Flat vector, SVG, no shadows, no 3D." |
+| **App icon / keyhole glyph** | "A single app-icon glyph: a circular letter Q whose counter forms a keyhole and whose tail is a key. Mint-teal `#2FD4A7` on a rounded-square dark tile `#0E1416`, ~14% padding. Flat, geometric, iconic at 16px. SVG." |
+| **Favicon (maskable)** | Same as app icon, but "centered inside the safe 80% circle, filled dark background to the edges (no transparency), rounded-square." |
+| **OG / social image (1200×630)** | "A social share banner, 1200×630. Left: the QuataTrade wordmark (keyhole-Q) and the tagline 'Crypto to cash. Protected.' in clean type. Background: a soft teal→mint mesh gradient (`#0E5F55`→`#159E85`→`#2FD4A7`) with subtle grain. Right: a simple flat illustration of a phone showing a locked-padlock/escrow shield. Balanced, lots of breathing room, text in the safe center." |
+| **Hero illustration** | "A wide flat vector illustration for a fintech landing hero: a Cameroonian person (varied skin tone, everyday dress, e.g. a young market vendor) smiling at a phone, with a floating simplified UI card showing a padlock/escrow badge and a coin↔cash exchange arrow. Mint-teal and deep-teal palette, subtle grain, warm, optimistic, plenty of empty space on one side for headline text. Flat shapes, no outlines-heavy, SVG." |
+| **Onboarding 1 — escrow** | "Flat vector, 800×800: two hands exchanging a coin and cash notes with a glowing mint padlock/keyhole between them symbolising escrow protection. Central African context, warm, simple shapes, teal palette, grain." |
+| **Onboarding 2 — pay your way** | "Flat vector, 800×800: a phone with three payment chips (mobile-money style, one yellow, one orange, one teal) and a happy user. Teal palette, minimal, grain." |
+| **Onboarding 3 — dispute safety** | "Flat vector, 800×800: a friendly shield-check and a small chat bubble, conveying human dispute review and safety. Teal palette, calm, minimal." |
+| **Empty state — no offers (320×240)** | "Flat vector, 320×240, transparent: a simple empty marketplace stall / open box with a small mint plus-sign, inviting the user to create the first offer. Minimal, teal, friendly, lots of negative space." |
+| **Empty state — no wallet activity** | "Flat vector, 320×240, transparent: a minimal wallet outline with a subtle mint sparkle, calm and empty. Teal palette." |
+| **Empty state — all caught up (notifications)** | "Flat vector, 320×240, transparent: a small bell with a check mark and a relaxed vibe, 'all caught up'. Teal, minimal." |
+| **Success / escrow-locked moment (240×240)** | "Flat vector, 240×240, transparent: a keyhole glyph clicking shut with a soft mint pulse ring around it, conveying 'funds protected'. Minimal, iconic, animatable (also provide an 'open' variant for release)." |
+| **Hero / lifestyle photography** | Photography brief (for a shoot or stock, NOT AI unless labelled): "Real, warm, natural-light photos of Cameroonian market traders, students and small-business owners using phones; authentic, candid, no corporate suits, no glowing screens-as-hero. 1920px wide, WebP." |
+
+Tip for the keyhole-Q: the app already ships a working vector at
+`frontend/components/brand/keyhole.tsx` — a designer can trace/refine that exact geometry so the
+generated logo and the in-app glyph match perfectly.
+
 ## Handover format
 Zip a `/brand` folder:
 ```

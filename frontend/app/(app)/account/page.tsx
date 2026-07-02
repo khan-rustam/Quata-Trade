@@ -66,7 +66,7 @@ export default function AccountPage(): React.JSX.Element {
         <MenuLink href="/account/security" icon={ShieldCheck} label="Security center" />
         <MenuLink href="/account/notifications" icon={Bell} label="Notifications" />
         <MenuLink href="/account/profile" icon={User} label="Profile details" />
-        <MenuLink href="/terms" icon={FileText} label="Terms & policies" />
+        <MenuLink href="/legal/terms" icon={FileText} label="Terms & policies" />
       </div>
 
       <button
