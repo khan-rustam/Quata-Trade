@@ -1,0 +1,28 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e3]:
+    - generic [ref=f1e4]:
+      - img [ref=f1e5]
+      - heading "Quata Admin" [level=1] [ref=f1e9]
+      - paragraph [ref=f1e10]:
+        - img [ref=f1e11]
+        - text: 2FA is mandatory for all admins
+    - generic [ref=f1e15]:
+      - generic [ref=f1e16]:
+        - generic [ref=f1e17]: Email*
+        - textbox "Email*" [ref=f1e18]:
+          - /placeholder: admin@quatatrade.com
+      - generic [ref=f1e19]:
+        - generic [ref=f1e20]: Password*
+        - textbox "Password*" [ref=f1e21]:
+          - /placeholder: ••••••••
+      - generic [ref=f1e22]:
+        - text: Authenticator code
+        - group "Authenticator code" [ref=f1e23]:
+          - textbox "Digit 1" [ref=f1e24]
+          - textbox "Digit 2" [ref=f1e25]
+          - textbox "Digit 3" [ref=f1e26]
+          - textbox "Digit 4" [ref=f1e27]
+          - textbox "Digit 5" [ref=f1e28]
+          - textbox "Digit 6" [ref=f1e29]
+      - button "Sign in" [disabled] [ref=f1e30]
+  - alert [ref=f1e31]

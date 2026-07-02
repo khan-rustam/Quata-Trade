@@ -6,7 +6,7 @@ import {
   type LoginRequest,
   type RegisterRequest,
 } from "../schemas/auth.js";
-import { zOk, type Ok } from "../schemas/common.js";
+import { zAnyRecord, zOk, type Ok } from "../schemas/common.js";
 import { zSessionsResponse, zUserProfile, type UpdateProfileRequest } from "../schemas/users.js";
 import {
   zKycStatusResponse,
@@ -43,6 +43,28 @@ import {
 import { zDispute, type OpenDisputeRequest, type SubmitEvidenceRequest } from "../schemas/disputes.js";
 import { zMessagesResponse, type SendMessageRequest } from "../schemas/chat.js";
 import { zNotificationsResponse } from "../schemas/notifications.js";
+import {
+  zAdminDisputesResponse,
+  zAdminKpisResponse,
+  zAdminKycQueueResponse,
+  zAdminProfile,
+  zAdminRevenueResponse,
+  zAdminTradesResponse,
+  zAdminTreasuryResponse,
+  zAdminUsersResponse,
+  zAdminWithdrawalsResponse,
+  zAuditLogsResponse,
+  zAuditVerifyResponse,
+  zKillSwitchState,
+  zModerationResult,
+  type AdminLoginRequest,
+  type ApproveWithdrawalRequest,
+  type KillSwitchRequest,
+  type RejectWithdrawalRequest,
+  type UpdateSettingRequest,
+} from "../schemas/admin.js";
+import type { KycReviewRequest } from "../schemas/kyc.js";
+import type { ResolveDisputeRequest } from "../schemas/disputes.js";
 
 export class ApiClientError extends Error {
   constructor(
@@ -189,4 +211,40 @@ export class QuataApiClient {
     this.request("GET", "/api/v1/notifications", zNotificationsResponse, undefined, query);
   markNotificationRead = (id: string): Promise<Ok> =>
     this.request("POST", `/api/v1/notifications/${id}/read`, zOk);
+
+  // ---- admin (uses a separate admin token; RBAC enforced server-side) ----
+  adminLogin = (body: AdminLoginRequest) =>
+    this.request("POST", "/api/v1/admin/auth/login", zAuthTokensResponse, body);
+  adminMe = () => this.request("GET", "/api/v1/admin/me", zAdminProfile);
+  adminKpis = () => this.request("GET", "/api/v1/admin/kpis", zAdminKpisResponse);
+  adminUsers = (query?: Query) =>
+    this.request("GET", "/api/v1/admin/users", zAdminUsersResponse, undefined, query);
+  adminModerateUser = (id: string, action: "freeze" | "suspend" | "restore", body: { reason: string }) =>
+    this.request("POST", `/api/v1/admin/users/${id}/${action}`, zModerationResult, body);
+  adminTrades = (query?: Query) =>
+    this.request("GET", "/api/v1/admin/trades", zAdminTradesResponse, undefined, query);
+  adminWithdrawals = (query?: Query) =>
+    this.request("GET", "/api/v1/admin/withdrawals", zAdminWithdrawalsResponse, undefined, query);
+  adminApproveWithdrawal = (id: string, body: ApproveWithdrawalRequest): Promise<unknown> =>
+    this.request("POST", `/api/v1/admin/withdrawals/${id}/approve`, zAnyRecord, body);
+  adminRejectWithdrawal = (id: string, body: RejectWithdrawalRequest): Promise<unknown> =>
+    this.request("POST", `/api/v1/admin/withdrawals/${id}/reject`, zAnyRecord, body);
+  adminKycQueue = (query?: Query) =>
+    this.request("GET", "/api/v1/admin/kyc/queue", zAdminKycQueueResponse, undefined, query);
+  adminReviewKyc = (id: string, decision: "approve" | "reject" | "resubmit", body: KycReviewRequest): Promise<unknown> =>
+    this.request("POST", `/api/v1/admin/kyc/${id}/${decision}`, zAnyRecord, body);
+  adminDisputes = (query?: Query) =>
+    this.request("GET", "/api/v1/admin/disputes", zAdminDisputesResponse, undefined, query);
+  adminResolveDispute = (id: string, body: ResolveDisputeRequest): Promise<unknown> =>
+    this.request("POST", `/api/v1/admin/disputes/${id}/resolve`, zAnyRecord, body);
+  adminKillSwitch = () => this.request("GET", "/api/v1/admin/kill-switch", zKillSwitchState);
+  adminSetKillSwitch = (body: KillSwitchRequest) =>
+    this.request("POST", "/api/v1/admin/kill-switch", zKillSwitchState, body);
+  adminUpdateSetting = (body: UpdateSettingRequest): Promise<unknown> =>
+    this.request("PATCH", "/api/v1/admin/settings", zAnyRecord, body);
+  adminAuditLogs = (query?: Query) =>
+    this.request("GET", "/api/v1/admin/audit-logs", zAuditLogsResponse, undefined, query);
+  adminVerifyAudit = () => this.request("GET", "/api/v1/admin/audit-logs/verify", zAuditVerifyResponse);
+  adminRevenue = () => this.request("GET", "/api/v1/admin/revenue", zAdminRevenueResponse);
+  adminTreasury = () => this.request("GET", "/api/v1/admin/treasury/balances", zAdminTreasuryResponse);
 }

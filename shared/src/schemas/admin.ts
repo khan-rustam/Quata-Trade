@@ -55,9 +55,11 @@ export const zAdminWithdrawalsResponse = zPaginated(zAdminWithdrawalRow);
 export const zApproveWithdrawalRequest = z
   .object({ totpCode: zTotpCode, notes: z.string().max(1000).optional() })
   .strict();
+export type ApproveWithdrawalRequest = z.infer<typeof zApproveWithdrawalRequest>;
 export const zRejectWithdrawalRequest = z
   .object({ totpCode: zTotpCode, reason: z.string().trim().min(5).max(1000) })
   .strict();
+export type RejectWithdrawalRequest = z.infer<typeof zRejectWithdrawalRequest>;
 
 export const zKillSwitchState = z.object({
   withdrawalsPaused: z.boolean(),
@@ -121,3 +123,50 @@ export const zUpdateSettingRequest = z
     totpCode: zTotpCode,
   })
   .strict();
+export type UpdateSettingRequest = z.infer<typeof zUpdateSettingRequest>;
+
+// ---- KYC review queue ----
+export const zAdminKycQueueRow = z.object({
+  id: zUuid,
+  userId: zUuid,
+  userEmail: z.string(),
+  tier: z.number().int(),
+  docType: z.string(),
+  files: z.array(z.string()),
+  submittedAt: z.string(),
+  retentionDeleteAfter: z.string(),
+});
+export const zAdminKycQueueResponse = zPaginated(zAdminKycQueueRow);
+
+// ---- dispute queue ----
+export const zAdminDisputeRow = z.object({
+  id: zUuid,
+  tradeId: zUuid,
+  tradeShortRef: z.string(),
+  tradeStatus: z.enum(TRADE_STATUSES),
+  amount: zAmount,
+  openedBy: zUuid,
+  reason: z.string(),
+  status: z.string(),
+  createdAt: z.string(),
+});
+export const zAdminDisputesResponse = zPaginated(zAdminDisputeRow);
+
+// ---- treasury / revenue ----
+export const zAdminRevenueResponse = z.object({
+  today: zAmount,
+  month: zAmount,
+  lifetime: zAmount,
+});
+export type AdminRevenueResponse = z.infer<typeof zAdminRevenueResponse>;
+
+export const zAdminTreasuryResponse = z.object({
+  treasury: z.string(),
+  pendingSweep: z.string(),
+  external: z.string(),
+});
+export type AdminTreasuryResponse = z.infer<typeof zAdminTreasuryResponse>;
+
+export const zAuditVerifyResponse = z.object({ broken: z.array(z.string()) });
+
+export const zModerationResult = z.object({ ok: z.literal(true), status: z.string() });

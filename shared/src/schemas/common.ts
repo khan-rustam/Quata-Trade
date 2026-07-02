@@ -59,6 +59,9 @@ export const zPaginated = <T extends z.ZodTypeAny>(item: T) =>
 export const zOk = z.object({ ok: z.literal(true) });
 export type Ok = z.infer<typeof zOk>;
 
+/** Accept any object body (action endpoints whose exact shape the client ignores). */
+export const zAnyRecord = z.object({}).passthrough();
+
 /** Standard API error envelope (Nest exception filter emits this shape). */
 export const zApiError = z.object({
   statusCode: z.number().int(),

@@ -34,6 +34,7 @@ export const zKycReviewRequest = z
     notes: z.string().trim().max(4000).optional(),
   })
   .strict();
+export type KycReviewRequest = z.infer<typeof zKycReviewRequest>;
 
 export const KYC_UPLOAD_MIMES = ["image/jpeg", "image/png", "image/webp", "application/pdf"] as const;
 
