@@ -1,0 +1,32 @@
+{
+  "brand": {
+    "name": "QuataTrade",
+    "tagline": "De la crypto au cash. Protégé."
+  },
+  "nav": {
+    "home": "Accueil",
+    "markets": "Marchés",
+    "trade": "Échanger",
+    "wallet": "Portefeuille",
+    "account": "Compte",
+    "login": "Se connecter",
+    "register": "Commencer"
+  },
+  "landing": {
+    "heroTitle": "De la crypto au cash. Protégé.",
+    "heroSubtitle": "Échangez des USDT avec des personnes au Cameroun via MTN MoMo, Orange Money ou QuataPay — chaque échange est bloqué sous séquestre jusqu'à votre paiement.",
+    "ctaPrimary": "Commencer à échanger",
+    "ctaSecondary": "Voir les offres",
+    "trust1Title": "Bloqué sous séquestre",
+    "trust1Body": "La crypto du vendeur est conservée en sécurité jusqu'à ce qu'il confirme votre paiement. Une capture d'écran n'est pas de l'argent — le séquestre, si.",
+    "trust2Title": "Votre taux, votre moyen",
+    "trust2Body": "Choisissez l'offre, le moyen de paiement et le prix qui vous conviennent. Pas de carnet d'ordres, pas de surprises.",
+    "trust3Title": "Conçu pour la confiance",
+    "trust3Body": "Vérification KYC, codes PIN de transaction, 2FA et un centre de litiges avec examen humain sur chaque dossier."
+  },
+  "common": {
+    "loading": "Chargement…",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer"
+  }
+}

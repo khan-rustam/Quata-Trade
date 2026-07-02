@@ -1,1 +1,93 @@
 @import "tailwindcss";
+
+/*
+ * QuataTrade brand tokens — Documents/11-brand-design-system.md §11.8.
+ * Components reference tokens ONLY; never raw hex.
+ * Dark is the default theme; light-mode values swap via [data-theme="light"].
+ */
+@theme {
+  /* brand */
+  --color-brand-900: #0b3b36;
+  --color-brand-700: #0e5f55;
+  --color-brand-500: #159e85;
+  --color-accent-400: #2fd4a7;
+  --color-accent-200: #a9efd9;
+
+  /* dark surfaces (default) */
+  --color-bg: #0e1416;
+  --color-surface-1: #151c1e;
+  --color-surface-2: #1c2528;
+  --color-surface-3: #243033;
+  --color-border: #2c3a3d;
+
+  /* text */
+  --color-text-1: #e7edeb;
+  --color-text-2: #9fb3ae;
+  --color-text-3: #5e706c;
+
+  /* semantic (dark values) — always pair with an icon/label, never color alone */
+  --color-success: #4ade8c;
+  --color-danger: #f87171;
+  --color-warning: #fbbf24;
+  --color-info: #7db2ff;
+  --color-escrow: #2fd4a7;
+
+  /* fonts (self-hosted via next/font, bound in layout.tsx) */
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --radius-card: 12px;
+  --radius-btn: 10px;
+  --radius-chip: 999px;
+}
+
+/* Light mode mirrors dark (Documents/11 §11.3) — never pure white pages/black text */
+[data-theme="light"] {
+  --color-bg: #f6f9f8;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #ffffff;
+  --color-surface-3: #eef3f1;
+  --color-border: #d8e2df;
+  --color-text-1: #101614;
+  --color-text-2: #5c6b67;
+  --color-text-3: #90a09b;
+  --color-success: #0e8a4d;
+  --color-danger: #c93b3b;
+  --color-warning: #b67b0f;
+  --color-info: #2563eb;
+  --color-escrow: #0e5f55;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-1);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Money & data — IBM Plex Mono with tabular figures (Documents/11 §11.4) */
+.font-money {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus ring — 2px accent, always visible (Documents/11 accessibility rules) */
+:focus-visible {
+  outline: 2px solid var(--color-accent-400);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

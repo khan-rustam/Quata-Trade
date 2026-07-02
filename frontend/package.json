@@ -9,10 +9,21 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
+    "@quatatrade/shared": "workspace:*",
+    "@tanstack/react-query": "^5.101.2",
+    "clsx": "^2.1.1",
+    "decimal.js": "^10.6.0",
+    "lucide-react": "^0.469.0",
     "next": "16.2.10",
+    "next-intl": "^3.26.5",
     "postcss": "^8.5.16",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.80.0",
+    "socket.io-client": "^4.8.3",
+    "tailwind-merge": "^2.6.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",

@@ -1,0 +1,32 @@
+{
+  "brand": {
+    "name": "QuataTrade",
+    "tagline": "Crypto to cash. Protected."
+  },
+  "nav": {
+    "home": "Home",
+    "markets": "Markets",
+    "trade": "Trade",
+    "wallet": "Wallet",
+    "account": "Account",
+    "login": "Log in",
+    "register": "Get started"
+  },
+  "landing": {
+    "heroTitle": "Crypto to cash. Protected.",
+    "heroSubtitle": "Trade USDT with people in Cameroon using MTN MoMo, Orange Money, or QuataPay — every trade locked in escrow until you're paid.",
+    "ctaPrimary": "Start trading",
+    "ctaSecondary": "Browse offers",
+    "trust1Title": "Locked in escrow",
+    "trust1Body": "The seller's crypto is held safely until they confirm your payment landed. A screenshot is not money — escrow is.",
+    "trust2Title": "Your rate, your method",
+    "trust2Body": "Pick the offer, the payment method, and the price that work for you. No order book, no surprises.",
+    "trust3Title": "Built for trust",
+    "trust3Body": "KYC verification, transaction PINs, 2FA, and a dispute center with human review on every case."
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Try again"
+  }
+}
