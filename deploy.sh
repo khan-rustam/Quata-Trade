@@ -18,7 +18,7 @@
 #   QT_PNPM_VERSION=11.2.2
 #   QT_API_HEALTH_URL=https://api.trade.quatadigital.com/health
 #   QT_WEB_URL=https://trade.quatadigital.com
-#   QT_WEB_PORT=3000                 (used by ecosystem.config.cjs)
+#   QT_WEB_PORT=3800                 (web listen port; must match the Nginx upstream)
 #   QT_SKIP_MIGRATE=0                (set 1 to skip migrations)
 #
 set -Eeuo pipefail
@@ -33,10 +33,15 @@ export QT_APP_DIR
 if [ "${QT_REEXEC:-}" != "1" ]; then
   _copy="$(mktemp)"
   cp "$SELF" "$_copy"
-  export QT_REEXEC=1
+  export QT_REEXEC=1 QT_SELF_COPY="$_copy"
   exec bash "$_copy" "$@"
 fi
-trap 'rm -f "$SELF"' EXIT   # $SELF is the temp copy in the re-exec'd process
+# We are now the throwaway copy. Delete EXACTLY that copy on exit — and only if
+# it is genuinely a different path from the tracked script, so a pre-set
+# QT_REEXEC can never cause us to delete the real deploy.sh.
+if [ -n "${QT_SELF_COPY:-}" ] && [ "$QT_SELF_COPY" != "$SELF" ]; then
+  trap 'rm -f "$QT_SELF_COPY"' EXIT
+fi
 
 # ----------------------------- configuration --------------------------------
 BRANCH="${QT_BRANCH:-main}"
@@ -46,7 +51,17 @@ API_HEALTH_URL="${QT_API_HEALTH_URL:-https://api.trade.quatadigital.com/health}"
 WEB_URL="${QT_WEB_URL:-https://trade.quatadigital.com}"
 ECOSYSTEM="${QT_ECOSYSTEM:-$APP_DIR/ecosystem.config.cjs}"
 SKIP_MIGRATE="${QT_SKIP_MIGRATE:-0}"
+WEB_PORT="${QT_WEB_PORT:-3800}"
 PM2_APPS=(quatatrade-api quatatrade-worker quatatrade-web)
+
+# backend/.env is the single source of truth for the API/worker NODE_ENV
+# (staging + SIGNER_MODE=mock on the test box). If the box exports NODE_ENV
+# globally, `pm2 --update-env` would leak it into api/worker and trip the
+# "SIGNER_MODE=mock forbidden in production" boot hard-stop — and NODE_ENV=production
+# could also make pnpm skip devDependencies (tsx/build tooling). Clear it so the
+# .env files and the per-app ecosystem env blocks stay authoritative. (The web
+# app still gets NODE_ENV=production from its own ecosystem env block.)
+unset NODE_ENV
 
 # ------------------------------- helpers ------------------------------------
 c_reset=$'\033[0m'; c_cyan=$'\033[1;36m'; c_green=$'\033[1;32m'; c_yellow=$'\033[1;33m'; c_red=$'\033[1;31m'
@@ -112,6 +127,7 @@ log "QuataTrade deploy — $APP_DIR (branch: $BRANCH)"
 command -v git  >/dev/null 2>&1 || die "git not found"
 command -v node >/dev/null 2>&1 || die "node not found"
 command -v pm2  >/dev/null 2>&1 || die "pm2 not found (npm i -g pm2)"
+command -v curl >/dev/null 2>&1 || die "curl not found (needed for health checks)"
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "$APP_DIR is not a git repository"
 
 # Secrets live only on the box and are gitignored — refuse to proceed without them.
@@ -130,7 +146,6 @@ ok "preflight ok — node $(node -v), pnpm $(pnpm -v)"
 
 # Capture rollback point AFTER preflight so it only arms once we're committed.
 PREV_COMMIT="$(git rev-parse HEAD)"
-trap rollback ERR
 log "current commit: $PREV_COMMIT"
 
 # ------------------------------- pull ---------------------------------------
@@ -139,6 +154,9 @@ git fetch --prune origin "$BRANCH"
 # reset --hard rewrites TRACKED files only; gitignored .env files are untouched.
 git reset --hard "origin/$BRANCH"
 NEW_COMMIT="$(git rev-parse HEAD)"
+# Arm rollback ONLY now: fetch/reset are read-only + idempotent, so a transient
+# network failure there must abort cleanly, not rebuild+restart healthy apps.
+trap rollback ERR
 if [ "$PREV_COMMIT" = "$NEW_COMMIT" ]; then
   warn "no new commits — redeploying $NEW_COMMIT"
 else
@@ -177,6 +195,9 @@ ok "processes reloaded"
 # Code is live and migrated — stop rolling back on subsequent (non-fatal) checks.
 trap - ERR
 
+# Give the forked apps a moment to bind their ports before we read status.
+sleep 4
+
 # --------------------------- verification -----------------------------------
 log "verifying processes"
 verify_fail=0
@@ -190,8 +211,11 @@ for app in "${PM2_APPS[@]}"; do
 done
 
 log "health checks"
-check_url "$API_HEALTH_URL" 12 || verify_fail=1   # /health -> {"status":"ok"}
-check_url "$WEB_URL" 8         || verify_fail=1   # web root
+# Local checks confirm the apps actually bound the ports Nginx proxies to, so a
+# stale foreign listener on the public URL can't mask a crash-looping new process.
+check_url "http://127.0.0.1:${WEB_PORT}/" 8 || verify_fail=1   # web bound its Nginx upstream port
+check_url "$API_HEALTH_URL" 12              || verify_fail=1   # public API /health -> {"status":"ok"}
+check_url "$WEB_URL" 8                      || verify_fail=1   # public web root (through Nginx)
 
 echo
 if [ "$verify_fail" -ne 0 ]; then

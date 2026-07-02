@@ -14,15 +14,17 @@
  *    NODE_ENV/PORT here — backend/.env is the single source of truth. (Forcing
  *    NODE_ENV=production would trip the SIGNER_MODE=mock hard-stop on the test
  *    box, which runs NODE_ENV=staging.)
- *  - The web process has no .env for its port, so we pass PORT explicitly
- *    (default 3000, override with QT_WEB_PORT). Nginx proxies trade.* -> :3000.
+ *  - The web process has no .env for its port, so we pass PORT explicitly.
+ *    Nginx proxies trade.quatadigital.com -> 127.0.0.1:3800, so the web app
+ *    MUST listen on 3800 (port 3000 is used by another project on this box).
+ *    Override with QT_WEB_PORT if the nginx upstream ever changes.
  */
 const path = require("path");
 
 const ROOT = __dirname;
 const BACKEND = path.join(ROOT, "backend");
 const FRONTEND = path.join(ROOT, "frontend");
-const WEB_PORT = process.env.QT_WEB_PORT || "3000";
+const WEB_PORT = process.env.QT_WEB_PORT || "3800";
 
 const common = {
   exec_mode: "fork",
