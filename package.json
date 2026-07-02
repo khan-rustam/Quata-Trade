@@ -1,0 +1,25 @@
+{
+  "name": "quatatrade",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.2.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:api": "pnpm --filter @quatatrade/backend dev",
+    "dev:worker": "pnpm --filter @quatatrade/backend dev:worker",
+    "dev:web": "pnpm --filter frontend dev",
+    "build": "pnpm --filter @quatatrade/shared build && pnpm --filter @quatatrade/backend build && pnpm --filter frontend build",
+    "build:shared": "pnpm --filter @quatatrade/shared build",
+    "migrate": "pnpm --filter @quatatrade/backend migrate",
+    "migrate:down": "pnpm --filter @quatatrade/backend migrate:down",
+    "test": "pnpm --filter @quatatrade/shared test && pnpm --filter @quatatrade/backend test",
+    "test:integration": "pnpm --filter @quatatrade/backend test:integration",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "compose:up": "docker compose up -d postgres redis minio",
+    "compose:full": "docker compose --profile full up -d",
+    "compose:down": "docker compose down"
+  }
+}
