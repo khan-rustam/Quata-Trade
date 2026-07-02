@@ -14,6 +14,7 @@ const zWithdrawalCaps = z.object({
 });
 const zTierLimit = z.object({ maxTrade: z.string(), dailyWithdrawal: z.string() });
 const zTierLimits = z.record(zTierLimit);
+const zDepositPolicy = z.object({ min_amount: z.string(), confirmations: z.number().int().min(1) });
 
 const CACHE_TTL_MS = 10_000;
 
@@ -82,5 +83,16 @@ export class SettingsService {
     const limits = v[String(tier)];
     if (!limits) throw new Error(`no limits configured for KYC tier ${tier}`);
     return { maxTrade: BigInt(limits.maxTrade), dailyWithdrawal: BigInt(limits.dailyWithdrawal) };
+  }
+
+  /** KYC document retention window in days (seeded 1825 — data-protection schedule). */
+  async kycRetentionDays(): Promise<number> {
+    return z.coerce.number().int().min(1).max(36500).parse(await this.raw("kyc_retention_days"));
+  }
+
+  /** Deposit display policy (settings key "deposit_policy"): min amount + confirmations. */
+  async depositPolicy(): Promise<{ minAmount: bigint; confirmations: number }> {
+    const v = zDepositPolicy.parse(await this.raw("deposit_policy"));
+    return { minAmount: BigInt(v.min_amount), confirmations: v.confirmations };
   }
 }

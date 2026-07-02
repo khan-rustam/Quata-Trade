@@ -41,6 +41,29 @@ an entry in `Documents/10-client-prompts-appendix.md` → Deviations Log.
 - Work in the phase order of `Documents/05-build-phases.md`; do not jump ahead of
   an unpassed AUDIT GATE.
 
+## Behavioral hard rules (Documents/12 §12.2 — merged per doc instruction)
+
+1. **No silent assumptions.** If the docs don't answer it, ask or log it in the Deviations
+   Log — never guess quietly, especially in ledger/escrow/withdrawal code.
+2. **Minimal solutions.** Implement exactly what the task needs; no speculative abstractions,
+   no "while I'm here" refactors on money paths.
+3. **Don't touch unrequested code.** A trade-room fix does not reformat the ledger. Diffs on
+   money paths must be reviewable line-by-line.
+4. **Verify before shipping.** Run typecheck + the relevant test project before claiming done;
+   money paths additionally need their gate suite green (`Documents/audits/`).
+
+## Project skills & tooling (Documents/12)
+
+- Project skills live in `.claude/skills/`: `quatatrade-ledger`, `quatatrade-escrow-fsm`,
+  `quatatrade-security-gates`, `quatatrade-api-contract`, `quatatrade-brand`.
+  **Consult the matching skill before working in its area.** Skills advise; on conflict,
+  `Documents/01–11` decide.
+- Dev-only MCP servers are configured in `.mcp.json` (Postgres read-only role, Context7,
+  Playwright). Never point the DB connector at staging/prod; never install plugins/MCP on
+  the signer host.
+- Official plugins are enabled via `.claude/settings.json`; one-time install commands and
+  community-skill vetting rules: `Documents/12-claude-code-skills.md` §12.6.
+
 ## Commands
 
 - `pnpm compose:up` — start postgres/redis/minio (Docker)

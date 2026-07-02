@@ -14,7 +14,7 @@ async function bootstrap(): Promise<void> {
     AppModule,
     new FastifyAdapter({
       trustProxy: true, // behind Nginx
-      bodyLimit: 1_048_576, // 1 MiB JSON cap; uploads use dedicated multipart endpoints
+      bodyLimit: 8_388_608, // 8 MiB — POST /kyc/upload carries ≤7 MiB base64 JSON; Nginx caps other routes tighter at the edge
     }),
     { bufferLogs: true },
   );

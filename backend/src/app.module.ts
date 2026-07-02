@@ -8,6 +8,9 @@ import { validateEnv, type Env } from "./config/env";
 import { DatabaseModule } from "./db/database.module";
 import { JwtAuthGuard } from "./common/auth/jwt-auth.guard";
 import { RolesGuard } from "./common/auth/roles.guard";
+import { AuditModule } from "./common/audit/audit.module";
+import { RedisModule } from "./common/redis/redis.module";
+import { StorageModule } from "./common/storage/storage.module";
 import { SettingsModule } from "./modules/settings/settings.module";
 import { HealthModule } from "./modules/health/health.module";
 import { FeesModule } from "./modules/fees/fees.module";
@@ -15,6 +18,17 @@ import { LedgerModule } from "./modules/ledger/ledger.module";
 import { EscrowModule } from "./modules/escrow/escrow.module";
 import { OffersModule } from "./modules/offers/offers.module";
 import { TradesModule } from "./modules/trades/trades.module";
+import { AuthModule } from "./modules/auth/auth.module";
+import { UsersModule } from "./modules/users/users.module";
+import { WalletModule } from "./modules/wallet/wallet.module";
+import { KycModule } from "./modules/kyc/kyc.module";
+import { WithdrawalsModule } from "./modules/withdrawals/withdrawals.module";
+import { DisputesModule } from "./modules/disputes/disputes.module";
+import { ChatModule } from "./modules/chat/chat.module";
+import { RiskModule } from "./modules/risk/risk.module";
+import { NotifyModule } from "./modules/notify/notify.module";
+import { AdminModule } from "./modules/admin/admin.module";
+import { TreasuryModule } from "./modules/treasury/treasury.module";
 
 @Module({
   imports: [
@@ -59,12 +73,27 @@ import { TradesModule } from "./modules/trades/trades.module";
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]), // global baseline; auth endpoints add stricter buckets
     DatabaseModule,
     SettingsModule,
+    AuditModule,
+    RedisModule,
+    StorageModule,
     HealthModule,
     FeesModule,
     LedgerModule,
     EscrowModule,
     OffersModule,
     TradesModule,
+    AuthModule,
+    UsersModule,
+    WalletModule,
+    KycModule,
+    WithdrawalsModule,
+    DisputesModule,
+    ChatModule,
+    RiskModule,
+    NotifyModule,
+    AdminModule,
+    TreasuryModule,
+    // DepositsModule + SignerModule run ONLY in the worker process (crons)
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared contract
+        run: pnpm --filter @quatatrade/shared build
+
+      - name: Typecheck (FE↔BE contract enforced at compile time)
+        run: pnpm -r typecheck
+
+      - name: Lint (any-ban on money paths is a hard failure)
+        run: pnpm --filter @quatatrade/backend lint
+
+      - name: Unit + property tests
+        run: |
+          pnpm --filter @quatatrade/shared test
+          pnpm --filter @quatatrade/backend test
+
+      - name: Integration tests (Testcontainers PG16)
+        run: pnpm --filter @quatatrade/backend test:integration
+
+      - name: Build backend + frontend
+        run: pnpm build
+
+      - name: Dependency audit (block on high severity)
+        run: pnpm audit --audit-level high

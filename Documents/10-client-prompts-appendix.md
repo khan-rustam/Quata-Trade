@@ -61,6 +61,20 @@ Each item: what the client asked, what we do instead, why. Client signs before l
 | D10 | SMS alerts | **Email + in-app** first; SMS/FCM later | Cost + provider setup; not launch-critical |
 | D11 | Gateway checkout (QuataPay payment gateway) fee-split | **Off-platform payment only** in v1; no fiat custody/gateway | Avoids payment-processing/fiat-custody licensing and PCI scope |
 
+### Implementation deviations (build-time, 2026-07-02 — technical, need reviewer sign-off)
+
+| # | Doc said | We build | Reason |
+|---|---|---|---|
+| D12 | Monorepo layout `apps/api`+`apps/worker`+`apps/web`+`packages/shared` (doc 03) | `backend/` (api+worker, two entry points) + `frontend/` + `shared/` pnpm workspace | Owner's chosen folder structure; identical module boundaries preserved; docs live in `Documents/` |
+| D13 | `account_kind` has no chain-facing account; `account_balances CHECK (balance >= 0)` for all (doc 04 §4.2) | Added `external` contra account kind, exempt from the non-negativity CHECK (denormalized `kind` on account_balances) | Zero-sum journals + all-accounts-non-negative is mathematically impossible; every real double-entry ledger uses an external/world account |
+| D14 | postJournal SERIALIZABLE + retry on 40001 max 3 (doc 04 §4.8) | READ COMMITTED + globally sorted `FOR UPDATE` pessimistic locks (retry kept for deadlock codes) | The doc's own Gate-1 test ("50 concurrent locks → exactly 10 succeed") is non-deterministic under SSI abort storms with only 3 retries; all balance access happens under row locks, which is linearizable for this pattern and passes the gate deterministically |
+| D15 | `withdrawals` CHECK `big_needs_two` as written (doc 04 §4.4) | CHECK applies only once status reaches APPROVED+; also requires `second_approver <> approved_by` | The doc's CHECK would reject *inserting* any large withdrawal (no approver can exist at request time); intent preserved, hole (same admin twice) closed |
+| D16 | `sodium-native` for crypto at rest (doc 02) | Node built-in `crypto` AES-256-GCM for TOTP-secret/KYC-key encryption | Same security class, zero native-build risk on Windows dev; can swap to sodium at hardening phase |
+| D17 | FSM trigger fires on any status UPDATE (doc 04 §4.5) | Added `WHEN (OLD.status IS DISTINCT FROM NEW.status)` | Idempotent no-op writes must not raise; illegal transitions still rejected |
+| D18 | `trade short_ref` example QT-XXXXX (5 chars, doc 04) | 5-char Crockford base32 (~33M space) kept, DB-unique; collision → request-level retry | Matches doc; noted for scale review at >1M trades |
+| D19 | `auth_tokens`, lockout columns, `outbox` table not in doc 04 | Added (migrations 0001/0006) | Doc 06 endpoints (OTP verify, lockouts) and doc 03 outbox pattern require them |
+| D20 | Refresh tokens for admins | Admin sessions = 10-min access JWT re-login, no refresh cookie in v1 | Smaller attack surface for the highest-privilege principals |
+
 ### Legal/commercial guardrails to settle in writing BEFORE building (from prior research)
 - Client owns the legal entity, any required licenses, treasury/cold keys, and the regulatory/legal risk. Developer is a contractor, not fund custodian.
 - The 30% revenue-share can reclassify the developer as an operator/partner (higher liability). Prefer paid milestones or a clear contract that isolates liability + indemnifies the developer.

@@ -47,6 +47,11 @@ export async function migrateToLatest(db: Kysely<Database>): Promise<void> {
 
 async function main(): Promise<void> {
   const direction = process.argv[2] ?? "up";
+  try {
+    process.loadEnvFile(".env"); // Node 21+; CLI convenience — CI/prod inject real env
+  } catch {
+    /* no .env present — rely on process env */
+  }
   const url = process.env.DATABASE_MIGRATION_URL ?? process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_MIGRATION_URL or DATABASE_URL required");
 

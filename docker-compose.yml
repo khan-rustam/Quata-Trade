@@ -13,7 +13,8 @@ services:
       -c max_connections=200
       -c shared_buffers=256MB
     ports:
-      - "5432:5432"
+      # 55432 on the host — this machine runs native PostgreSQL instances on 5432/5433
+      - "55432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
