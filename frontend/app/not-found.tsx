@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Keyhole } from "@/components/brand/keyhole";
+import { BrandMark } from "@/components/brand/logo";
 
 export default function NotFound(): React.JSX.Element {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
-      <Keyhole size={48} className="text-accent-400" />
+      <BrandMark size={48} />
       <div>
         <h1 className="font-display text-3xl font-bold">Page not found</h1>
         <p className="mt-2 text-text-2">

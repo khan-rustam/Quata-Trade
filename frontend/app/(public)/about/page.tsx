@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Section, SectionHeading } from "@/components/public/marketing";
 import { Button } from "@/components/ui/button";
-import { Keyhole } from "@/components/brand/keyhole";
+import { BrandMark } from "@/components/brand/logo";
 
 export const metadata: Metadata = {
   title: "About — QuataTrade",
@@ -52,7 +52,7 @@ export default function AboutPage(): React.JSX.Element {
 
       <Section className="text-center">
         <div className="mx-auto flex max-w-lg flex-col items-center gap-4">
-          <Keyhole size={36} className="text-accent-400" />
+          <BrandMark size={40} />
           <p className="text-text-2">
             Company details and legal identity are on our{" "}
             <Link href="/legal/imprint" className="text-accent-400 hover:underline">

@@ -10,6 +10,7 @@ import { zLoginRequest, type LoginRequest } from "@quatatrade/shared";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { OtpInput } from "@/components/ui/otp-input";
 import { Alert } from "@/components/ui/alert";
@@ -70,7 +71,7 @@ export default function LoginPage(): React.JSX.Element {
           </Field>
           <Field label="Password" error={errors.password?.message} required>
             {(p) => (
-              <Input type="password" autoComplete="current-password" placeholder="••••••••" {...p} {...register("password")} />
+              <PasswordInput autoComplete="current-password" placeholder="••••••••" {...p} {...register("password")} />
             )}
           </Field>
         </fieldset>

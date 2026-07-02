@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -44,7 +43,7 @@ export default function NotificationsPage(): React.JSX.Element {
           ))}
         </div>
       ) : !data || data.items.length === 0 ? (
-        <EmptyState icon={Bell} title="You're all caught up" description="Trade and wallet updates will show here." />
+        <EmptyState image="/assets/empty-notifications.png" title="You're all caught up" description="Trade and wallet updates will show here." />
       ) : (
         <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
           {data.items.map((n) => {

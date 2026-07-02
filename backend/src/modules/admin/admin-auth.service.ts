@@ -4,13 +4,14 @@ import { JwtService } from "@nestjs/jwt";
 import * as argon2 from "argon2";
 import type { Kysely, Selectable } from "kysely";
 import { authenticator } from "otplib";
+import * as QRCode from "qrcode";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import type { AdminLoginRequest, AdminProfile } from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
 import type { AdminsTable, Database } from "../../db/types";
 import type { Env } from "../../config/env";
 import { newId } from "../../common/ids";
-import { decryptSecret } from "../../common/crypto";
+import { decryptSecret, encryptSecret } from "../../common/crypto";
 import { AuditService } from "../../common/audit/audit.service";
 import type { AccessTokenPayload } from "../../common/auth/jwt.types";
 import { AdminAuthError, AdminNotFoundError, AdminVerificationError } from "./admin.errors";
@@ -20,6 +21,7 @@ type AdminRow = Selectable<AdminsTable>;
 export interface AdminTokens {
   accessToken: string;
   accessTokenExpiresIn: number;
+  totpRequired: boolean;
 }
 
 const LOGIN_MAX_FAILURES = 5;
@@ -85,10 +87,16 @@ export class AdminAuthService {
       throw new AdminAuthError();
     }
 
-    // TOTP is MANDATORY for admins — there is no fallback path.
-    if (!this.totpMatches(admin, dto.totpCode)) {
-      await this.loginFailed(limiterKey, admin.id, "bad_totp", ip);
-      throw new AdminAuthError();
+    // TOTP is OPTIONAL (test phase): required only for admins who enabled it.
+    if (admin.totp_enabled) {
+      if (!dto.totpCode) {
+        // password verified, but the admin has 2FA on — ask the client for a code
+        return { accessToken: "", accessTokenExpiresIn: 0, totpRequired: true };
+      }
+      if (!this.totpMatches(admin, dto.totpCode)) {
+        await this.loginFailed(limiterKey, admin.id, "bad_totp", ip);
+        throw new AdminAuthError();
+      }
     }
 
     await this.loginLimiter.delete(limiterKey);
@@ -107,6 +115,7 @@ export class AdminAuthService {
     return {
       accessToken,
       accessTokenExpiresIn: this.config.get("JWT_ACCESS_TTL_SECONDS", { infer: true }),
+      totpRequired: false,
     };
   }
 
@@ -118,9 +127,13 @@ export class AdminAuthService {
    * Failure is generic; the attempt is audited with the action name only —
    * the code itself is never logged anywhere.
    */
-  async verifyTotp(adminId: string, code: string, action: string, ip?: string): Promise<void> {
+  async verifyTotp(adminId: string, code: string | undefined, action: string, ip?: string): Promise<void> {
     const admin = await this.db.selectFrom("admins").selectAll().where("id", "=", adminId).executeTakeFirst();
-    if (!admin || !admin.active || !this.totpMatches(admin, code)) {
+    if (!admin || !admin.active) throw new AdminVerificationError();
+    // Step-up only applies to admins who have 2FA enabled. When disabled (test
+    // phase), the action proceeds — RBAC still gates it. Production re-enables 2FA.
+    if (!admin.totp_enabled) return;
+    if (!code || !this.totpMatches(admin, code)) {
       await this.audit.log({
         actorType: "admin",
         actorId: adminId,
@@ -134,21 +147,59 @@ export class AdminAuthService {
     }
   }
 
-  // ── profile ──────────────────────────────────────────────────────────────
+  // ── profile & 2FA setup ──────────────────────────────────────────────────
 
   async getProfile(adminId: string): Promise<AdminProfile> {
     const admin = await this.db
       .selectFrom("admins")
-      .select(["id", "email", "role", "active"])
+      .select(["id", "email", "role", "active", "totp_enabled"])
       .where("id", "=", adminId)
       .executeTakeFirst();
     if (!admin || !admin.active) throw new AdminNotFoundError();
-    return { id: admin.id, email: admin.email, role: admin.role };
+    return { id: admin.id, email: admin.email, role: admin.role, totpEnabled: admin.totp_enabled };
+  }
+
+  /** Generate + store a fresh TOTP secret (NOT yet enabled); return QR to scan. */
+  async totpSetup(adminId: string): Promise<{ otpauthUrl: string; qrDataUrl: string }> {
+    const admin = await this.db
+      .selectFrom("admins")
+      .select(["id", "email", "active"])
+      .where("id", "=", adminId)
+      .executeTakeFirst();
+    if (!admin || !admin.active) throw new AdminNotFoundError();
+
+    const secret = authenticator.generateSecret();
+    await this.db
+      .updateTable("admins")
+      .set({ totp_secret_enc: encryptSecret(secret, this.config.get("MASTER_ENCRYPTION_KEY", { infer: true })) })
+      .where("id", "=", adminId)
+      .execute();
+
+    const otpauthUrl = authenticator.keyuri(admin.email, "QuataTrade Admin", secret);
+    const qrDataUrl = await QRCode.toDataURL(otpauthUrl);
+    return { otpauthUrl, qrDataUrl };
+  }
+
+  /** Verify a code against the pending secret and turn 2FA on. */
+  async totpEnable(adminId: string, code: string, ip?: string): Promise<void> {
+    const admin = await this.db.selectFrom("admins").selectAll().where("id", "=", adminId).executeTakeFirst();
+    if (!admin || !admin.active || !admin.totp_secret_enc) throw new AdminVerificationError();
+    if (!this.totpMatches(admin, code)) throw new AdminVerificationError();
+    await this.db.updateTable("admins").set({ totp_enabled: true }).where("id", "=", adminId).execute();
+    await this.audit.log({
+      actorType: "admin",
+      actorId: adminId,
+      action: "admin.2fa_enabled",
+      targetType: "admin",
+      targetId: adminId,
+      ip,
+    });
   }
 
   // ── private ──────────────────────────────────────────────────────────────
 
   private totpMatches(admin: AdminRow, code: string): boolean {
+    if (!admin.totp_secret_enc) return false;
     let secret: string;
     try {
       secret = decryptSecret(admin.totp_secret_enc, this.config.get("MASTER_ENCRYPTION_KEY", { infer: true }));

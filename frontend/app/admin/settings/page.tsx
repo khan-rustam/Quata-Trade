@@ -12,13 +12,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
-import { useAdminKillSwitch } from "@/hooks/use-admin";
+import { useAdminKillSwitch, useAdminMe } from "@/hooks/use-admin";
 import { apiErrorMessage } from "@/lib/api/errors";
 
 type Target = "withdrawals" | "trades";
 
 export default function AdminSettingsPage(): React.JSX.Element {
   const { data, isLoading } = useAdminKillSwitch();
+  const { data: me } = useAdminMe();
   const qc = useQueryClient();
   const toast = useToast();
   const [pending, setPending] = useState<{ target: Target; paused: boolean } | null>(null);
@@ -33,7 +34,7 @@ export default function AdminSettingsPage(): React.JSX.Element {
       await adminApi.adminSetKillSwitch({
         target: pending.target,
         paused: pending.paused,
-        totpCode: v.totpCode,
+        totpCode: v.totpCode || undefined,
         reason: v.reason ?? "",
       });
       toast.success(pending.paused ? "Paused" : "Resumed", `${pending.target} ${pending.paused ? "halted" : "resumed"}.`);
@@ -83,6 +84,7 @@ export default function AdminSettingsPage(): React.JSX.Element {
         destructive={pending?.paused}
         reasonLabel="Reason"
         reasonRequired
+        requireTotp={Boolean(me?.totpEnabled)}
         busy={busy}
         error={error}
         onConfirm={submit}

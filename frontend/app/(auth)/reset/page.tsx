@@ -9,7 +9,7 @@ import { zPassword } from "@quatatrade/shared";
 import { z } from "zod";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
@@ -61,7 +61,7 @@ function ResetForm(): React.JSX.Element {
       <form onSubmit={submit} className="space-y-4" noValidate>
         <Field label="New password" error={errors.password?.message} required>
           {(p) => (
-            <Input type="password" autoComplete="new-password" placeholder="••••••••" {...p} {...register("password")} />
+            <PasswordInput autoComplete="new-password" placeholder="••••••••" {...p} {...register("password")} />
           )}
         </Field>
         <Button type="submit" className="w-full" disabled={isSubmitting || !token}>

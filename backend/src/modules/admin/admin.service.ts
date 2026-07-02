@@ -412,7 +412,7 @@ export class AdminService {
    * flow). Old and new values are audit-logged so every fee change is
    * reconstructible.
    */
-  async updateSetting(adminId: string, key: string, value: unknown, totpCode: string, ip?: string): Promise<void> {
+  async updateSetting(adminId: string, key: string, value: unknown, totpCode: string | undefined, ip?: string): Promise<void> {
     const schema = SETTING_VALUE_SCHEMAS[key];
     if (!schema) throw new SettingKeyNotAllowedError(key);
     const parsed = schema.safeParse(value);

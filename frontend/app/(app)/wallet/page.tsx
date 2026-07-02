@@ -81,7 +81,7 @@ function DepositsList(): React.JSX.Element {
   if (!data || data.items.length === 0) {
     return (
       <EmptyState
-        icon={ArrowDownToLine}
+        image="/assets/empty-wallet.png"
         title="No deposits yet"
         description="Deposit USDT (TRC20) to start trading."
         action={

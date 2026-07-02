@@ -19,7 +19,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Usdt } from "@/components/ui/amount";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
-import { useAdminDisputes } from "@/hooks/use-admin";
+import { useAdminDisputes, useAdminMe } from "@/hooks/use-admin";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime } from "@/lib/format";
 
@@ -28,6 +28,7 @@ type Row = z.infer<typeof zAdminDisputeRow>;
 export default function AdminDisputesPage(): React.JSX.Element {
   const [page, setPage] = useState(1);
   const { data, isLoading } = useAdminDisputes(page);
+  const { data: me } = useAdminMe();
   const [active, setActive] = useState<Row | null>(null);
 
   return (
@@ -69,12 +70,12 @@ export default function AdminDisputesPage(): React.JSX.Element {
         </>
       )}
 
-      {active && <ResolveDialog dispute={active} onClose={() => setActive(null)} />}
+      {active && <ResolveDialog dispute={active} requireTotp={Boolean(me?.totpEnabled)} onClose={() => setActive(null)} />}
     </div>
   );
 }
 
-function ResolveDialog({ dispute, onClose }: { dispute: Row; onClose: () => void }): React.JSX.Element {
+function ResolveDialog({ dispute, requireTotp, onClose }: { dispute: Row; requireTotp: boolean; onClose: () => void }): React.JSX.Element {
   const qc = useQueryClient();
   const toast = useToast();
   const [resolution, setResolution] = useState<DisputeResolution>("RELEASE_TO_BUYER");
@@ -87,7 +88,7 @@ function ResolveDialog({ dispute, onClose }: { dispute: Row; onClose: () => void
     setBusy(true);
     setError(null);
     try {
-      await adminApi.adminResolveDispute(dispute.id, { resolution, notes, totpCode: totp });
+      await adminApi.adminResolveDispute(dispute.id, { resolution, notes, totpCode: totp || undefined });
       toast.success("Dispute resolved", resolution === "RELEASE_TO_BUYER" ? "Escrow released to the buyer." : "Escrow refunded to the seller.");
       onClose();
       void qc.invalidateQueries({ queryKey: ["admin"] });
@@ -99,7 +100,12 @@ function ResolveDialog({ dispute, onClose }: { dispute: Row; onClose: () => void
   };
 
   return (
-    <Dialog open onClose={onClose} title={`Resolve ${dispute.tradeShortRef}`} description="This moves the frozen escrow. Choose the outcome, then confirm with your 2FA.">
+    <Dialog
+      open
+      onClose={onClose}
+      title={`Resolve ${dispute.tradeShortRef}`}
+      description={requireTotp ? "This moves the frozen escrow. Choose the outcome, then confirm with your 2FA." : "This moves the frozen escrow. Choose the outcome, then confirm."}
+    >
       <div className="space-y-4">
         {error && <Alert tone="danger">{error}</Alert>}
         <div className="rounded-lg bg-surface-2 p-3 text-sm">
@@ -125,15 +131,17 @@ function ResolveDialog({ dispute, onClose }: { dispute: Row; onClose: () => void
         <Field label="Resolution notes" required>
           {(p) => <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Explain the decision (min 10 characters)…" {...p} />}
         </Field>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Your authenticator code</label>
-          <OtpInput value={totp} onChange={setTotp} aria-label="Authenticator code" invalid={Boolean(error)} />
-        </div>
+        {requireTotp && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Your authenticator code</label>
+            <OtpInput value={totp} onChange={setTotp} aria-label="Authenticator code" invalid={Boolean(error)} />
+          </div>
+        )}
         <div className="flex gap-2">
           <Button variant="secondary" className="flex-1" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button className="flex-1" disabled={busy || notes.trim().length < 10 || totp.length < 6} onClick={submit}>
+          <Button className="flex-1" disabled={busy || notes.trim().length < 10 || (requireTotp && totp.length < 6)} onClick={submit}>
             {busy ? <Spinner /> : "Resolve dispute"}
           </Button>
         </div>

@@ -6,7 +6,8 @@ export const zAdminLoginRequest = z
   .object({
     email: zEmail,
     password: z.string().min(1).max(128),
-    totpCode: zTotpCode, // 2FA is mandatory for admins — no optional path
+    // 2FA is optional (test phase): required only if the admin enabled it.
+    totpCode: zTotpCode.optional(),
   })
   .strict();
 export type AdminLoginRequest = z.infer<typeof zAdminLoginRequest>;
@@ -15,6 +16,7 @@ export const zAdminProfile = z.object({
   id: zUuid,
   email: z.string(),
   role: z.enum(ADMIN_ROLES),
+  totpEnabled: z.boolean(),
 });
 export type AdminProfile = z.infer<typeof zAdminProfile>;
 
@@ -53,11 +55,11 @@ export const zAdminWithdrawalRow = z.object({
 export const zAdminWithdrawalsResponse = zPaginated(zAdminWithdrawalRow);
 
 export const zApproveWithdrawalRequest = z
-  .object({ totpCode: zTotpCode, notes: z.string().max(1000).optional() })
+  .object({ totpCode: zTotpCode.optional(), notes: z.string().max(1000).optional() })
   .strict();
 export type ApproveWithdrawalRequest = z.infer<typeof zApproveWithdrawalRequest>;
 export const zRejectWithdrawalRequest = z
-  .object({ totpCode: zTotpCode, reason: z.string().trim().min(5).max(1000) })
+  .object({ totpCode: zTotpCode.optional(), reason: z.string().trim().min(5).max(1000) })
   .strict();
 export type RejectWithdrawalRequest = z.infer<typeof zRejectWithdrawalRequest>;
 
@@ -71,7 +73,7 @@ export const zKillSwitchRequest = z
   .object({
     target: z.enum(["withdrawals", "trades"]),
     paused: z.boolean(),
-    totpCode: zTotpCode,
+    totpCode: zTotpCode.optional(),
     reason: z.string().trim().min(5).max(1000),
   })
   .strict();
@@ -120,7 +122,7 @@ export const zUpdateSettingRequest = z
   .object({
     key: z.string().min(1).max(120),
     value: z.unknown(),
-    totpCode: zTotpCode,
+    totpCode: zTotpCode.optional(),
   })
   .strict();
 export type UpdateSettingRequest = z.infer<typeof zUpdateSettingRequest>;

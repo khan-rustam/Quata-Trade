@@ -9,6 +9,7 @@ import { zRegisterRequest, type RegisterRequest } from "@quatatrade/shared";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
@@ -81,7 +82,7 @@ export default function RegisterPage(): React.JSX.Element {
           required
         >
           {(p) => (
-            <Input type="password" autoComplete="new-password" placeholder="••••••••" {...p} {...register("password")} />
+            <PasswordInput autoComplete="new-password" placeholder="••••••••" {...p} {...register("password")} />
           )}
         </Field>
 

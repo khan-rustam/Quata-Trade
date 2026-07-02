@@ -6,17 +6,13 @@
  * or via env: SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD.
  * Required env: DATABASE_URL, MASTER_ENCRYPTION_KEY (32 bytes base64).
  *
- * A fresh TOTP secret is generated and printed as an otpauth:// URL to stdout
- * EXACTLY ONCE — scan it into an authenticator app immediately; it is stored
- * only AES-256-GCM-encrypted and can never be shown again.
- * Refuses to overwrite an existing admin with the same email.
+ * The admin is created WITHOUT 2FA — they log in with email + password and can
+ * enable TOTP later from their profile. Refuses to overwrite an existing email.
  */
 import * as argon2 from "argon2";
-import { authenticator } from "otplib";
 import { zEmail, zPassword } from "@quatatrade/shared";
 import { createDb } from "../../db/database.module";
 import { newId } from "../../common/ids";
-import { encryptSecret } from "../../common/crypto";
 import { AuditService } from "../../common/audit/audit.service";
 
 function argValue(flag: string): string | undefined {
@@ -37,9 +33,11 @@ async function main(): Promise<void> {
   // full password policy applies to admins too (min 10, upper/lower/digit)
   const password = zPassword.parse(argValue("--password") ?? process.env.SEED_ADMIN_PASSWORD);
 
+  // masterKey is validated above (kept for parity with the app's env contract)
+  void masterKey;
+
   const db = createDb(databaseUrl);
   try {
-    const secret = authenticator.generateSecret();
     const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
     const adminId = newId();
 
@@ -50,7 +48,7 @@ async function main(): Promise<void> {
         email,
         password_hash: passwordHash,
         role: "SUPER_ADMIN",
-        totp_secret_enc: encryptSecret(secret, masterKey),
+        totp_secret_enc: null,
       })
       .onConflict((oc) => oc.column("email").doNothing())
       .returning("id")
@@ -72,10 +70,9 @@ async function main(): Promise<void> {
       metadata: { role: "SUPER_ADMIN" },
     });
 
-    const otpauthUrl = authenticator.keyuri(email, "QuataTrade Admin", secret);
     process.stdout.write(`SUPER_ADMIN created: ${adminId}\n`);
-    process.stdout.write("Scan this otpauth URL NOW — it will never be shown again:\n");
-    process.stdout.write(`${otpauthUrl}\n`);
+    process.stdout.write("Log in at /admin/login with your email + password.\n");
+    process.stdout.write("You can enable two-factor authentication afterwards from your admin profile.\n");
   } finally {
     await db.destroy();
   }

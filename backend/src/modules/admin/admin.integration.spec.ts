@@ -249,6 +249,7 @@ describe("admin flows (Testcontainers PG16)", () => {
         password_hash: passwordHash,
         role,
         totp_secret_enc: encryptSecret(secret, MASTER_KEY_B64),
+        totp_enabled: true, // tests exercise the mandatory-TOTP path (login + step-up)
         active,
       })
       .execute();

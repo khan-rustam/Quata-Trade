@@ -45,9 +45,9 @@ export const zResolveDisputeRequest = z
   .object({
     resolution: z.enum(DISPUTE_RESOLUTIONS),
     notes: z.string().trim().min(10).max(4000),
-    // Admin step-up 2FA — dispute resolution moves escrow funds, so it requires
-    // the resolving admin's own TOTP, like withdrawal approve/reject (§08 E).
-    totpCode: zTotpCode,
+    // Admin step-up 2FA — required only if the resolving admin has 2FA enabled
+    // (optional in the test phase; enforced again in production).
+    totpCode: zTotpCode.optional(),
   })
   .strict();
 export type ResolveDisputeRequest = z.infer<typeof zResolveDisputeRequest>;

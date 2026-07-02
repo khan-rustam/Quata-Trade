@@ -1,9 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Lock, MessageSquare, ShieldCheck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Section, SectionHeading, Step, FeatureCard } from "@/components/public/marketing";
 import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
-import { Keyhole } from "@/components/brand/keyhole";
+import { BrandMark } from "@/components/brand/logo";
 
 export default function LandingPage(): React.JSX.Element {
   return (
@@ -40,6 +41,16 @@ export default function LandingPage(): React.JSX.Element {
             <PaymentMethodChip method="MTN_MOMO" />
             <PaymentMethodChip method="ORANGE_MONEY" />
             <PaymentMethodChip method="QUATAPAY" />
+          </div>
+          <div className="mx-auto mt-14 max-w-3xl">
+            <Image
+              src="/assets/hero-illustration.png"
+              alt="A protected USDT trade moving from crypto to cash through escrow"
+              width={1586}
+              height={992}
+              priority
+              className="h-auto w-full rounded-2xl border border-border/60 shadow-2xl shadow-black/20"
+            />
           </div>
         </div>
       </section>
@@ -84,7 +95,7 @@ export default function LandingPage(): React.JSX.Element {
       {/* CTA */}
       <Section className="text-center">
         <div className="mx-auto flex max-w-xl flex-col items-center gap-5">
-          <Keyhole size={40} className="text-accent-400" />
+          <BrandMark size={44} />
           <h2 className="font-display text-3xl font-bold tracking-tight">Ready to trade with confidence?</h2>
           <p className="text-text-2">Create your account in minutes. Crypto to cash. Protected.</p>
           <Link href="/register">

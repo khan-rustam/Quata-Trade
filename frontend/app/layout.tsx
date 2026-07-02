@@ -6,10 +6,29 @@ import { inter, plexMono, spaceGrotesk } from "@/lib/fonts";
 import { Providers } from "./providers";
 import "./globals.css";
 
+const SITE_DESCRIPTION =
+  "P2P USDT marketplace with escrow protection for Cameroon. Trade with MTN MoMo, Orange Money, or QuataPay.";
+
 export const metadata: Metadata = {
-  title: "QuataTrade — Crypto to cash. Protected.",
-  description:
-    "P2P USDT marketplace with escrow protection for Cameroon. Trade with MTN MoMo, Orange Money, or QuataPay.",
+  title: {
+    default: "QuataTrade — Crypto to cash. Protected.",
+    template: "%s · QuataTrade",
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: "QuataTrade",
+  openGraph: {
+    type: "website",
+    siteName: "QuataTrade",
+    title: "QuataTrade — Crypto to cash. Protected.",
+    description: SITE_DESCRIPTION,
+    images: [{ url: "/assets/og-image.png", width: 1734, height: 907, alt: "QuataTrade — Crypto to cash. Protected." }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "QuataTrade — Crypto to cash. Protected.",
+    description: SITE_DESCRIPTION,
+    images: ["/assets/twitter-card.png"],
+  },
 };
 
 // Locale comes from a cookie (next-intl without route-based i18n), so rendering

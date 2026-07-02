@@ -15,7 +15,7 @@ import { Usdt } from "@/components/ui/amount";
 import { WithdrawalStatusBadge } from "@/components/ui/status-badge";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
-import { useAdminWithdrawals } from "@/hooks/use-admin";
+import { useAdminMe, useAdminWithdrawals } from "@/hooks/use-admin";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { shortHash } from "@/lib/format";
 
@@ -24,6 +24,7 @@ type Row = z.infer<typeof zAdminWithdrawalRow>;
 export default function AdminWithdrawalsPage(): React.JSX.Element {
   const [page, setPage] = useState(1);
   const { data, isLoading } = useAdminWithdrawals(page);
+  const { data: me } = useAdminMe();
   const qc = useQueryClient();
   const toast = useToast();
 
@@ -37,10 +38,10 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
     setError(null);
     try {
       if (action.kind === "approve") {
-        await adminApi.adminApproveWithdrawal(action.row.id, { totpCode: v.totpCode });
+        await adminApi.adminApproveWithdrawal(action.row.id, { totpCode: v.totpCode || undefined });
         toast.success("Approved", "The withdrawal moves to the signer pipeline.");
       } else {
-        await adminApi.adminRejectWithdrawal(action.row.id, { totpCode: v.totpCode, reason: v.reason ?? "" });
+        await adminApi.adminRejectWithdrawal(action.row.id, { totpCode: v.totpCode || undefined, reason: v.reason ?? "" });
         toast.success("Rejected", "Funds were refunded to the user.");
       }
       setAction(null);
@@ -143,6 +144,7 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
         destructive={action?.kind === "reject"}
         reasonLabel={action?.kind === "reject" ? "Reason" : undefined}
         reasonRequired={action?.kind === "reject"}
+        requireTotp={Boolean(me?.totpEnabled)}
         busy={busy}
         error={error}
         onConfirm={submit}

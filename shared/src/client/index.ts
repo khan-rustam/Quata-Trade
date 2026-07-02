@@ -216,6 +216,9 @@ export class QuataApiClient {
   adminLogin = (body: AdminLoginRequest) =>
     this.request("POST", "/api/v1/admin/auth/login", zAuthTokensResponse, body);
   adminMe = () => this.request("GET", "/api/v1/admin/me", zAdminProfile);
+  adminTotpSetup = () => this.request("POST", "/api/v1/admin/2fa/setup", zTotpSetupResponse);
+  adminTotpEnable = (body: { code: string }): Promise<Ok> =>
+    this.request("POST", "/api/v1/admin/2fa/enable", zOk, body);
   adminKpis = () => this.request("GET", "/api/v1/admin/kpis", zAdminKpisResponse);
   adminUsers = (query?: Query) =>
     this.request("GET", "/api/v1/admin/users", zAdminUsersResponse, undefined, query);

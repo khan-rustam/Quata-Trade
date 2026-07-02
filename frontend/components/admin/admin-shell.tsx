@@ -14,11 +14,12 @@ import {
   ShieldAlert,
   Sliders,
   Repeat,
+  UserCog,
   Users,
 } from "lucide-react";
 import type { LucideProps } from "lucide-react";
 import type { AdminRole } from "@quatatrade/shared";
-import { Keyhole } from "@/components/brand/keyhole";
+import { BrandMark } from "@/components/brand/logo";
 import { Badge } from "@/components/ui/badge";
 import { adminLogout } from "@/hooks/use-admin";
 import { can, type RBAC } from "@/lib/admin-rbac";
@@ -41,6 +42,7 @@ const NAV: NavItem[] = [
   { href: "/admin/treasury", label: "Treasury", icon: Coins },
   { href: "/admin/settings", label: "Settings", icon: Sliders, gate: "editSettings" },
   { href: "/admin/audit", label: "Audit log", icon: ScrollText, gate: "viewAudit" },
+  { href: "/admin/profile", label: "My profile", icon: UserCog },
 ];
 
 export function AdminShell({
@@ -63,7 +65,7 @@ export function AdminShell({
     <div className="flex min-h-screen">
       <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-surface-1 md:flex">
         <div className="flex h-14 items-center gap-2 border-b border-border px-4">
-          <Keyhole size={18} className="text-accent-400" />
+          <BrandMark size={22} />
           <span className="font-display text-sm font-bold">Quata Admin</span>
         </div>
         <nav aria-label="Admin" className="flex-1 space-y-1 overflow-y-auto p-3">
@@ -86,12 +88,15 @@ export function AdminShell({
           })}
         </nav>
         <div className="border-t border-border p-3">
-          <div className="mb-2 px-1">
+          <Link
+            href="/admin/profile"
+            className="mb-2 block rounded-lg px-1 py-1 transition-colors hover:bg-surface-2/60"
+          >
             <p className="truncate text-xs font-medium text-text-1">{email}</p>
             <Badge tone="accent" className="mt-1">
               {role.replace("_", " ").toLowerCase()}
             </Badge>
-          </div>
+          </Link>
           <button
             type="button"
             onClick={() => {
@@ -109,7 +114,7 @@ export function AdminShell({
         {/* mobile top bar */}
         <header className="flex h-14 items-center justify-between border-b border-border px-4 md:hidden">
           <span className="flex items-center gap-2">
-            <Keyhole size={18} className="text-accent-400" />
+            <BrandMark size={22} />
             <span className="font-display text-sm font-bold">Quata Admin</span>
           </span>
           <Badge tone="accent">{role.replace("_", " ").toLowerCase()}</Badge>

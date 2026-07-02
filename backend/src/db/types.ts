@@ -80,7 +80,8 @@ export interface AdminsTable {
   email: string;
   password_hash: string;
   role: AdminRole;
-  totp_secret_enc: Buffer;
+  totp_secret_enc: Buffer | null;
+  totp_enabled: Generated<boolean>;
   active: Generated<boolean>;
   created_at: Timestamp;
 }

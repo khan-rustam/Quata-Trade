@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Plus, Search, ShieldCheck, Star } from "lucide-react";
+import { Plus, ShieldCheck, Star } from "lucide-react";
 import type { OfferSide, PaymentMethod } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
@@ -80,7 +80,7 @@ function TradeBrowser(): React.JSX.Element {
         </div>
       ) : !data || data.items.length === 0 ? (
         <EmptyState
-          icon={Search}
+          image="/assets/empty-offers.png"
           title="No offers here yet"
           description={`No ${side === "BUY" ? "sellers" : "buyers"} for this filter — create the first offer.`}
           action={
