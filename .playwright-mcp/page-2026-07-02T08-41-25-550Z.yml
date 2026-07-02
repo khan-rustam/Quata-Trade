@@ -1,0 +1,36 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - banner [ref=f2e3]:
+      - link "QuataTrade home" [ref=f2e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f2e5]:
+          - img [ref=f2e6]
+          - generic [ref=f2e10]: QuataTrade
+      - generic [ref=f2e11]:
+        - button "Switch language to French" [ref=f2e12]:
+          - img [ref=f2e13]
+          - generic [ref=f2e17]: en
+        - button "Switch to light mode" [ref=f2e18]:
+          - img [ref=f2e19]
+    - main [ref=f2e25]:
+      - generic [ref=f2e27]:
+        - generic [ref=f2e28]:
+          - heading "Welcome back" [level=1] [ref=f2e29]
+          - paragraph [ref=f2e30]: Log in to your QuataTrade account.
+        - generic [ref=f2e31]:
+          - group [ref=f2e32]:
+            - generic [ref=f2e33]:
+              - generic [ref=f2e34]: Email*
+              - textbox "Email*" [ref=f2e35]:
+                - /placeholder: you@example.com
+            - generic [ref=f2e36]:
+              - generic [ref=f2e37]: Password*
+              - textbox "Password*" [ref=f2e38]:
+                - /placeholder: ••••••••
+          - button "Log in" [ref=f2e39]
+        - generic [ref=f2e40]:
+          - link "Forgot password?" [ref=f2e41] [cursor=pointer]:
+            - /url: /forgot
+          - link "Create account" [ref=f2e42] [cursor=pointer]:
+            - /url: /register
+  - alert [ref=f2e43]

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { inter, plexMono, spaceGrotesk } from "@/lib/fonts";
@@ -20,11 +21,13 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const cookieStore = await cookies();
+  const theme = cookieStore.get("qt_theme")?.value === "light" ? "light" : "dark";
 
   return (
     <html
       lang={locale}
-      data-theme="dark"
+      data-theme={theme}
       className={`${inter.variable} ${spaceGrotesk.variable} ${plexMono.variable} h-full`}
       suppressHydrationWarning
     >

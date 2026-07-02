@@ -1,0 +1,110 @@
+- generic [active] [ref=f4e1]:
+  - generic [ref=f4e44]:
+    - banner [ref=f4e45]:
+      - link "QuataTrade home" [ref=f4e46] [cursor=pointer]:
+        - /url: /home
+        - generic [ref=f4e47]:
+          - img [ref=f4e48]
+          - generic [ref=f4e52]: QuataTrade
+      - generic [ref=f4e53]:
+        - button "Switch language to French" [ref=f4e54]:
+          - img [ref=f4e55]
+          - generic [ref=f4e59]: en
+        - button "Switch to light mode" [ref=f4e60]:
+          - img [ref=f4e61]
+        - link "Notifications" [ref=f4e67] [cursor=pointer]:
+          - /url: /account/notifications
+          - img [ref=f4e68]
+        - button "Account menu" [ref=f4e72]:
+          - img [ref=f4e73]
+    - generic [ref=f4e76]:
+      - navigation "Primary" [ref=f4e77]:
+        - list [ref=f4e78]:
+          - listitem [ref=f4e79]:
+            - link "Home" [ref=f4e80] [cursor=pointer]:
+              - /url: /home
+              - img [ref=f4e81]
+              - text: Home
+          - listitem [ref=f4e84]:
+            - link "Markets" [ref=f4e85] [cursor=pointer]:
+              - /url: /markets
+              - img [ref=f4e86]
+              - text: Markets
+          - listitem [ref=f4e89]:
+            - link "Trade" [ref=f4e90] [cursor=pointer]:
+              - /url: /trade
+              - img [ref=f4e91]
+              - text: Trade
+          - listitem [ref=f4e96]:
+            - link "Wallet" [ref=f4e97] [cursor=pointer]:
+              - /url: /wallet
+              - img [ref=f4e98]
+              - text: Wallet
+          - listitem [ref=f4e101]:
+            - link "Account" [ref=f4e102] [cursor=pointer]:
+              - /url: /account
+              - img [ref=f4e103]
+              - text: Account
+      - main [ref=f4e106]:
+        - generic [ref=f4e107]:
+          - generic [ref=f4e108]:
+            - heading "Hi 👋" [level=1] [ref=f4e109]
+            - paragraph [ref=f4e110]: Here’s your portfolio today.
+          - note [ref=f4e111]:
+            - img [ref=f4e112]
+            - generic [ref=f4e114]:
+              - paragraph [ref=f4e115]: Finish verification
+              - generic [ref=f4e117]:
+                - generic [ref=f4e118]: Verify your identity to raise your trade and withdrawal limits.
+                - link "Verify now" [ref=f4e119] [cursor=pointer]:
+                  - /url: /account/kyc
+          - generic [ref=f4e120]:
+            - generic [ref=f4e121]:
+              - generic [ref=f4e122]:
+                - paragraph [ref=f4e123]: Available balance
+                - generic [ref=f4e125]: 0.00USDT
+              - generic [ref=f4e126]:
+                - img [ref=f4e127]
+                - text: KYC none
+            - generic [ref=f4e130]:
+              - img [ref=f4e131]
+              - generic [ref=f4e135]: In escrow
+              - generic [ref=f4e136]: 0.00USDT
+            - generic [ref=f4e137]:
+              - link "Buy" [ref=f4e138] [cursor=pointer]:
+                - /url: /trade?side=BUY
+                - img [ref=f4e140]
+                - text: Buy
+              - link "Sell" [ref=f4e143] [cursor=pointer]:
+                - /url: /trade?side=SELL
+                - img [ref=f4e145]
+                - text: Sell
+              - link "Deposit" [ref=f4e148] [cursor=pointer]:
+                - /url: /wallet/deposit
+                - img [ref=f4e150]
+                - text: Deposit
+              - link "Withdraw" [ref=f4e153] [cursor=pointer]:
+                - /url: /wallet/withdraw
+                - img [ref=f4e155]
+                - text: Withdraw
+          - generic [ref=f4e160]:
+            - generic [ref=f4e161]:
+              - paragraph [ref=f4e162]: Reputation
+              - paragraph [ref=f4e163]: "0"
+              - paragraph [ref=f4e164]: Complete trades to build trust.
+            - generic [ref=f4e165]:
+              - paragraph [ref=f4e166]: USDT / XAF
+              - paragraph [ref=f4e167]: ≈ 650
+              - paragraph [ref=f4e168]: Indicative market rate.
+          - generic [ref=f4e169]:
+            - heading "Start trading" [level=2] [ref=f4e170]
+            - link "Trade" [ref=f4e171] [cursor=pointer]:
+              - /url: /trade
+          - generic [ref=f4e172]:
+            - generic [ref=f4e173]:
+              - paragraph [ref=f4e174]: Browse live offers
+              - paragraph [ref=f4e175]: Buy or sell USDT with MoMo, Orange Money, or QuataPay.
+            - link "Explore" [ref=f4e176] [cursor=pointer]:
+              - /url: /trade
+              - button "Explore" [ref=f4e177]
+  - alert [ref=f4e43]

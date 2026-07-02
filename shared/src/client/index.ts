@@ -2,12 +2,18 @@ import type { z } from "zod";
 import {
   zAuthTokensResponse,
   zRegisterResponse,
+  zTotpSetupResponse,
   type LoginRequest,
   type RegisterRequest,
 } from "../schemas/auth.js";
 import { zOk, type Ok } from "../schemas/common.js";
 import { zSessionsResponse, zUserProfile, type UpdateProfileRequest } from "../schemas/users.js";
-import { zKycStatusResponse, type KycSubmitRequest } from "../schemas/kyc.js";
+import {
+  zKycStatusResponse,
+  zKycUploadResponse,
+  type KycSubmitRequest,
+  type KycUploadRequest,
+} from "../schemas/kyc.js";
 import {
   zBalancesResponse,
   zDepositAddressResponse,
@@ -114,6 +120,11 @@ export class QuataApiClient {
     this.request("POST", "/api/v1/auth/forgot", zOk, body);
   resetPassword = (body: { token: string; password: string }): Promise<Ok> =>
     this.request("POST", "/api/v1/auth/reset", zOk, body);
+  totpSetup = () => this.request("POST", "/api/v1/auth/2fa/setup", zTotpSetupResponse);
+  totpEnable = (body: { code: string }): Promise<Ok> =>
+    this.request("POST", "/api/v1/auth/2fa/enable", zOk, body);
+  setPin = (body: { pin: string; currentPassword: string }): Promise<Ok> =>
+    this.request("POST", "/api/v1/auth/pin/set", zOk, body);
 
   // ---- users ----
   me = () => this.request("GET", "/api/v1/users/me", zUserProfile);
@@ -123,6 +134,7 @@ export class QuataApiClient {
 
   // ---- kyc ----
   kycStatus = () => this.request("GET", "/api/v1/kyc/status", zKycStatusResponse);
+  kycUpload = (body: KycUploadRequest) => this.request("POST", "/api/v1/kyc/upload", zKycUploadResponse, body);
   kycSubmit = (body: KycSubmitRequest): Promise<Ok> => this.request("POST", "/api/v1/kyc/submit", zOk, body);
 
   // ---- wallet ----
@@ -175,4 +187,6 @@ export class QuataApiClient {
   // ---- notifications ----
   notifications = (query?: Query) =>
     this.request("GET", "/api/v1/notifications", zNotificationsResponse, undefined, query);
+  markNotificationRead = (id: string): Promise<Ok> =>
+    this.request("POST", `/api/v1/notifications/${id}/read`, zOk);
 }

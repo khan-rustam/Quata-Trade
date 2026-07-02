@@ -34,3 +34,16 @@ export const zKycReviewRequest = z
     notes: z.string().trim().max(4000).optional(),
   })
   .strict();
+
+export const KYC_UPLOAD_MIMES = ["image/jpeg", "image/png", "image/webp", "application/pdf"] as const;
+
+export const zKycUploadRequest = z
+  .object({
+    fileBase64: z.string().min(1),
+    mime: z.enum(KYC_UPLOAD_MIMES),
+  })
+  .strict();
+export type KycUploadRequest = z.infer<typeof zKycUploadRequest>;
+
+export const zKycUploadResponse = z.object({ key: z.string() });
+export type KycUploadResponse = z.infer<typeof zKycUploadResponse>;

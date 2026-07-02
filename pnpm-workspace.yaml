@@ -5,6 +5,7 @@ packages:
 # Build-script allowlist (Documents/08 §H: no unaudited postinstall scripts).
 # @scarf/scarf = telemetry → denied. cpu-features/ssh2 have pure-JS fallbacks → denied.
 allowBuilds:
+  '@parcel/watcher': false
   '@scarf/scarf': false
   '@swc/core': true
   argon2: true

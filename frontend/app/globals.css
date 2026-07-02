@@ -83,11 +83,55 @@ body {
   outline-offset: 2px;
 }
 
+/* Motion primitives (Documents/11 §11.7: 150–250ms, ease-out, transform/opacity) */
+@keyframes qt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes qt-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+@keyframes qt-count-up {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+}
+@keyframes qt-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(47, 212, 167, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(47, 212, 167, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(47, 212, 167, 0);
+  }
+}
+
+.qt-animate-dialog {
+  animation: qt-dialog-in 200ms ease-out;
+}
+.qt-animate-fade {
+  animation: qt-fade-in 180ms ease-out;
+}
+.qt-count-up {
+  animation: qt-count-up 300ms ease-out;
+}
+.qt-pulse-ring {
+  animation: qt-pulse-ring 600ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
