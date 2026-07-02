@@ -9,9 +9,10 @@ import type { LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import { Logo } from "@/components/brand/logo";
 import { Keyhole } from "@/components/brand/keyhole";
+import { Avatar } from "@/components/ui/avatar";
 import { ThemeToggle } from "./theme-toggle";
 import { LanguageToggle } from "./language-toggle";
-import { useLogout } from "@/hooks/use-auth";
+import { useLogout, useMe } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -37,6 +38,7 @@ export function AppShell({ children }: { children: ReactNode }): React.JSX.Eleme
   const pathname = usePathname();
   const router = useRouter();
   const logout = useLogout();
+  const { data: me } = useMe();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const onLogout = () => {
@@ -67,9 +69,9 @@ export function AppShell({ children }: { children: ReactNode }): React.JSX.Eleme
               aria-haspopup="menu"
               aria-expanded={menuOpen}
               aria-label="Account menu"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-accent-400 transition-colors hover:bg-surface-3"
+              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-surface-2 text-accent-400 transition-colors hover:ring-2 hover:ring-accent-400/40"
             >
-              <User size={18} />
+              {me ? <Avatar seed={me.id} size={36} className="ring-0" /> : <User size={18} />}
             </button>
             {menuOpen && (
               <>

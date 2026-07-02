@@ -34,7 +34,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-[10px] font-medium",
+        "inline-flex items-center justify-center gap-2 rounded-btn font-medium",
         "transition-[transform,background-color] duration-150 ease-out active:scale-[0.97]",
         "disabled:cursor-not-allowed disabled:active:scale-100",
         "min-h-11 min-w-11", // 44px touch target

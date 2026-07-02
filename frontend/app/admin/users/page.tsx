@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar } from "@/components/ui/avatar";
 import { Field } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
@@ -75,8 +76,13 @@ export default function AdminUsersPage(): React.JSX.Element {
             {data.items.map((u) => (
               <tr key={u.id}>
                 <td className="px-4 py-3">
-                  <p className="truncate">{u.email}</p>
-                  {u.phone && <p className="text-xs text-text-3">{u.phone}</p>}
+                  <div className="flex items-center gap-2.5">
+                    <Avatar seed={u.id} size={32} />
+                    <div className="min-w-0">
+                      <p className="truncate">{u.email}</p>
+                      {u.phone && <p className="text-xs text-text-3">{u.phone}</p>}
+                    </div>
+                  </div>
                 </td>
                 <td className="px-4 py-3"><Badge tone={u.kycStatus === "APPROVED" ? "success" : "neutral"}>T{u.kycTier} · {u.kycStatus.toLowerCase()}</Badge></td>
                 <td className="px-4 py-3"><Badge tone={STATUS_TONE[u.status]}>{u.status}</Badge></td>

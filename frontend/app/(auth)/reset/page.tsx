@@ -13,6 +13,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api/client";
 import { apiErrorMessage } from "@/lib/api/errors";
 
@@ -22,6 +23,7 @@ type Values = z.infer<typeof schema>;
 function ResetForm(): React.JSX.Element {
   const params = useSearchParams();
   const router = useRouter();
+  const toast = useToast();
   const token = params.get("token") ?? "";
   const [error, setError] = useState<string | null>(null);
   const {
@@ -34,7 +36,8 @@ function ResetForm(): React.JSX.Element {
     setError(null);
     try {
       await api.resetPassword({ token, password: values.password });
-      router.replace("/login?reset=1");
+      toast.success("Password updated", "Log in with your new password.");
+      router.replace("/login");
     } catch (err) {
       setError(apiErrorMessage(err, "This reset link is invalid or expired"));
     }

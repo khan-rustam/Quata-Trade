@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/button";
 import { OtpInput } from "@/components/ui/otp-input";
 import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api/client";
 import { apiErrorMessage } from "@/lib/api/errors";
 
 function VerifyForm(): React.JSX.Element {
   const params = useSearchParams();
   const router = useRouter();
+  const toast = useToast();
   const email = params.get("email") ?? "";
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +27,8 @@ function VerifyForm(): React.JSX.Element {
     setError(null);
     try {
       await api.verifyEmail({ email, code });
-      router.replace("/login?verified=1");
+      toast.success("Email verified", "You're all set — log in to continue.");
+      router.replace("/login");
     } catch (err) {
       setError(apiErrorMessage(err, "Invalid or expired code"));
     } finally {

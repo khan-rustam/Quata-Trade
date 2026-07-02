@@ -40,8 +40,8 @@ export default function AdminTradesPage(): React.JSX.Element {
             {data.items.map((t) => (
               <tr key={t.id}>
                 <td className="px-4 py-3 font-money">{t.shortRef}</td>
-                <td className="max-w-[10rem] truncate px-4 py-3 text-text-2">{t.sellerEmail}</td>
-                <td className="max-w-[10rem] truncate px-4 py-3 text-text-2">{t.buyerEmail}</td>
+                <td className="max-w-40 truncate px-4 py-3 text-text-2">{t.sellerEmail}</td>
+                <td className="max-w-40 truncate px-4 py-3 text-text-2">{t.buyerEmail}</td>
                 <td className="px-4 py-3"><Usdt value={t.amount} size="sm" /></td>
                 <td className="px-4 py-3"><Usdt value={t.feeAmount} size="sm" showUnit={false} /></td>
                 <td className="px-4 py-3"><TradeStatusBadge status={t.status} /></td>

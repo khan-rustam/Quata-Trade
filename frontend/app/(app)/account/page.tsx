@@ -16,6 +16,7 @@ import type { ComponentType } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMe, useLogout } from "@/hooks/use-auth";
 
@@ -37,9 +38,11 @@ export default function AccountPage(): React.JSX.Element {
       <PageHeader title="Account" />
 
       <Card className="flex items-center gap-4">
-        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 text-xl font-semibold text-accent-400">
-          {me?.firstName?.slice(0, 1).toUpperCase() ?? me?.email.slice(0, 1).toUpperCase() ?? "?"}
-        </span>
+        {me ? (
+          <Avatar seed={me.id} name={me.firstName ?? me.email} size={56} />
+        ) : (
+          <Skeleton className="h-14 w-14 rounded-full" />
+        )}
         <div className="min-w-0">
           {isLoading ? (
             <Skeleton className="h-5 w-40" />

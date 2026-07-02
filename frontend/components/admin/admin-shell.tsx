@@ -21,6 +21,7 @@ import type { LucideProps } from "lucide-react";
 import type { AdminRole } from "@quatatrade/shared";
 import { BrandMark } from "@/components/brand/logo";
 import { Badge } from "@/components/ui/badge";
+import { Avatar } from "@/components/ui/avatar";
 import { adminLogout } from "@/hooks/use-admin";
 import { can, type RBAC } from "@/lib/admin-rbac";
 import { cn } from "@/lib/utils";
@@ -60,11 +61,14 @@ export function AdminShell({
 
   const items = NAV.filter((n) => !n.gate || can(role, n.gate));
   const isActive = (href: string) => (href === "/admin" ? pathname === href : pathname.startsWith(href));
+  const current = items.find((n) => isActive(n.href))?.label ?? "Admin";
+  const roleLabel = role.replace("_", " ").toLowerCase();
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-surface-1 md:flex">
-        <div className="flex h-14 items-center gap-2 border-b border-border px-4">
+    // Fixed to the viewport: the sidebar + header stay put, only <main> scrolls.
+    <div className="flex h-screen overflow-hidden">
+      <aside className="hidden h-full w-56 shrink-0 flex-col border-r border-border bg-surface-1 md:flex">
+        <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
           <BrandMark size={22} />
           <span className="font-display text-sm font-bold">Quata Admin</span>
         </div>
@@ -87,15 +91,18 @@ export function AdminShell({
             );
           })}
         </nav>
-        <div className="border-t border-border p-3">
+        <div className="shrink-0 border-t border-border p-3">
           <Link
             href="/admin/profile"
-            className="mb-2 block rounded-lg px-1 py-1 transition-colors hover:bg-surface-2/60"
+            className="mb-2 flex items-center gap-2.5 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-surface-2/60"
           >
-            <p className="truncate text-xs font-medium text-text-1">{email}</p>
-            <Badge tone="accent" className="mt-1">
-              {role.replace("_", " ").toLowerCase()}
-            </Badge>
+            <Avatar seed={email} size={32} />
+            <div className="min-w-0">
+              <p className="truncate text-xs font-medium text-text-1">{email}</p>
+              <Badge tone="accent" className="mt-0.5">
+                {roleLabel}
+              </Badge>
+            </div>
           </Link>
           <button
             type="button"
@@ -110,16 +117,26 @@ export function AdminShell({
         </div>
       </aside>
 
-      <div className="min-w-0 flex-1">
-        {/* mobile top bar */}
-        <header className="flex h-14 items-center justify-between border-b border-border px-4 md:hidden">
-          <span className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* sticky header — stays fixed while the content below scrolls */}
+        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface-1/80 px-4 backdrop-blur md:px-8">
+          <span className="flex items-center gap-2 md:hidden">
             <BrandMark size={22} />
             <span className="font-display text-sm font-bold">Quata Admin</span>
           </span>
-          <Badge tone="accent">{role.replace("_", " ").toLowerCase()}</Badge>
+          <h1 className="hidden font-display text-base font-semibold md:block">{current}</h1>
+          <Link
+            href="/admin/profile"
+            aria-label="Admin profile"
+            className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 transition-colors hover:bg-surface-2"
+          >
+            <Badge tone="accent" className="hidden sm:inline-flex">
+              {roleLabel}
+            </Badge>
+            <Avatar seed={email} size={30} />
+          </Link>
         </header>
-        <main className="px-4 py-6 md:px-8">{children}</main>
+        <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8">{children}</main>
       </div>
     </div>
   );

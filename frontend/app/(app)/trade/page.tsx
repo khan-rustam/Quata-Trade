@@ -13,6 +13,7 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
+import { Avatar } from "@/components/ui/avatar";
 import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
 import { useOffers } from "@/hooks/use-trade";
 import { formatRate, formatUsdt } from "@/lib/format";
@@ -97,9 +98,7 @@ function TradeBrowser(): React.JSX.Element {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-sm font-semibold text-accent-400">
-                        {offer.trader.displayName.slice(0, 1).toUpperCase()}
-                      </span>
+                      <Avatar seed={offer.trader.id} name={offer.trader.displayName} size={32} />
                       <div className="min-w-0">
                         <p className="flex items-center gap-1.5 truncate font-medium">
                           {offer.trader.displayName}

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert } from "@/components/ui/alert";
+import { Avatar } from "@/components/ui/avatar";
 import { Usdt, Xaf } from "@/components/ui/amount";
 import { Spinner } from "@/components/ui/spinner";
 import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
@@ -85,9 +86,7 @@ export default function OfferDetailPage(): React.JSX.Element {
 
       <Card>
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 font-semibold text-accent-400">
-            {offer.trader.displayName.slice(0, 1).toUpperCase()}
-          </span>
+          <Avatar seed={offer.trader.id} name={offer.trader.displayName} size={40} />
           <div>
             <p className="flex items-center gap-1.5 font-medium">
               {offer.trader.displayName}

@@ -56,7 +56,7 @@ export function Pagination({
 export function TableFrame({ head, children }: { head: ReactNode; children: ReactNode }): React.JSX.Element {
   return (
     <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full min-w-[640px] text-sm">
+      <table className="w-full min-w-160 text-sm">
         <thead className="border-b border-border bg-surface-2 text-left text-xs uppercase tracking-wide text-text-3">
           {head}
         </thead>

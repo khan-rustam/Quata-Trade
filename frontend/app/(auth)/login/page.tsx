@@ -15,12 +15,14 @@ import { Button } from "@/components/ui/button";
 import { OtpInput } from "@/components/ui/otp-input";
 import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/components/ui/toast";
 import { useLogin } from "@/hooks/use-auth";
 import { apiErrorMessage } from "@/lib/api/errors";
 
 export default function LoginPage(): React.JSX.Element {
   const t = useTranslations("nav");
   const router = useRouter();
+  const toast = useToast();
   const login = useLogin();
   const [totpRequired, setTotpRequired] = useState(false);
   const [totpCode, setTotpCode] = useState("");
@@ -43,6 +45,7 @@ export default function LoginPage(): React.JSX.Element {
         setTotpRequired(true);
         return;
       }
+      toast.success("Welcome back");
       router.replace("/home");
     } catch (err) {
       setFormError(apiErrorMessage(err, "Invalid email or password"));

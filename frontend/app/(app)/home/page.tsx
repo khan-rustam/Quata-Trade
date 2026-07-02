@@ -6,6 +6,7 @@ import { ArrowDownLeft, ArrowUpRight, Repeat, ShieldCheck, TrendingUp } from "lu
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar } from "@/components/ui/avatar";
 import { Usdt } from "@/components/ui/amount";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert } from "@/components/ui/alert";
@@ -32,11 +33,18 @@ export default function HomePage(): React.JSX.Element {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight">
-          Hi{me?.firstName ? `, ${me.firstName}` : ""} 👋
-        </h1>
-        <p className="text-sm text-text-2">Here&rsquo;s your portfolio today.</p>
+      <div className="flex items-center gap-3">
+        {me ? (
+          <Avatar seed={me.id} name={me.firstName ?? me.email} size={44} />
+        ) : (
+          <Skeleton className="h-11 w-11 rounded-full" />
+        )}
+        <div>
+          <h1 className="font-display text-2xl font-bold tracking-tight">
+            Hi{me?.firstName ? `, ${me.firstName}` : ""} 👋
+          </h1>
+          <p className="text-sm text-text-2">Here&rsquo;s your portfolio today.</p>
+        </div>
       </div>
 
       {me && me.kycStatus !== "APPROVED" && (
