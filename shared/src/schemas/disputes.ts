@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DISPUTE_RESOLUTIONS, DISPUTE_STATUSES } from "../constants.js";
-import { zUuid } from "./common.js";
+import { zTotpCode, zUuid } from "./common.js";
 
 export const zOpenDisputeRequest = z
   .object({
@@ -45,6 +45,9 @@ export const zResolveDisputeRequest = z
   .object({
     resolution: z.enum(DISPUTE_RESOLUTIONS),
     notes: z.string().trim().min(10).max(4000),
+    // Admin step-up 2FA — dispute resolution moves escrow funds, so it requires
+    // the resolving admin's own TOTP, like withdrawal approve/reject (§08 E).
+    totpCode: zTotpCode,
   })
   .strict();
 export type ResolveDisputeRequest = z.infer<typeof zResolveDisputeRequest>;

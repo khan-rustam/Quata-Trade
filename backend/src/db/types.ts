@@ -279,6 +279,8 @@ export interface KycSubmissionsTable {
 
 export interface AuditLogsTable {
   id: string;
+  /** monotonic append-order sequence (migration 0008) — the hash chain orders by this */
+  seq: Generated<bigint>;
   actor_type: string;
   actor_id: string | null;
   action: string;

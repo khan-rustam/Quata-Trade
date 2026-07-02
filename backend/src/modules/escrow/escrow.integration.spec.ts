@@ -7,7 +7,7 @@ import { LedgerService } from "../ledger/ledger.service";
 import { SettingsService } from "../settings/settings.service";
 import { EscrowService } from "./escrow.service";
 import { TradesService } from "../trades/trades.service";
-import { IllegalTransitionError, OfferUnavailableError } from "./escrow.errors";
+import { IllegalTransitionError, OfferUnavailableError, TradeNotFoundError } from "./escrow.errors";
 
 /**
  * AUDIT GATE 4 — escrow/trade state machine (Documents/05, 08 §B/§C, 09).
@@ -248,11 +248,34 @@ describe("Escrow state machine (Gate 4)", () => {
 
     // admin resolution RELEASE_TO_BUYER moves funds correctly
     const treasuryBefore = await treasuryBalance();
-    const resolved = await escrow.resolveDispute(trade.id, newId(), "RELEASE_TO_BUYER", `r-${trade.id}`);
+    const resolved = await escrow.resolveDispute(trade.id, newId(), "RELEASE_TO_BUYER");
     expect(resolved.status).toBe("RESOLVED_RELEASE");
     const buyerCredit = await balanceOf(buyer, "user_available");
     expect(buyerCredit + ((await treasuryBalance()) - treasuryBefore)).toBe(10n * USDT);
     expect(await balanceOf(seller, "user_escrow")).toBe(0n);
+  });
+
+  it("resolveDispute on a non-DISPUTED trade is rejected; same-outcome re-resolve is idempotent", async () => {
+    const seller = await fundedUser(10n * USDT);
+    const buyer = await fundedUser(0n);
+    const offer = await createOffer(seller, 10n * USDT);
+    const trade = await openTrade(buyer, offer.id, 10n * USDT); // ESCROW_LOCKED, not disputed
+
+    await expect(escrow.resolveDispute(trade.id, newId(), "RELEASE_TO_BUYER")).rejects.toBeInstanceOf(
+      IllegalTransitionError,
+    );
+
+    // dispute it, resolve, then a same-outcome re-resolve must no-op (not double-pay)
+    await disputeTrade(trade.id, buyer);
+    await escrow.resolveDispute(trade.id, newId(), "RELEASE_TO_BUYER");
+    const buyerAfter = await balanceOf(buyer, "user_available");
+    const again = await escrow.resolveDispute(trade.id, newId(), "RELEASE_TO_BUYER");
+    expect(again.status).toBe("RESOLVED_RELEASE");
+    expect(await balanceOf(buyer, "user_available")).toBe(buyerAfter);
+    // a conflicting re-resolve (opposite outcome) is rejected by the FSM
+    await expect(escrow.resolveDispute(trade.id, newId(), "REFUND_TO_SELLER")).rejects.toBeInstanceOf(
+      IllegalTransitionError,
+    );
   });
 
   it("dispute resolution REFUND_TO_SELLER returns funds + restocks", async () => {
@@ -262,7 +285,7 @@ describe("Escrow state machine (Gate 4)", () => {
     const trade = await openTrade(buyer, offer.id, 10n * USDT);
     await disputeTrade(trade.id, seller);
 
-    const resolved = await escrow.resolveDispute(trade.id, newId(), "REFUND_TO_SELLER", `r-${trade.id}`);
+    const resolved = await escrow.resolveDispute(trade.id, newId(), "REFUND_TO_SELLER");
     expect(resolved.status).toBe("RESOLVED_REFUND");
     expect(await balanceOf(seller, "user_available")).toBe(10n * USDT);
     expect(await balanceOf(buyer, "user_available")).toBe(0n);
@@ -290,6 +313,61 @@ describe("Escrow state machine (Gate 4)", () => {
     expect(offerAfter.status).toBe("EXHAUSTED");
     expect(await balanceOf(seller, "user_escrow")).toBe(100n * USDT); // never oversold
     expect(await balanceOf(seller, "user_available")).toBe(100n * USDT);
+  });
+
+  it("SECURITY: two trades reusing one client idempotencyKey both lock real escrow (no cross-trade collision)", async () => {
+    // Regression for the escrow idempotency-scoping finding: a buyer opening two
+    // trades on the same offer with ONE reused client key must not let trade 2's
+    // escrow lock silently replay trade 1's journal (which oversold the offer and
+    // left an unbacked escrow). Keys are now scoped by trade id.
+    const seller = await fundedUser(100n * USDT);
+    const buyer = await fundedUser(0n);
+    const offer = await createOffer(seller, 100n * USDT, 1n * USDT, 100n * USDT);
+    const sharedKey = "reused-client-key-0001";
+
+    const t1 = await trades.openTrade(buyer, {
+      offerId: offer.id,
+      amount: (30n * USDT).toString(),
+      paymentMethod: "MTN_MOMO",
+      idempotencyKey: sharedKey,
+    });
+    const t2 = await trades.openTrade(buyer, {
+      offerId: offer.id,
+      amount: (40n * USDT).toString(),
+      paymentMethod: "MTN_MOMO",
+      idempotencyKey: sharedKey, // same key — must still lock its own escrow
+    });
+
+    expect(t1.status).toBe("ESCROW_LOCKED");
+    expect(t2.status).toBe("ESCROW_LOCKED");
+    // Both escrows are real: 30 + 40 = 70 locked, 30 available, offer down to 30.
+    expect(await balanceOf(seller, "user_escrow")).toBe(70n * USDT);
+    expect(await balanceOf(seller, "user_available")).toBe(30n * USDT);
+    const offerAfter = await t.db.selectFrom("offers").selectAll().where("id", "=", offer.id).executeTakeFirstOrThrow();
+    expect(offerAfter.remaining).toBe(30n * USDT);
+
+    // Each releases independently — the shared client key never collides.
+    await submitPayment(t1.id, buyer);
+    await trades.confirmTrade(t1.id, seller, sharedKey);
+    await submitPayment(t2.id, buyer);
+    await trades.confirmTrade(t2.id, seller, sharedKey);
+    expect(await balanceOf(seller, "user_escrow")).toBe(0n);
+    expect(await balanceOf(buyer, "user_available")).toBe(70n * USDT - 350_000n); // 0.5% of 70
+  });
+
+  it("SECURITY: confirm/cancel on a terminal trade by a non-party is 404, never a data leak", async () => {
+    const seller = await fundedUser(10n * USDT);
+    const buyer = await fundedUser(0n);
+    const stranger = await fundedUser(0n);
+    const offer = await createOffer(seller, 10n * USDT);
+    const trade = await openTrade(buyer, offer.id, 10n * USDT);
+    await submitPayment(trade.id, buyer);
+    await trades.confirmTrade(trade.id, seller, `k-${newId()}`); // now COMPLETED
+
+    // A stranger probing the terminal trade must get 404 (party check runs first),
+    // not the completed trade row.
+    await expect(trades.confirmTrade(trade.id, stranger, `k-${newId()}`)).rejects.toBeInstanceOf(TradeNotFoundError);
+    await expect(trades.cancelTrade(trade.id, stranger, `k-${newId()}`)).rejects.toBeInstanceOf(TradeNotFoundError);
   });
 
   it("buyer cancel refunds seller and restocks; only the buyer may cancel", async () => {

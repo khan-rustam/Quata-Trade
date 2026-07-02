@@ -123,7 +123,7 @@ export class TradesService {
       await this.escrow.recordCreation(trx, tradeId, actor);
 
       const deadline = new Date(Date.now() + windowMinutes * 60_000);
-      await this.escrow.lockEscrow(trx, trade, actor, deadline, dto.idempotencyKey);
+      await this.escrow.lockEscrow(trx, trade, actor, deadline);
 
       return { ...trade, status: "ESCROW_LOCKED" as const, payment_deadline: deadline };
     });
@@ -164,13 +164,18 @@ export class TradesService {
     });
   }
 
-  /** Seller confirms fiat received → escrow releases (idempotent). */
-  async confirmTrade(tradeId: string, sellerId: string, idempotencyKey: string): Promise<TradeRow> {
-    return this.escrow.confirmRelease(tradeId, sellerId, idempotencyKey);
+  /**
+   * Seller confirms fiat received → escrow releases (idempotent).
+   * Idempotency is keyed by the trade id inside escrow (status guard +
+   * `trade:<id>:release`), so the client key is accepted for HTTP retry
+   * semantics but not threaded into the ledger.
+   */
+  async confirmTrade(tradeId: string, sellerId: string, _idempotencyKey: string): Promise<TradeRow> {
+    return this.escrow.confirmRelease(tradeId, sellerId);
   }
 
-  async cancelTrade(tradeId: string, userId: string, idempotencyKey: string): Promise<TradeRow> {
-    return this.escrow.cancelTrade(tradeId, userId, idempotencyKey);
+  async cancelTrade(tradeId: string, userId: string, _idempotencyKey: string): Promise<TradeRow> {
+    return this.escrow.cancelTrade(tradeId, userId);
   }
 
   /** Party-scoped fetch — returns null (→404) rather than leaking others' trades. */

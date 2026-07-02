@@ -350,8 +350,12 @@ export class AdminController {
     @CurrentAdminId() adminId: string,
     @Param("id", new ZodPipe(zUuid)) disputeId: string,
     @Body(new ZodPipe(zResolveDisputeRequest)) dto: ResolveDisputeRequest,
+    @Req() req: AuthenticatedRequest,
   ): Promise<ResolveResult> {
     try {
+      // step-up: resolving a dispute releases/refunds escrow — require the
+      // admin's OWN TOTP, exactly like withdrawal approve/reject (§08 E).
+      await this.adminAuth.verifyTotp(adminId, dto.totpCode, "dispute.resolve", this.ip(req));
       return await this.disputesAdmin.resolve(disputeId, adminId, dto.resolution, dto.notes);
     } catch (err) {
       throw mapAdminError(err);

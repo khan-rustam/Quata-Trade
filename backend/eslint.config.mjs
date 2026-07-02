@@ -40,16 +40,25 @@ export default tseslint.config(
   {
     files: MONEY_PATHS,
     rules: {
+      // Documents/02: `any` and `as unknown as` double-casts are BANNED on money
+      // paths (a single narrowing `x as T` is allowed — e.g. caught-error codes).
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-non-null-assertion": "error",
       "@typescript-eslint/consistent-type-assertions": [
         "error",
-        { assertionStyle: "never" }
+        { assertionStyle: "as", objectLiteralTypeAssertions: "never" }
       ],
-      // number arithmetic on money is caught by types (bigint), but forbid
-      // parseFloat/parseInt/Number on identifiers named like amounts:
       "no-restricted-syntax": [
         "error",
+        {
+          // `x as unknown as T` parses as (x as unknown) as T — ban the escape hatch.
+          selector: "TSAsExpression[expression.type='TSAsExpression']",
+          message: "No `as unknown as` double-casts on money paths (Documents/02).",
+        },
+        {
+          selector: "TSAsExpression > TSUnknownKeyword",
+          message: "No `as unknown` widening on money paths — narrow with a type guard.",
+        },
         {
           selector: "CallExpression[callee.name='parseFloat']",
           message: "No floats in money paths.",

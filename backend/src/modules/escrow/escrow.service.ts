@@ -112,7 +112,6 @@ export class EscrowService {
     trade: TradeRow,
     actor: string,
     paymentDeadline: Date,
-    idempotencyKey: string,
   ): Promise<void> {
     const sellerAvailable = await this.ledger.getOrCreateAccount(trade.seller_id, "user_available", trade.asset, trx);
     const sellerEscrow = await this.ledger.getOrCreateAccount(trade.seller_id, "user_escrow", trade.asset, trx);
@@ -121,7 +120,10 @@ export class EscrowService {
         reason: "escrow_lock",
         referenceType: "trade",
         referenceId: trade.id,
-        idempotencyKey: `${idempotencyKey}:lock`,
+        // Scope by trade id, NOT the client key: a client-supplied key is
+        // attacker-controlled and reusing one across trades would collide on
+        // the global journal UNIQUE, silently replaying (oversell / escrow leak).
+        idempotencyKey: `trade:${trade.id}:lock`,
         createdBy: actor,
         asset: trade.asset,
         legs: [
@@ -142,19 +144,21 @@ export class EscrowService {
    * Releases: escrow −amount / buyer +(amount−fee) / treasury +fee.
    * Idempotent: a second confirm finds status COMPLETED and no-ops.
    */
-  async confirmRelease(tradeId: string, sellerId: string, idempotencyKey: string): Promise<TradeRow> {
+  async confirmRelease(tradeId: string, sellerId: string): Promise<TradeRow> {
     return this.ledger.withMoneyTransaction(async (trx) => {
       const trade = await this.lockTrade(trx, tradeId);
 
+      // Ownership FIRST — a non-party must get 404 even on a terminal trade,
+      // otherwise the idempotent early-return leaks the full trade row.
+      if (trade.seller_id !== sellerId) throw new TradeNotFoundError(tradeId);
       if (trade.status === "COMPLETED" && trade.release_journal_id) {
         return trade; // double-confirm no-op (Gate 4 requirement)
       }
-      if (trade.seller_id !== sellerId) throw new TradeNotFoundError(tradeId); // no IDOR leak
       if (trade.status !== "PAYMENT_SUBMITTED") {
         throw new IllegalTransitionError(trade.status, "COMPLETED");
       }
 
-      const journalId = await this.postRelease(trx, trade, `seller:${sellerId}`, idempotencyKey);
+      const journalId = await this.postRelease(trx, trade, `seller:${sellerId}`);
       await this.transition(trx, trade, "COMPLETED", `seller:${sellerId}`, undefined, {
         completed_at: new Date(),
         release_journal_id: journalId,
@@ -164,12 +168,7 @@ export class EscrowService {
   }
 
   /** Shared release legs: escrow → buyer (amount − fee) + treasury (fee). */
-  private async postRelease(
-    trx: Transaction<Database>,
-    trade: TradeRow,
-    actor: string,
-    idempotencyKey: string,
-  ): Promise<string> {
+  private async postRelease(trx: Transaction<Database>, trade: TradeRow, actor: string): Promise<string> {
     const sellerEscrow = await this.ledger.getOrCreateAccount(trade.seller_id, "user_escrow", trade.asset, trx);
     const buyerAvailable = await this.ledger.getOrCreateAccount(trade.buyer_id, "user_available", trade.asset, trx);
     const treasury = await this.ledger.getOrCreateAccount(null, "platform_treasury", trade.asset, trx);
@@ -192,7 +191,7 @@ export class EscrowService {
         reason: "escrow_release_buyer",
         referenceType: "trade",
         referenceId: trade.id,
-        idempotencyKey: `${idempotencyKey}:release`,
+        idempotencyKey: `trade:${trade.id}:release`,
         createdBy: actor,
         asset: trade.asset,
         legs,
@@ -203,12 +202,7 @@ export class EscrowService {
   }
 
   /** Shared refund legs: escrow → seller available (full amount, no fee). */
-  private async postRefund(
-    trx: Transaction<Database>,
-    trade: TradeRow,
-    actor: string,
-    idempotencyKey: string,
-  ): Promise<string> {
+  private async postRefund(trx: Transaction<Database>, trade: TradeRow, actor: string): Promise<string> {
     const sellerEscrow = await this.ledger.getOrCreateAccount(trade.seller_id, "user_escrow", trade.asset, trx);
     const sellerAvailable = await this.ledger.getOrCreateAccount(trade.seller_id, "user_available", trade.asset, trx);
     const { journalId } = await this.ledger.postJournal(
@@ -216,7 +210,9 @@ export class EscrowService {
         reason: "escrow_refund",
         referenceType: "trade",
         referenceId: trade.id,
-        idempotencyKey: `${idempotencyKey}:refund`,
+        // One refund per trade whichever terminal path fires (cancel/expiry/dispute) —
+        // mutually exclusive by status guard; a shared key makes it exactly-once.
+        idempotencyKey: `trade:${trade.id}:refund`,
         createdBy: actor,
         asset: trade.asset,
         legs: [
@@ -257,14 +253,17 @@ export class EscrowService {
    * Buyer cancels (ESCROW_LOCKED or PAYMENT_SUBMITTED) → CANCELLED + refund.
    * Also used for OPENED → CANCELLED (no funds moved yet).
    */
-  async cancelTrade(tradeId: string, actorUserId: string, idempotencyKey: string): Promise<TradeRow> {
+  async cancelTrade(tradeId: string, actorUserId: string): Promise<TradeRow> {
     return this.ledger.withMoneyTransaction(async (trx) => {
       const trade = await this.lockTrade(trx, tradeId);
-      if (trade.status === "CANCELLED") return trade; // idempotent
 
+      // Party check FIRST — only the buyer may cancel; a non-party gets 404 even
+      // on an already-CANCELLED trade (else the early-return leaks the row).
       const isBuyer = trade.buyer_id === actorUserId;
-      if (!isBuyer) throw new TradeNotFoundError(tradeId); // only the buyer may cancel; sellers use disputes
+      if (!isBuyer) throw new TradeNotFoundError(tradeId); // sellers use disputes
       const actor = `buyer:${actorUserId}`;
+
+      if (trade.status === "CANCELLED") return trade; // idempotent
 
       if (trade.status === "OPENED") {
         await this.transition(trx, trade, "CANCELLED", actor);
@@ -274,7 +273,7 @@ export class EscrowService {
         throw new IllegalTransitionError(trade.status, "CANCELLED");
       }
       await this.restockOffer(trx, trade.offer_id, trade.amount);
-      await this.postRefund(trx, trade, actor, idempotencyKey);
+      await this.postRefund(trx, trade, actor);
       await this.transition(trx, trade, "CANCELLED", actor);
       return { ...trade, status: "CANCELLED" as const };
     });
@@ -292,7 +291,7 @@ export class EscrowService {
       if (!trade.payment_deadline || trade.payment_deadline.getTime() > Date.now()) return false;
 
       await this.restockOffer(trx, trade.offer_id, trade.amount);
-      await this.postRefund(trx, trade, "system", `trade:${trade.id}:expiry`);
+      await this.postRefund(trx, trade, "system");
       await this.transition(trx, trade, "EXPIRED", "system");
       return true;
     });
@@ -314,7 +313,6 @@ export class EscrowService {
     tradeId: string,
     adminId: string,
     resolution: "RELEASE_TO_BUYER" | "REFUND_TO_SELLER",
-    idempotencyKey: string,
   ): Promise<TradeRow> {
     return this.ledger.withMoneyTransaction(async (trx) => {
       const trade = await this.lockTrade(trx, tradeId);
@@ -331,7 +329,7 @@ export class EscrowService {
       }
 
       if (resolution === "RELEASE_TO_BUYER") {
-        const journalId = await this.postRelease(trx, trade, actor, idempotencyKey);
+        const journalId = await this.postRelease(trx, trade, actor);
         await this.transition(trx, trade, "RESOLVED_RELEASE", actor, undefined, {
           completed_at: new Date(),
           release_journal_id: journalId,
@@ -339,7 +337,7 @@ export class EscrowService {
         return { ...trade, status: "RESOLVED_RELEASE" as const, release_journal_id: journalId };
       }
       await this.restockOffer(trx, trade.offer_id, trade.amount);
-      const journalId = await this.postRefund(trx, trade, actor, idempotencyKey);
+      const journalId = await this.postRefund(trx, trade, actor);
       await this.transition(trx, trade, "RESOLVED_REFUND", actor, undefined, {
         release_journal_id: journalId,
       });

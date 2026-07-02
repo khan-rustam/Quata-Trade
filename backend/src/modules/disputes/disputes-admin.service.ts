@@ -125,8 +125,9 @@ export class DisputesAdminService {
       throw new ConflictingResolutionError(); // never silently flip an outcome
     }
 
-    // 1. Money + trade FSM — escrow only. Deterministic key ⇒ retry-safe.
-    await this.escrow.resolveDispute(dispute.trade_id, adminId, resolution, `dispute:${disputeId}:resolve`);
+    // 1. Money + trade FSM — escrow only. Escrow keys its journals by trade id
+    // (retry-safe: same-outcome re-resolve replays, different outcome rejected by FSM).
+    await this.escrow.resolveDispute(dispute.trade_id, adminId, resolution);
 
     // 2. Idempotent follow-up write on the disputes row (+ outbox + audit once).
     let applied = false;

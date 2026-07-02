@@ -53,11 +53,14 @@ export class AuditService {
   async log(entry: AuditEntry, trx?: Transaction<Database>): Promise<string> {
     const run = async (t: Transaction<Database>): Promise<string> => {
       await sql`SELECT pg_advisory_xact_lock(hashtext('audit_chain'))`.execute(t);
+      // Order the chain by `seq` (append-order, migration 0008), NEVER created_at:
+      // created_at = now() = txn START time, which inverts across concurrent money
+      // transactions that commit out of start order. The advisory lock above is held
+      // until commit, so seq (assigned at insert) is monotonic in true append order.
       const prev = await t
         .selectFrom("audit_logs")
         .select("row_hash")
-        .orderBy("created_at", "desc")
-        .orderBy("id", "desc")
+        .orderBy("seq", "desc")
         .limit(1)
         .executeTakeFirst();
 
@@ -99,8 +102,7 @@ export class AuditService {
     const rows = await this.db
       .selectFrom("audit_logs")
       .select(["id", "actor_type", "actor_id", "action", "target_type", "target_id", "metadata", "prev_hash", "row_hash"])
-      .orderBy("created_at", "asc")
-      .orderBy("id", "asc")
+      .orderBy("seq", "asc")
       .execute();
 
     const broken: string[] = [];

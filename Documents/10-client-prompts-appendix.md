@@ -74,6 +74,9 @@ Each item: what the client asked, what we do instead, why. Client signs before l
 | D18 | `trade short_ref` example QT-XXXXX (5 chars, doc 04) | 5-char Crockford base32 (~33M space) kept, DB-unique; collision → request-level retry | Matches doc; noted for scale review at >1M trades |
 | D19 | `auth_tokens`, lockout columns, `outbox` table not in doc 04 | Added (migrations 0001/0006) | Doc 06 endpoints (OTP verify, lockouts) and doc 03 outbox pattern require them |
 | D20 | Refresh tokens for admins | Admin sessions = 10-min access JWT re-login, no refresh cookie in v1 | Smaller attack surface for the highest-privilege principals |
+| D21 | zResolveDisputeRequest has {resolution, notes} | Added required `totpCode` (admin step-up 2FA) | Security review finding #5: dispute resolution moves escrow funds and must require the admin's TOTP like withdrawal approve/reject (§08 E) |
+| D22 | audit_logs schema per doc 04 §4.7 | Added `seq` column (migration 0008); hash-chain ordered by seq not created_at | Security review finding #2: created_at = txn start time forks the chain under concurrent money-path writes |
+| D23 | Coverage 100% branch on ledger/escrow/fees at every gate (doc 09) | Ratcheted CI floor (~84% branch) now; 100% is the launch gate, needs fault-injection tests | Serialization-retry + unique-violation race branches require fault injection; tracked in gate-1.md |
 
 ### Legal/commercial guardrails to settle in writing BEFORE building (from prior research)
 - Client owns the legal entity, any required licenses, treasury/cold keys, and the regulatory/legal risk. Developer is a contractor, not fund custodian.

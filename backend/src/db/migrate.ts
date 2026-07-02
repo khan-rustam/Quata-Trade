@@ -39,7 +39,6 @@ export async function migrateToLatest(db: Kysely<Database>): Promise<void> {
   const migrator = createMigrator(db);
   const { error, results } = await migrator.migrateToLatest();
   for (const r of results ?? []) {
-    // eslint-disable-next-line no-console
     console.log(`migration "${r.migrationName}": ${r.status}`);
   }
   if (error) throw error;
@@ -64,7 +63,6 @@ async function main(): Promise<void> {
       const migrator = createMigrator(db);
       const { error, results } = await migrator.migrateDown();
       for (const r of results ?? []) {
-        // eslint-disable-next-line no-console
         console.log(`migration "${r.migrationName}": ${r.status}`);
       }
       if (error) throw error;
@@ -78,7 +76,6 @@ async function main(): Promise<void> {
 
 if (require.main === module) {
   main().catch((err) => {
-    // eslint-disable-next-line no-console
     console.error(err);
     process.exit(1);
   });

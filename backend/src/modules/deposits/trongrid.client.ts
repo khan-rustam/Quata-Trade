@@ -84,7 +84,9 @@ export class HttpTronGridClient implements TronGridClient {
     const parsed = zTrc20Response.parse(await this.getJson(url));
 
     const transfers: Trc20Transfer[] = [];
-    const metaCache = new Map<string, { blockNumber: bigint | null; logIndex: number }>();
+    const metaCache = new Map<string, { blockNumber: bigint | null; logIndexes: number[] }>();
+    // occurrences seen so far per tx — assign the Nth transfer the Nth matching log
+    const seenPerTx = new Map<string, number>();
     for (const item of parsed.data) {
       if (item.type !== "Transfer" || item.to !== address) continue;
       let meta = metaCache.get(item.transaction_id);
@@ -92,9 +94,15 @@ export class HttpTronGridClient implements TronGridClient {
         meta = await this.resolveTxMeta(item.transaction_id, address);
         metaCache.set(item.transaction_id, meta);
       }
+      // Two USDT transfers to the SAME address in ONE tx must get DISTINCT
+      // log indexes, else the second collides on UNIQUE(tx_hash,log_index) and
+      // the deposit is silently dropped. Consume the matching logs in order.
+      const seen = seenPerTx.get(item.transaction_id) ?? 0;
+      const logIndex = meta.logIndexes[seen] ?? 1_000_000 + seen; // distinct fallback
+      seenPerTx.set(item.transaction_id, seen + 1);
       transfers.push({
         txHash: item.transaction_id,
-        logIndex: meta.logIndex,
+        logIndex,
         from: item.from,
         to: item.to,
         contract: item.token_info.address,
@@ -118,11 +126,13 @@ export class HttpTronGridClient implements TronGridClient {
   private async resolveTxMeta(
     txHash: string,
     toAddress: string,
-  ): Promise<{ blockNumber: bigint | null; logIndex: number }> {
+  ): Promise<{ blockNumber: bigint | null; logIndexes: number[] }> {
     try {
       const info = zTxInfo.parse(await this.postJson("/wallet/gettransactioninfobyid", { value: txHash }));
       const blockNumber = info.blockNumber !== undefined ? BigInt(info.blockNumber) : null;
-      let logIndex = 0;
+      // ALL Transfer logs to our address, in on-chain order — one per real
+      // transfer, so multiple same-address transfers get distinct indexes.
+      const logIndexes: number[] = [];
       const recipientHex = addressToEvmHex(toAddress);
       const logs = info.log ?? [];
       if (recipientHex !== null) {
@@ -131,15 +141,14 @@ export class HttpTronGridClient implements TronGridClient {
           const topic0 = topics[0]?.toLowerCase() ?? "";
           const topic2 = topics[2]?.toLowerCase() ?? "";
           if (topic0.endsWith(TRANSFER_TOPIC) && topic2.endsWith(recipientHex)) {
-            logIndex = i;
-            break;
+            logIndexes.push(i);
           }
         }
       }
-      return { blockNumber, logIndex };
+      return { blockNumber, logIndexes: logIndexes.length > 0 ? logIndexes : [0] };
     } catch (err) {
       this.logger.warn(`tx meta resolution failed for ${txHash}: ${err instanceof Error ? err.message : "unknown"}`);
-      return { blockNumber: null, logIndex: 0 };
+      return { blockNumber: null, logIndexes: [0] };
     }
   }
 

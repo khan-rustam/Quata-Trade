@@ -109,6 +109,13 @@ export class WithdrawalsService {
     const total = amount + fee;
 
     return this.ledger.withMoneyTransaction(async (trx) => {
+      // Serialize this user's cap check + insert against concurrent requests.
+      // The daily aggregate is a SUM (not a locked balance row), so under READ
+      // COMMITTED two parallel requests could each read the same usedToday and
+      // both pass the cap (TOCTOU). A per-user advisory xact lock (held to commit)
+      // makes the read+insert atomic per user without blocking other users.
+      await sql`SELECT pg_advisory_xact_lock(hashtext('withdrawal_daily'), hashtext(${userId}))`.execute(trx);
+
       // Daily aggregate (today UTC, everything not REJECTED/FAILED) + this request.
       const usedToday = await this.dailyWithdrawnAmount(trx, userId);
       if (usedToday + amount > dailyLimit) {
