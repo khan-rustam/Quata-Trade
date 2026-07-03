@@ -1,7 +1,30 @@
 # QuataTrade — Claude Handoff
 
-**Date:** 2026-07-03 · **Branch:** `main` · **Last commit:** `ea4143d` (pushed to `origin/main`)
+**Date:** 2026-07-03 · **Branch:** `main` · **Last commit:** `653b55e` (pushed to `origin/main`)
 **Repo:** github.com/khan-rustam/Quata-Trade
+
+## ✅ Update — 2026-07-03 (session 2)
+
+Shipped + pushed since the original handoff:
+- **Profiles frontend UI** (`cc0526a`): avatar picker (DiceBear style + shuffle), reputation-tier
+  badge, rebuilt account/profile (avatar / display-name / bio), public bilingual `/traders/[id]`.
+- **Email delivery fixed** (`a476937`): new worker `EmailSendJob` sends QUEUED email rows so
+  verification + password-reset actually deliver once SMTP creds are set, with retry. `email_verify`
+  template now carries the code; added the missing `password_reset` template. No auth.service change.
+- **Email-change end-to-end** (`653b55e`): `POST /users/me/email` + `/verify` (users module + mailer)
+  and the frontend EmailChange flow in the profile page (new email + password → code → confirm).
+
+All verified: shared build + backend/frontend tsc + eslint clean; notify unit tests 26/26; a fresh
+register queues the verification email and `EmailSendJob` attempts delivery (attempts++ w/o SMTP).
+
+**THE ONE REMAINING TASK: app-wide i18n sweep.** The public site is 100% bilingual, but the logged-in
+app (15 pages in `frontend/app/(app)`) + admin (11 pages in `frontend/app/admin`) are still ~English.
+Proven approach (from the public-pages sweep): a Workflow, one agent per page → each rewrites its page
+to `useTranslations` + returns a FLAT EN/FR key map → merge maps into `messages/{en,fr}.json` centrally
+(DECODE HTML entities — `&amp;`→`&`), then `tsc` + a static missing-key check. Only swap DISPLAY
+strings; never touch money (`<Usdt>`/`<Xaf>`), dates, or query hooks. CAVEAT: these pages are behind
+auth, so to render-verify EN/FR you need a session — set a user's `email_verified_at` in the DB, log
+in for a token, then drive the pages. Best done in a session where the app can be exercised.
 
 > **Next Claude: start here.** Read this file, then `CLAUDE.md`, `Documents/01-overview.md`, and
 > `Documents/02-tech-stack.md`. The `Documents/` folder is the single source of truth.
