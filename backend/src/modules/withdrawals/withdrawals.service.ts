@@ -53,6 +53,14 @@ function toAddressWire(r: WithdrawalAddressRow): WithdrawalAddress {
 
 const PIN_MAX_ATTEMPTS = 5;
 const PIN_LOCK_MINUTES = 15;
+const UNIQUE_VIOLATION = "23505";
+
+/** pg unique-constraint violation (23505) — used to map an addAddress race to a 409. */
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" && err !== null && "code" in err && (err as { code?: unknown }).code === UNIQUE_VIOLATION
+  );
+}
 
 /** RBAC matrix (Documents/06): approve = SUPER/FINANCE; 2nd-approve adds COMPLIANCE. */
 const FIRST_APPROVER_ROLES: readonly AdminRole[] = ["SUPER_ADMIN", "FINANCE_ADMIN"];
@@ -120,19 +128,27 @@ export class WithdrawalsService {
     if (existing) throw new WithdrawalAddressExistsError();
 
     const { newAddressMinutes } = await this.settings.securityHolds();
-    const row = await this.db
-      .insertInto("withdrawal_addresses")
-      .values({
-        id: newId(),
-        user_id: userId,
-        asset: dto.asset,
-        address: dto.address,
-        label: dto.label ?? null,
-        usable_at: new Date(Date.now() + newAddressMinutes * 60_000),
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow();
-    return toAddressWire(row);
+    try {
+      const row = await this.db
+        .insertInto("withdrawal_addresses")
+        .values({
+          id: newId(),
+          user_id: userId,
+          asset: dto.asset,
+          address: dto.address,
+          label: dto.label ?? null,
+          usable_at: new Date(Date.now() + newAddressMinutes * 60_000),
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return toAddressWire(row);
+    } catch (err) {
+      // Concurrent double-submit can race past the existence check above; the
+      // UNIQUE(user_id, asset, address) constraint then fires. Surface it as the
+      // same 409 as the pre-check path instead of a generic 500.
+      if (isUniqueViolation(err)) throw new WithdrawalAddressExistsError();
+      throw err;
+    }
   }
 
   /** Remove a whitelisted address (idempotent, owner-scoped). */

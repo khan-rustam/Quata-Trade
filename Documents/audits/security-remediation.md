@@ -28,6 +28,14 @@ locally** — it runs in CI (`.github/workflows/ci.yml`). Money-path changes her
 - ✅ **Item 5b** — on-chain reserve check: reconciliation job reads the signer hot-wallet USDT balance (`getTrc20Balance`) and compares it against ledger obligations (pending withdrawals + treasury); a shortfall raises `reconciliation.reserve_shortfall`. **Alert-only, opt-in** (`WALLET_HOT_ADDRESS`); the obligations formula is a conservative lower bound **flagged for human review** against the Host B sweep design. Pure check unit-tested.
 - ✅ **Item 6b** — at-rest encryption of KYC/PII: uploaded objects (KYC docs, proofs, disputes, chat) encrypted at rest via **MinIO SSE-S3** (`STORAGE_SSE_ENABLED`, transparent to presigned GET); prod hard-stop requires it on. DB secrets stay app-encrypted (AES-256-GCM `common/crypto`, now unit-tested). DB profile-PII/volume at-rest = infra (encrypted volumes / managed TDE) — ops; HSM/vault deferred (ops).
 - 🎉 **All listed remediation items complete** (2FA + escrow step-up deferred per client; see above).
+- 🔒 **Post-review hardening** (adversarial multi-agent review of the six commits):
+  - **[HIGH] Reverted withdrawal tx was auto-settled.** The confirmation poller judged finality by inclusion depth
+    only; a mined-but-REVERTED / OUT_OF_ENERGY TRC20 transfer (funds never left the hot wallet) would reach the
+    threshold and settle — telling the ledger a failed withdrawal succeeded. Fixed: `getTransactionStatus` now reads
+    `receipt.result`; the poller settles **only on explicit SUCCESS**, and a mined-but-failed tx is left BROADCAST for
+    human reconciliation (stuck-broadcast alert). Regression-tested.
+  - **[LOW] `addAddress` race → 500 instead of 409.** Concurrent identical whitelist submits raced past the existence
+    check into the UNIQUE constraint. Fixed: catch 23505 → `WithdrawalAddressExistsError` (409).
 
 ## Fixes (in progress)
 

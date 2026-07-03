@@ -54,13 +54,26 @@ export class WithdrawalConfirmationService {
     }
   }
 
-  /** One broadcast tx: settle once it reaches the finality threshold. */
-  async confirmOne(withdrawalId: string, txHash: string): Promise<"settled" | "pending" | "unresolved"> {
-    const confirmations = await this.tron.getTransactionConfirmations(txHash);
-    if (confirmations === null) return "unresolved"; // not in a block yet — retry next tick
-    if (confirmations < this.cfg.confirmations) return "pending";
+  /** One broadcast tx: settle only a SUCCESSFUL tx once it reaches finality. */
+  async confirmOne(
+    withdrawalId: string,
+    txHash: string,
+  ): Promise<"settled" | "pending" | "unresolved" | "reverted"> {
+    const status = await this.tron.getTransactionStatus(txHash);
+    if (status === null) return "unresolved"; // not mined / result unknown — retry next tick
+    if (!status.success) {
+      // Mined but REVERTED / OUT_OF_ENERGY: the transfer did not execute, funds
+      // stayed in the hot wallet. NEVER settle (that would tell the ledger a
+      // failed withdrawal succeeded). Leave it BROADCAST — the reconciliation
+      // job's stuck-broadcast alert pages a human for reconciliation with Host B.
+      this.logger.error(
+        `withdrawal ${withdrawalId} tx ${txHash} FAILED on-chain (reverted) — NOT settled, needs reconciliation`,
+      );
+      return "reverted";
+    }
+    if (status.confirmations < this.cfg.confirmations) return "pending";
     const settled = await this.withdrawals.settleConfirmed(withdrawalId);
-    if (settled) this.logger.log(`withdrawal ${withdrawalId} CONFIRMED on-chain (${confirmations} conf)`);
+    if (settled) this.logger.log(`withdrawal ${withdrawalId} CONFIRMED on-chain (${status.confirmations} conf)`);
     return settled ? "settled" : "pending";
   }
 }

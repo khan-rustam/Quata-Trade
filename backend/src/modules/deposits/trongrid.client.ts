@@ -24,16 +24,27 @@ export interface Trc20Transfer {
   blockNumber: bigint | null;
 }
 
+/** Terminal on-chain status of a broadcast withdrawal tx. */
+export interface TxStatus {
+  confirmations: number;
+  /** false = mined but the contract call REVERTED / OUT_OF_ENERGY (funds stayed in custody). */
+  success: boolean;
+}
+
 export interface TronGridClient {
   /** Incoming TRC20 transfers for one of our deposit addresses. */
   getTrc20TransfersTo(address: string): Promise<Trc20Transfer[]>;
   getCurrentBlockNumber(): Promise<bigint>;
   /**
-   * Confirmation depth of a broadcast tx (currentBlock − txBlock; 0 if not yet
-   * deep, null when the tx is not in a known block). Read-only chain query used
-   * by the remote withdrawal confirmation poller — NEVER by the signer (Host B).
+   * On-chain status of a broadcast tx for the withdrawal confirmation poller.
+   * Returns null when the tx is not yet mined OR its terminal receipt result is
+   * not yet available (retry later — never settle without an explicit SUCCESS).
+   * Once mined with a terminal result: { confirmations, success }. success=false
+   * means the TRC20 transfer REVERTED / ran OUT_OF_ENERGY — it is mined but the
+   * funds never left custody, so it MUST NOT be settled. Read-only chain query —
+   * NEVER the signer (Host B).
    */
-  getTransactionConfirmations(txHash: string): Promise<number | null>;
+  getTransactionStatus(txHash: string): Promise<TxStatus | null>;
   /**
    * TRC20 (USDT) balance of an address in smallest units — read-only, via
    * triggerconstantcontract balanceOf. Used by the on-chain reserve check
@@ -63,6 +74,9 @@ const zTrc20Response = z.object({ data: z.array(zTrc20Item) }).passthrough();
 const zTxInfo = z
   .object({
     blockNumber: z.number().int().optional(),
+    // receipt.result is the contract-execution outcome ("SUCCESS" | "REVERT" |
+    // "OUT_OF_ENERGY" | …) — absent until the tx is executed/mined.
+    receipt: z.object({ result: z.string().optional() }).passthrough().optional(),
     log: z
       .array(z.object({ address: z.string().optional(), topics: z.array(z.string()).optional() }).passthrough())
       .optional(),
@@ -136,21 +150,26 @@ export class HttpTronGridClient implements TronGridClient {
     return BigInt(parsed.block_header.raw_data.number);
   }
 
-  async getTransactionConfirmations(txHash: string): Promise<number | null> {
+  async getTransactionStatus(txHash: string): Promise<TxStatus | null> {
     let blockNumber: bigint | null;
+    let receiptResult: string | undefined;
     try {
       const info = zTxInfo.parse(await this.postJson("/wallet/gettransactioninfobyid", { value: txHash }));
       blockNumber = info.blockNumber !== undefined ? BigInt(info.blockNumber) : null;
+      receiptResult = info.receipt?.result;
     } catch (err) {
-      // Soft failure: treat as "cannot prove depth yet" — the poller retries.
-      this.logger.warn(`tx confirmations lookup failed for ${txHash}: ${err instanceof Error ? err.message : "unknown"}`);
+      // Soft failure: treat as "cannot prove status yet" — the poller retries.
+      this.logger.warn(`tx status lookup failed for ${txHash}: ${err instanceof Error ? err.message : "unknown"}`);
       return null;
     }
-    if (blockNumber === null) return null;
+    // Not yet in a block, or the terminal receipt result is not yet available:
+    // conservatively retry. A withdrawal is NEVER settled without an explicit
+    // SUCCESS — a mined-but-reverted transfer left funds in custody.
+    if (blockNumber === null || receiptResult === undefined) return null;
     const height = await this.getCurrentBlockNumber();
-    if (height < blockNumber) return 0; // node behind / reorg in progress
-    const depth = height - blockNumber;
-    return depth > 2_000_000_000n ? 2_000_000_000 : Number(depth);
+    const depth = height < blockNumber ? 0n : height - blockNumber;
+    const confirmations = depth > 2_000_000_000n ? 2_000_000_000 : Number(depth);
+    return { confirmations, success: receiptResult === "SUCCESS" };
   }
 
   async getTrc20Balance(address: string): Promise<bigint> {

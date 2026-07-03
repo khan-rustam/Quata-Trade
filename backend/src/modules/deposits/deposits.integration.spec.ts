@@ -43,10 +43,10 @@ class FakeTronGrid implements TronGridClient {
     return this.height;
   }
 
-  txConfirmations = new Map<string, number | null>();
-  async getTransactionConfirmations(txHash: string): Promise<number | null> {
+  txStatus = new Map<string, { confirmations: number; success: boolean } | null>();
+  async getTransactionStatus(txHash: string): Promise<{ confirmations: number; success: boolean } | null> {
     if (this.failing) throw new Error("simulated RPC outage");
-    return this.txConfirmations.get(txHash) ?? null;
+    return this.txStatus.get(txHash) ?? null;
   }
 
   balances = new Map<string, bigint>();
