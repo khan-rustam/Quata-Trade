@@ -39,6 +39,13 @@ export function useAdminUsers(page: number, search?: string) {
     queryFn: () => adminApi.adminUsers({ page, pageSize: 20, ...(search ? { search } : {}) }),
   });
 }
+export function useAdminUserDetail(id: string) {
+  return useQuery({
+    queryKey: ["admin", "user", id],
+    queryFn: () => adminApi.adminUserDetail(id),
+    enabled: Boolean(id),
+  });
+}
 export function useAdminWithdrawals(page: number) {
   return useQuery({ queryKey: ["admin", "withdrawals", page], queryFn: () => adminApi.adminWithdrawals({ page, pageSize: 20 }) });
 }

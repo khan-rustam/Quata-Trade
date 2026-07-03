@@ -1,5 +1,12 @@
 import { z } from "zod";
-import { ADMIN_ROLES, KYC_STATUSES, TRADE_STATUSES, USER_STATUSES, WITHDRAWAL_STATUSES } from "../constants.js";
+import {
+  ADMIN_ROLES,
+  KYC_STATUSES,
+  OFFER_SIDES,
+  TRADE_STATUSES,
+  USER_STATUSES,
+  WITHDRAWAL_STATUSES,
+} from "../constants.js";
 import { zAmount, zEmail, zPaginated, zTotpCode, zUuid } from "./common.js";
 
 export const zAdminLoginRequest = z
@@ -172,3 +179,103 @@ export type AdminTreasuryResponse = z.infer<typeof zAdminTreasuryResponse>;
 export const zAuditVerifyResponse = z.object({ broken: z.array(z.string()) });
 
 export const zModerationResult = z.object({ ok: z.literal(true), status: z.string() });
+
+// ---- user detail (admin: click a user row → everything about them) ----
+export const zAdminUserBalance = z.object({
+  asset: z.string(),
+  kind: z.string(),
+  balance: zAmount,
+});
+export const zAdminUserTradeRow = z.object({
+  id: zUuid,
+  shortRef: z.string(),
+  /** from THIS user's perspective */
+  side: z.enum(OFFER_SIDES),
+  counterpartyEmail: z.string(),
+  amount: zAmount,
+  fiatAmountXaf: zAmount,
+  status: z.enum(TRADE_STATUSES),
+  createdAt: z.string(),
+});
+export const zAdminUserWithdrawalRow = z.object({
+  id: zUuid,
+  asset: z.string(),
+  amount: zAmount,
+  fee: zAmount,
+  status: z.enum(WITHDRAWAL_STATUSES),
+  toAddress: z.string(),
+  createdAt: z.string(),
+});
+export const zAdminUserDepositRow = z.object({
+  id: zUuid,
+  asset: z.string(),
+  amount: zAmount,
+  status: z.string(),
+  txHash: z.string(),
+  createdAt: z.string(),
+});
+export const zAdminUserKycRow = z.object({
+  id: zUuid,
+  tier: z.number().int(),
+  docType: z.string(),
+  status: z.enum(KYC_STATUSES),
+  reviewedAt: z.string().nullable(),
+  createdAt: z.string(),
+});
+export const zAdminUserSessionRow = z.object({
+  id: zUuid,
+  ip: z.string().nullable(),
+  userAgent: z.string().nullable(),
+  deviceFingerprint: z.string().nullable(),
+  revoked: z.boolean(),
+  createdAt: z.string(),
+  expiresAt: z.string(),
+});
+export const zAdminUserRiskRow = z.object({
+  id: zUuid,
+  kind: z.string(),
+  score: z.number().int(),
+  actionTaken: z.string().nullable(),
+  flags: z.record(z.unknown()).nullable(),
+  createdAt: z.string(),
+});
+export const zAdminUserDetail = z.object({
+  user: z.object({
+    id: zUuid,
+    email: z.string(),
+    phone: z.string().nullable(),
+    firstName: z.string().nullable(),
+    lastName: z.string().nullable(),
+    displayName: z.string().nullable(),
+    bio: z.string().nullable(),
+    country: z.string(),
+    kycTier: z.number().int(),
+    kycStatus: z.enum(KYC_STATUSES),
+    status: z.enum(USER_STATUSES),
+    reputationScore: z.number().int(),
+    totpEnabled: z.boolean(),
+    emailVerified: z.boolean(),
+    phoneVerified: z.boolean(),
+    createdAt: z.string(),
+  }),
+  balances: z.array(zAdminUserBalance),
+  stats: z.object({
+    tradesTotal: z.number().int(),
+    tradesCompleted: z.number().int(),
+    tradesCancelled: z.number().int(),
+    tradesDisputed: z.number().int(),
+    volumeCompletedXaf: zAmount,
+    offersActive: z.number().int(),
+    offersTotal: z.number().int(),
+    withdrawalsTotal: z.number().int(),
+    depositsTotal: z.number().int(),
+    openDisputes: z.number().int(),
+  }),
+  recentTrades: z.array(zAdminUserTradeRow),
+  recentWithdrawals: z.array(zAdminUserWithdrawalRow),
+  recentDeposits: z.array(zAdminUserDepositRow),
+  kyc: z.array(zAdminUserKycRow),
+  sessions: z.array(zAdminUserSessionRow),
+  riskEvents: z.array(zAdminUserRiskRow),
+});
+export type AdminUserDetail = z.infer<typeof zAdminUserDetail>;

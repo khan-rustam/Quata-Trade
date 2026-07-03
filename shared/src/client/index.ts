@@ -76,6 +76,7 @@ import {
   zAdminTradesResponse,
   zAdminTreasuryResponse,
   zAdminUsersResponse,
+  zAdminUserDetail,
   zAdminWithdrawalsResponse,
   zAuditLogsResponse,
   zAuditVerifyResponse,
@@ -283,6 +284,9 @@ export class QuataApiClient {
   adminKpis = () => this.request("GET", "/api/v1/admin/kpis", zAdminKpisResponse);
   adminUsers = (query?: Query) =>
     this.request("GET", "/api/v1/admin/users", zAdminUsersResponse, undefined, query);
+  /** Full user profile + balances + trades/withdrawals/deposits/kyc/sessions/risk for the detail page. */
+  adminUserDetail = (id: string) =>
+    this.request("GET", `/api/v1/admin/users/${id}`, zAdminUserDetail);
   adminModerateUser = (id: string, action: "freeze" | "suspend" | "restore", body: { reason: string }) =>
     this.request("POST", `/api/v1/admin/users/${id}/${action}`, zModerationResult, body);
   adminTrades = (query?: Query) =>

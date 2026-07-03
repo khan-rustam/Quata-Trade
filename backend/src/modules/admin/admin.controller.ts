@@ -29,6 +29,7 @@ import {
   zUuid,
   type AdminKpisResponse,
   type AdminProfile,
+  type AdminUserDetail,
   type KillSwitchRequest,
   type KillSwitchState,
   type Pagination,
@@ -153,6 +154,16 @@ export class AdminController {
   async users(@Query(new ZodPipe(zAdminUsersQuery)) query: AdminUsersQuery): Promise<Paged<unknown>> {
     const { items, total } = await this.admin.listUsers(query);
     return { items, page: query.page, pageSize: query.pageSize, total };
+  }
+
+  @Roles(...RBAC.viewDashboards)
+  @Get("users/:id")
+  async userDetail(@Param("id", new ZodPipe(zUuid)) userId: string): Promise<AdminUserDetail> {
+    try {
+      return await this.admin.getUserDetail(userId);
+    } catch (err) {
+      throw mapAdminError(err);
+    }
   }
 
   @Roles(...RBAC.viewDashboards)

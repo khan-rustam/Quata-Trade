@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { Search, Users } from "lucide-react";
+import { ChevronRight, Search, Users } from "lucide-react";
 import type { z } from "zod";
 import { zAdminUserRow } from "@quatatrade/shared";
 import { AdminTitle, Pagination, TableFrame } from "@/components/admin/admin-ui";
@@ -31,6 +32,7 @@ const STATUS_TONE = { active: "success", frozen: "warning", suspended: "danger",
 
 export default function AdminUsersPage(): React.JSX.Element {
   const tx = useTranslations("adminUsers");
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -76,12 +78,16 @@ export default function AdminUsersPage(): React.JSX.Element {
             }
           >
             {data.items.map((u) => (
-              <tr key={u.id}>
+              <tr
+                key={u.id}
+                onClick={() => router.push(`/admin/users/${u.id}`)}
+                className="cursor-pointer transition-colors hover:bg-surface-2/40"
+              >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5">
                     <Avatar seed={u.id} size={32} />
                     <div className="min-w-0">
-                      <p className="truncate">{u.email}</p>
+                      <p className="truncate font-medium text-text-1">{u.email}</p>
                       {u.phone && <p className="text-xs text-text-3">{u.phone}</p>}
                     </div>
                   </div>
@@ -89,10 +95,20 @@ export default function AdminUsersPage(): React.JSX.Element {
                 <td className="px-4 py-3"><Badge tone={u.kycStatus === "APPROVED" ? "success" : "neutral"}>T{u.kycTier} · {u.kycStatus.toLowerCase()}</Badge></td>
                 <td className="px-4 py-3"><Badge tone={STATUS_TONE[u.status]}>{u.status}</Badge></td>
                 <td className="px-4 py-3 text-xs text-text-3">{formatDateTime(u.createdAt)}</td>
-                <td className="px-4 py-3 text-right">
-                  <Button size="sm" variant="secondary" onClick={() => setActive(u)}>
-                    {tx("manage")}
-                  </Button>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActive(u);
+                      }}
+                    >
+                      {tx("manage")}
+                    </Button>
+                    <ChevronRight size={16} className="text-text-3" aria-hidden />
+                  </div>
                 </td>
               </tr>
             ))}

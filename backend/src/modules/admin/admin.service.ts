@@ -3,6 +3,7 @@ import { sql, type Kysely } from "kysely";
 import { z } from "zod";
 import type {
   AdminKpisResponse,
+  AdminUserDetail,
   KillSwitchRequest,
   KillSwitchState,
   Pagination,
@@ -167,6 +168,241 @@ export class AdminService {
         createdAt: u.created_at.toISOString(),
       })),
       total: Number(count.n),
+    };
+  }
+
+  /**
+   * Everything an admin should know about one user — profile + balances +
+   * trade/offer aggregates + recent trades/withdrawals/deposits + KYC history +
+   * device sessions + risk events. All read-only; recent lists capped at 10-15.
+   */
+  async getUserDetail(userId: string): Promise<AdminUserDetail> {
+    const user = await this.db
+      .selectFrom("users")
+      .select([
+        "id",
+        "email",
+        "phone",
+        "first_name",
+        "last_name",
+        "display_name",
+        "bio",
+        "country",
+        "kyc_tier",
+        "kyc_status",
+        "status",
+        "reputation_score",
+        "totp_enabled",
+        "email_verified_at",
+        "phone_verified_at",
+        "created_at",
+      ])
+      .where("id", "=", userId)
+      .executeTakeFirst();
+    if (!user) throw new TargetUserNotFoundError();
+
+    const [
+      balances,
+      tradeAgg,
+      offerAgg,
+      withdrawalCount,
+      depositCount,
+      openDisputes,
+      recentTrades,
+      recentWithdrawals,
+      recentDeposits,
+      kyc,
+      sessions,
+      riskEvents,
+    ] = await Promise.all([
+      this.db
+        .selectFrom("accounts as a")
+        .innerJoin("account_balances as ab", "ab.account_id", "a.id")
+        .select(["a.asset", "a.kind", "ab.balance"])
+        .where("a.owner_user_id", "=", userId)
+        .orderBy("a.asset")
+        .orderBy("a.kind")
+        .execute(),
+      this.db
+        .selectFrom("trades")
+        .select(sql<bigint>`count(*)`.as("total"))
+        .select(sql<bigint>`count(*) filter (where status in ('COMPLETED','RESOLVED_RELEASE'))`.as("completed"))
+        .select(sql<bigint>`count(*) filter (where status in ('CANCELLED','EXPIRED','RESOLVED_REFUND'))`.as("cancelled"))
+        .select(sql<bigint>`count(*) filter (where status = 'DISPUTED')`.as("disputed"))
+        .select(
+          sql<bigint>`coalesce(sum(fiat_amount_xaf) filter (where status in ('COMPLETED','RESOLVED_RELEASE')),0)::int8`.as(
+            "volume",
+          ),
+        )
+        .where((eb) => eb.or([eb("seller_id", "=", userId), eb("buyer_id", "=", userId)]))
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("offers")
+        .select(sql<bigint>`count(*)`.as("total"))
+        .select(sql<bigint>`count(*) filter (where status = 'ACTIVE')`.as("active"))
+        .where("user_id", "=", userId)
+        .where("status", "!=", "DELETED")
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("withdrawals")
+        .select((eb) => eb.fn.countAll<bigint>().as("n"))
+        .where("user_id", "=", userId)
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("deposits")
+        .select((eb) => eb.fn.countAll<bigint>().as("n"))
+        .where("user_id", "=", userId)
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("disputes as d")
+        .innerJoin("trades as t", "t.id", "d.trade_id")
+        .select((eb) => eb.fn.countAll<bigint>().as("n"))
+        .where((eb) => eb.or([eb("t.seller_id", "=", userId), eb("t.buyer_id", "=", userId)]))
+        .where("d.status", "!=", "RESOLVED")
+        .executeTakeFirstOrThrow(),
+      this.db
+        .selectFrom("trades as t")
+        .innerJoin("users as s", "s.id", "t.seller_id")
+        .innerJoin("users as b", "b.id", "t.buyer_id")
+        .select([
+          "t.id",
+          "t.short_ref",
+          "t.seller_id",
+          "s.email as seller_email",
+          "b.email as buyer_email",
+          "t.amount",
+          "t.fiat_amount_xaf",
+          "t.status",
+          "t.created_at",
+        ])
+        .where((eb) => eb.or([eb("t.seller_id", "=", userId), eb("t.buyer_id", "=", userId)]))
+        .orderBy("t.created_at", "desc")
+        .limit(15)
+        .execute(),
+      this.db
+        .selectFrom("withdrawals")
+        .select(["id", "asset", "amount", "fee", "status", "to_address", "created_at"])
+        .where("user_id", "=", userId)
+        .orderBy("created_at", "desc")
+        .limit(10)
+        .execute(),
+      this.db
+        .selectFrom("deposits")
+        .select(["id", "asset", "amount", "status", "tx_hash", "created_at"])
+        .where("user_id", "=", userId)
+        .orderBy("created_at", "desc")
+        .limit(10)
+        .execute(),
+      this.db
+        .selectFrom("kyc_submissions")
+        .select(["id", "tier", "doc_type", "status", "reviewed_at", "created_at"])
+        .where("user_id", "=", userId)
+        .orderBy("created_at", "desc")
+        .limit(10)
+        .execute(),
+      this.db
+        .selectFrom("sessions")
+        .select(["id", "ip", "user_agent", "device_fingerprint", "revoked_at", "created_at", "expires_at"])
+        .where("user_id", "=", userId)
+        .orderBy("created_at", "desc")
+        .limit(10)
+        .execute(),
+      this.db
+        .selectFrom("risk_events")
+        .select(["id", "kind", "score", "action_taken", "flags", "created_at"])
+        .where("user_id", "=", userId)
+        .orderBy("created_at", "desc")
+        .limit(10)
+        .execute(),
+    ]);
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        phone: user.phone,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        displayName: user.display_name,
+        bio: user.bio,
+        country: user.country,
+        kycTier: user.kyc_tier,
+        kycStatus: user.kyc_status,
+        status: user.status,
+        reputationScore: user.reputation_score,
+        totpEnabled: user.totp_enabled,
+        emailVerified: user.email_verified_at !== null,
+        phoneVerified: user.phone_verified_at !== null,
+        createdAt: user.created_at.toISOString(),
+      },
+      balances: balances.map((b) => ({ asset: b.asset, kind: b.kind, balance: b.balance.toString() })),
+      stats: {
+        tradesTotal: Number(tradeAgg.total),
+        tradesCompleted: Number(tradeAgg.completed),
+        tradesCancelled: Number(tradeAgg.cancelled),
+        tradesDisputed: Number(tradeAgg.disputed),
+        volumeCompletedXaf: tradeAgg.volume.toString(),
+        offersActive: Number(offerAgg.active),
+        offersTotal: Number(offerAgg.total),
+        withdrawalsTotal: Number(withdrawalCount.n),
+        depositsTotal: Number(depositCount.n),
+        openDisputes: Number(openDisputes.n),
+      },
+      recentTrades: recentTrades.map((t) => {
+        const isSeller = t.seller_id === userId;
+        return {
+          id: t.id,
+          shortRef: t.short_ref,
+          side: isSeller ? "SELL" : "BUY",
+          counterpartyEmail: isSeller ? t.buyer_email : t.seller_email,
+          amount: t.amount.toString(),
+          fiatAmountXaf: t.fiat_amount_xaf.toString(),
+          status: t.status,
+          createdAt: t.created_at.toISOString(),
+        };
+      }),
+      recentWithdrawals: recentWithdrawals.map((w) => ({
+        id: w.id,
+        asset: w.asset,
+        amount: w.amount.toString(),
+        fee: w.fee.toString(),
+        status: w.status,
+        toAddress: w.to_address,
+        createdAt: w.created_at.toISOString(),
+      })),
+      recentDeposits: recentDeposits.map((d) => ({
+        id: d.id,
+        asset: d.asset,
+        amount: d.amount.toString(),
+        status: d.status,
+        txHash: d.tx_hash,
+        createdAt: d.created_at.toISOString(),
+      })),
+      kyc: kyc.map((k) => ({
+        id: k.id,
+        tier: k.tier,
+        docType: k.doc_type,
+        status: k.status,
+        reviewedAt: k.reviewed_at ? k.reviewed_at.toISOString() : null,
+        createdAt: k.created_at.toISOString(),
+      })),
+      sessions: sessions.map((s) => ({
+        id: s.id,
+        ip: s.ip,
+        userAgent: s.user_agent,
+        deviceFingerprint: s.device_fingerprint,
+        revoked: s.revoked_at !== null,
+        createdAt: s.created_at.toISOString(),
+        expiresAt: s.expires_at.toISOString(),
+      })),
+      riskEvents: riskEvents.map((r) => ({
+        id: r.id,
+        kind: r.kind,
+        score: r.score,
+        actionTaken: r.action_taken,
+        flags: r.flags,
+        createdAt: r.created_at.toISOString(),
+      })),
     };
   }
 
