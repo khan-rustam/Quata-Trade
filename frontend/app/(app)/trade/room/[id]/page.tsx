@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { AlertTriangle, CheckCircle2, Send } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
@@ -29,6 +30,7 @@ import { apiErrorMessage } from "@/lib/api/errors";
 import { timeAgo } from "@/lib/format";
 
 export default function TradeRoomPage(): React.JSX.Element {
+  const tx = useTranslations("tradeRoom");
   const { id } = useParams<{ id: string }>();
   const { data: me } = useMe();
   const { data, isLoading } = useTrade(id, true);
@@ -43,8 +45,8 @@ export default function TradeRoomPage(): React.JSX.Element {
   if (isLoading) return <Skeleton className="h-96 w-full rounded-xl" />;
   if (!data)
     return (
-      <Alert tone="danger" title="Trade not found">
-        This trade doesn&rsquo;t exist or you don&rsquo;t have access.
+      <Alert tone="danger" title={tx("notFoundTitle")}>
+        {tx("notFoundBody")}
       </Alert>
     );
 
@@ -60,10 +62,10 @@ export default function TradeRoomPage(): React.JSX.Element {
     try {
       await api.confirmTrade(id, { ...creds, idempotencyKey: crypto.randomUUID() });
       setConfirmOpen(false);
-      toast.success("Released", "Funds released to the buyer.");
+      toast.success(tx("releasedTitle"), tx("releasedBody"));
       refresh();
     } catch (err) {
-      setDialogError(apiErrorMessage(err, "Could not confirm"));
+      setDialogError(apiErrorMessage(err, tx("couldNotConfirm")));
     } finally {
       setBusy(false);
     }
@@ -73,10 +75,10 @@ export default function TradeRoomPage(): React.JSX.Element {
     setBusy(true);
     try {
       await api.cancelTrade(id, { idempotencyKey: crypto.randomUUID() });
-      toast.success("Trade cancelled", "Escrow was returned to the seller.");
+      toast.success(tx("cancelledTitle"), tx("cancelledBody"));
       refresh();
     } catch (err) {
-      toast.error("Could not cancel", apiErrorMessage(err));
+      toast.error(tx("couldNotCancel"), apiErrorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -86,14 +88,14 @@ export default function TradeRoomPage(): React.JSX.Element {
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
-      <PageHeader title={`Trade ${trade.shortRef}`} backHref="/trade" action={<TradeStatusBadge status={trade.status} />} />
+      <PageHeader title={tx("headerTitle", { ref: trade.shortRef })} backHref="/trade" action={<TradeStatusBadge status={trade.status} />} />
 
       <Card>
         <StatusStepper status={trade.status} />
         {trade.status === "ESCROW_LOCKED" && trade.paymentDeadline && (
           <div className="mt-4 flex items-center justify-between rounded-lg bg-surface-2 px-3 py-2">
             <span className="flex items-center gap-1.5 text-sm text-text-2">
-              <Keyhole size={16} className="text-accent-400" /> Escrow locked · pay before
+              <Keyhole size={16} className="text-accent-400" /> {tx("escrowLockedPayBefore")}
             </span>
             <Countdown deadline={trade.paymentDeadline} onExpire={refresh} />
           </div>
@@ -102,29 +104,29 @@ export default function TradeRoomPage(): React.JSX.Element {
 
       {/* summary */}
       <Card className="space-y-2 text-sm">
-        <Row label="You trade" value={<Usdt value={trade.amount} size="sm" />} />
-        <Row label="Fiat amount" value={<Xaf value={trade.fiatAmountXaf} />} />
-        <Row label="Trading fee" value={<Usdt value={trade.feeAmount} size="sm" />} />
-        <Row label={isBuyer ? "You receive" : "Buyer receives"} value={<Usdt value={trade.buyerCredit} size="sm" className="text-accent-400" />} />
+        <Row label={tx("youTrade")} value={<Usdt value={trade.amount} size="sm" />} />
+        <Row label={tx("fiatAmount")} value={<Xaf value={trade.fiatAmountXaf} />} />
+        <Row label={tx("tradingFee")} value={<Usdt value={trade.feeAmount} size="sm" />} />
+        <Row label={isBuyer ? tx("youReceive") : tx("buyerReceives")} value={<Usdt value={trade.buyerCredit} size="sm" className="text-accent-400" />} />
         <div className="flex items-center justify-between pt-1">
-          <span className="text-text-2">Payment method</span>
+          <span className="text-text-2">{tx("paymentMethod")}</span>
           <PaymentMethodChip method={trade.paymentMethod} />
         </div>
-        <Row label={isSeller ? "Buyer" : "Seller"} value={counterparty.displayName} />
+        <Row label={isSeller ? tx("buyer") : tx("seller")} value={counterparty.displayName} />
       </Card>
 
       {/* ACTIONS by role + status */}
       {isBuyer && trade.status === "ESCROW_LOCKED" && <BuyerPayPanel tradeId={id} onDone={refresh} />}
 
       {isBuyer && trade.status === "PAYMENT_SUBMITTED" && (
-        <Alert tone="warning" title="Waiting for the seller">
-          You&rsquo;ve marked payment sent. The seller will confirm once they see the funds in their account.
+        <Alert tone="warning" title={tx("waitingSellerTitle")}>
+          {tx("waitingSellerBody")}
         </Alert>
       )}
 
       {isSeller && trade.status === "ESCROW_LOCKED" && (
-        <Alert tone="info" title="Waiting for the buyer">
-          The buyer is making the off-platform payment. Do not release until you&rsquo;ve confirmed the money in YOUR account.
+        <Alert tone="info" title={tx("waitingBuyerTitle")}>
+          {tx("waitingBuyerBody")}
         </Alert>
       )}
 
@@ -132,41 +134,41 @@ export default function TradeRoomPage(): React.JSX.Element {
         <Card className="space-y-3">
           {trade.payment && (
             <div className="space-y-1.5 rounded-lg bg-surface-2 p-3 text-sm">
-              <p className="font-medium text-text-1">Buyer&rsquo;s payment details</p>
-              <Row label="Reference" value={trade.payment.reference} />
-              <Row label="Sender name" value={trade.payment.senderName} />
-              <Row label="Sender number" value={trade.payment.senderNumber} />
+              <p className="font-medium text-text-1">{tx("buyerPaymentDetails")}</p>
+              <Row label={tx("reference")} value={trade.payment.reference} />
+              <Row label={tx("senderName")} value={trade.payment.senderName} />
+              <Row label={tx("senderNumber")} value={trade.payment.senderNumber} />
             </div>
           )}
           <Alert tone="warning">
-            Confirm you received <Xaf value={trade.fiatAmountXaf} /> in YOUR own account before releasing. A screenshot is not money.
+            {tx("confirmReceivedPrefix")} <Xaf value={trade.fiatAmountXaf} /> {tx("confirmReceivedSuffix")}
           </Alert>
           <div className="flex gap-2">
             <Button variant="secondary" className="flex-1" onClick={() => setDisputeOpen(true)}>
-              Not received
+              {tx("notReceived")}
             </Button>
             <Button className="flex-1" onClick={() => setConfirmOpen(true)}>
-              Payment received
+              {tx("paymentReceived")}
             </Button>
           </div>
         </Card>
       )}
 
       {trade.status === "COMPLETED" && (
-        <Alert tone="success" title="Trade complete">
+        <Alert tone="success" title={tx("tradeCompleteTitle")}>
           <span className="flex items-center gap-1.5">
-            <CheckCircle2 size={16} /> Funds released. Thanks for trading safely.
+            <CheckCircle2 size={16} /> {tx("tradeCompleteBody")}
           </span>
         </Alert>
       )}
       {(trade.status === "CANCELLED" || trade.status === "EXPIRED") && (
-        <Alert tone="info" title={trade.status === "EXPIRED" ? "Trade expired" : "Trade cancelled"}>
-          Escrow was returned to the seller.
+        <Alert tone="info" title={trade.status === "EXPIRED" ? tx("tradeExpiredTitle") : tx("tradeCancelledTitle")}>
+          {tx("escrowReturned")}
         </Alert>
       )}
       {trade.status === "DISPUTED" && (
-        <Alert tone="danger" title="In dispute">
-          Escrow is frozen while an admin reviews the evidence. You&rsquo;ll be notified of the resolution.
+        <Alert tone="danger" title={tx("inDisputeTitle")}>
+          {tx("inDisputeBody")}
         </Alert>
       )}
 
@@ -175,11 +177,11 @@ export default function TradeRoomPage(): React.JSX.Element {
         <div className="flex flex-wrap gap-2">
           {isBuyer && (trade.status === "ESCROW_LOCKED" || trade.status === "PAYMENT_SUBMITTED") && (
             <Button variant="ghost" size="sm" onClick={cancel} disabled={busy} className="text-text-2">
-              Cancel trade
+              {tx("cancelTrade")}
             </Button>
           )}
           <Button variant="ghost" size="sm" onClick={() => setDisputeOpen(true)} className="text-danger">
-            <AlertTriangle size={14} /> Open dispute
+            <AlertTriangle size={14} /> {tx("openDispute")}
           </Button>
         </div>
       )}
@@ -189,9 +191,9 @@ export default function TradeRoomPage(): React.JSX.Element {
       <SecurityDialog
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        title="Release escrow to buyer"
-        description="Only do this after the money is in your account."
-        actionLabel="Release funds"
+        title={tx("releaseDialogTitle")}
+        description={tx("releaseDialogDesc")}
+        actionLabel={tx("releaseFunds")}
         requirePin={Boolean(me?.pinSet)}
         requireTotp={Boolean(me?.totpEnabled)}
         busy={busy}
@@ -213,6 +215,7 @@ export default function TradeRoomPage(): React.JSX.Element {
 }
 
 function BuyerPayPanel({ tradeId, onDone }: { tradeId: string; onDone: () => void }): React.JSX.Element {
+  const tx = useTranslations("tradeRoom");
   const toast = useToast();
   const [reference, setReference] = useState("");
   const [senderName, setSenderName] = useState("");
@@ -225,10 +228,10 @@ function BuyerPayPanel({ tradeId, onDone }: { tradeId: string; onDone: () => voi
     setError(null);
     try {
       await api.submitPayment(tradeId, { reference, senderName, senderNumber, proofFiles: [] });
-      toast.success("Payment marked as sent", "The seller will confirm shortly.");
+      toast.success(tx("paymentSentTitle"), tx("paymentSentBody"));
       onDone();
     } catch (err) {
-      setError(apiErrorMessage(err, "Could not submit payment"));
+      setError(apiErrorMessage(err, tx("couldNotSubmitPayment")));
     } finally {
       setBusy(false);
     }
@@ -237,23 +240,23 @@ function BuyerPayPanel({ tradeId, onDone }: { tradeId: string; onDone: () => voi
   return (
     <Card className="space-y-3">
       <div>
-        <p className="font-medium">Pay the seller off-platform</p>
-        <p className="text-sm text-text-2">Send the exact fiat amount, then enter your payment details below.</p>
+        <p className="font-medium">{tx("payOffPlatform")}</p>
+        <p className="text-sm text-text-2">{tx("payOffPlatformBody")}</p>
       </div>
-      <Field label="Payment reference" required>
-        {(p) => <Input placeholder="Transaction ID / reference" value={reference} onChange={(e) => setReference(e.target.value)} {...p} />}
+      <Field label={tx("paymentReference")} required>
+        {(p) => <Input placeholder={tx("paymentReferencePlaceholder")} value={reference} onChange={(e) => setReference(e.target.value)} {...p} />}
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Sender name" required>
-          {(p) => <Input placeholder="Your name" value={senderName} onChange={(e) => setSenderName(e.target.value)} {...p} />}
+        <Field label={tx("senderName")} required>
+          {(p) => <Input placeholder={tx("senderNamePlaceholder")} value={senderName} onChange={(e) => setSenderName(e.target.value)} {...p} />}
         </Field>
-        <Field label="Sender number" required>
-          {(p) => <Input placeholder="+2376..." value={senderNumber} onChange={(e) => setSenderNumber(e.target.value)} {...p} />}
+        <Field label={tx("senderNumber")} required>
+          {(p) => <Input placeholder={tx("senderNumberPlaceholder")} value={senderNumber} onChange={(e) => setSenderNumber(e.target.value)} {...p} />}
         </Field>
       </div>
       {error && <Alert tone="danger">{error}</Alert>}
       <Button className="w-full" onClick={submit} disabled={busy || !reference || senderName.length < 2 || senderNumber.length < 5}>
-        {busy ? <Spinner /> : "I've paid — notify seller"}
+        {busy ? <Spinner /> : tx("paidNotifySeller")}
       </Button>
     </Card>
   );
@@ -270,6 +273,7 @@ function DisputeDialog({
   tradeId: string;
   onDone: () => void;
 }): React.JSX.Element {
+  const tx = useTranslations("tradeRoom");
   const toast = useToast();
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
@@ -280,30 +284,30 @@ function DisputeDialog({
     setError(null);
     try {
       await api.openDispute(tradeId, { reason });
-      toast.success("Dispute opened", "An admin will review the trade.");
+      toast.success(tx("disputeOpenedTitle"), tx("disputeOpenedBody"));
       onDone();
     } catch (err) {
-      setError(apiErrorMessage(err, "Could not open dispute"));
+      setError(apiErrorMessage(err, tx("couldNotOpenDispute")));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Dialog open={open} onClose={onClose} title="Open a dispute" description="Freeze the escrow and ask an admin to review.">
+    <Dialog open={open} onClose={onClose} title={tx("openDisputeDialogTitle")} description={tx("openDisputeDialogDesc")}>
       <div className="space-y-3">
         {error && <Alert tone="danger">{error}</Alert>}
-        <Field label="What went wrong?" hint="Be specific — this helps the admin resolve fairly.">
+        <Field label={tx("whatWentWrong")} hint={tx("whatWentWrongHint")}>
           {(p) => (
-            <Textarea placeholder="Describe the issue (min 10 characters)…" value={reason} onChange={(e) => setReason(e.target.value)} {...p} />
+            <Textarea placeholder={tx("disputeReasonPlaceholder")} value={reason} onChange={(e) => setReason(e.target.value)} {...p} />
           )}
         </Field>
         <div className="flex gap-2">
           <Button variant="secondary" className="flex-1" onClick={onClose} disabled={busy}>
-            Cancel
+            {tx("cancel")}
           </Button>
           <Button variant="danger" className="flex-1" onClick={submit} disabled={busy || reason.trim().length < 10}>
-            {busy ? <Spinner /> : "Open dispute"}
+            {busy ? <Spinner /> : tx("openDispute")}
           </Button>
         </div>
       </div>
@@ -312,6 +316,7 @@ function DisputeDialog({
 }
 
 function ChatPanel({ tradeId, meId, disabled }: { tradeId: string; meId?: string; disabled: boolean }): React.JSX.Element {
+  const tx = useTranslations("tradeRoom");
   const { data } = useMessages(tradeId);
   const send = useSendMessage(tradeId);
   const [text, setText] = useState("");
@@ -325,10 +330,10 @@ function ChatPanel({ tradeId, meId, disabled }: { tradeId: string; meId?: string
 
   return (
     <Card className="flex flex-col">
-      <p className="mb-3 font-medium">Chat</p>
+      <p className="mb-3 font-medium">{tx("chat")}</p>
       <div className="flex max-h-72 min-h-24 flex-col gap-2 overflow-y-auto">
         {!data || data.messages.length === 0 ? (
-          <p className="py-6 text-center text-sm text-text-3">No messages yet. Say hello 👋</p>
+          <p className="py-6 text-center text-sm text-text-3">{tx("noMessages")}</p>
         ) : (
           data.messages.map((m) => {
             const mine = m.senderId === meId;
@@ -352,15 +357,15 @@ function ChatPanel({ tradeId, meId, disabled }: { tradeId: string; meId?: string
       {!disabled && (
         <div className="mt-3 flex gap-2">
           <Input
-            placeholder="Type a message…"
+            placeholder={tx("messagePlaceholder")}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") onSend();
             }}
-            aria-label="Message"
+            aria-label={tx("messageAriaLabel")}
           />
-          <Button size="sm" onClick={onSend} disabled={send.isPending || !text.trim()} aria-label="Send">
+          <Button size="sm" onClick={onSend} disabled={send.isPending || !text.trim()} aria-label={tx("sendAriaLabel")}>
             <Send size={16} />
           </Button>
         </div>

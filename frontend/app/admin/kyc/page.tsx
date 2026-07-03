@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, FileText } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { z } from "zod";
 import { zAdminKycQueueRow } from "@quatatrade/shared";
 import { AdminTitle, Pagination, TableFrame } from "@/components/admin/admin-ui";
@@ -26,36 +27,37 @@ type Row = z.infer<typeof zAdminKycQueueRow>;
 type Decision = "approve" | "reject" | "resubmit";
 
 export default function AdminKycPage(): React.JSX.Element {
+  const tx = useTranslations("adminKyc");
   const [page, setPage] = useState(1);
   const { data, isLoading } = useAdminKycQueue(page);
   const [active, setActive] = useState<Row | null>(null);
 
   return (
     <div className="space-y-5">
-      <AdminTitle title="KYC review" subtitle="Decisions are manual — no code path auto-approves." />
+      <AdminTitle title={tx("title")} subtitle={tx("subtitle")} />
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
       ) : !data || data.items.length === 0 ? (
-        <EmptyState icon={BadgeCheck} title="Nothing to review" description="No pending KYC submissions." />
+        <EmptyState icon={BadgeCheck} title={tx("emptyTitle")} description={tx("emptyDescription")} />
       ) : (
         <>
           <TableFrame
             head={
               <tr>
-                <th className="px-4 py-2.5">User</th>
-                <th className="px-4 py-2.5">Tier</th>
-                <th className="px-4 py-2.5">Document</th>
-                <th className="px-4 py-2.5">Files</th>
-                <th className="px-4 py-2.5">Submitted</th>
-                <th className="px-4 py-2.5 text-right">Action</th>
+                <th className="px-4 py-2.5">{tx("colUser")}</th>
+                <th className="px-4 py-2.5">{tx("colTier")}</th>
+                <th className="px-4 py-2.5">{tx("colDocument")}</th>
+                <th className="px-4 py-2.5">{tx("colFiles")}</th>
+                <th className="px-4 py-2.5">{tx("colSubmitted")}</th>
+                <th className="px-4 py-2.5 text-right">{tx("colAction")}</th>
               </tr>
             }
           >
             {data.items.map((k) => (
               <tr key={k.id}>
                 <td className="px-4 py-3">{k.userEmail}</td>
-                <td className="px-4 py-3"><Badge tone="info">Tier {k.tier}</Badge></td>
+                <td className="px-4 py-3"><Badge tone="info">{tx("badgeTier", { tier: k.tier })}</Badge></td>
                 <td className="px-4 py-3 capitalize">{k.docType.replace(/_/g, " ")}</td>
                 <td className="px-4 py-3">
                   <span className="flex items-center gap-1 text-text-2">
@@ -65,7 +67,7 @@ export default function AdminKycPage(): React.JSX.Element {
                 <td className="px-4 py-3 text-xs text-text-3">{formatDateTime(k.submittedAt)}</td>
                 <td className="px-4 py-3 text-right">
                   <Button size="sm" onClick={() => setActive(k)}>
-                    Review
+                    {tx("review")}
                   </Button>
                 </td>
               </tr>
@@ -81,6 +83,7 @@ export default function AdminKycPage(): React.JSX.Element {
 }
 
 function ReviewDialog({ row, onClose }: { row: Row; onClose: () => void }): React.JSX.Element {
+  const tx = useTranslations("adminKyc");
   const qc = useQueryClient();
   const toast = useToast();
   const [decision, setDecision] = useState<Decision>("approve");
@@ -88,52 +91,62 @@ function ReviewDialog({ row, onClose }: { row: Row; onClose: () => void }): Reac
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const labels: Record<Decision, string> = {
+    approve: tx("decisionApprove"),
+    resubmit: tx("decisionResubmit"),
+    reject: tx("decisionReject"),
+  };
+  const toastTitles: Record<Decision, string> = {
+    approve: tx("toastApproved"),
+    resubmit: tx("toastResubmit"),
+    reject: tx("toastRejected"),
+  };
+
   const submit = async () => {
     setBusy(true);
     setError(null);
     try {
       await adminApi.adminReviewKyc(row.id, decision, { notes: notes.trim() || undefined });
-      toast.success(`Marked ${decision}d`, `${row.userEmail} — tier ${row.tier}`);
+      toast.success(toastTitles[decision], tx("toastDetail", { email: row.userEmail, tier: row.tier }));
       onClose();
       void qc.invalidateQueries({ queryKey: ["admin"] });
     } catch (err) {
-      setError(apiErrorMessage(err, "Review failed"));
+      setError(apiErrorMessage(err, tx("reviewFailed")));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Dialog open onClose={onClose} title={`Review — ${row.userEmail}`} description={`Tier ${row.tier} · ${row.docType.replace(/_/g, " ")}`}>
+    <Dialog open onClose={onClose} title={tx("dialogTitle", { email: row.userEmail })} description={tx("dialogDescription", { tier: row.tier, doc: row.docType.replace(/_/g, " ") })}>
       <div className="space-y-4">
         {error && <Alert tone="danger">{error}</Alert>}
         <Alert tone="info">
-          {row.files.length} document{row.files.length === 1 ? "" : "s"} submitted. Open each in the secure viewer
-          before deciding. Approving raises the user to tier {row.tier}.
+          {tx("alertInfo", { count: row.files.length, tier: row.tier })}
         </Alert>
         <div>
-          <p className="mb-1.5 text-sm font-medium">Decision</p>
+          <p className="mb-1.5 text-sm font-medium">{tx("decisionLabel")}</p>
           <Segmented
             value={decision}
             onChange={setDecision}
-            aria-label="KYC decision"
+            aria-label={tx("segmentedAria")}
             className="w-full"
             options={[
-              { value: "approve", label: "Approve", tone: "success" },
-              { value: "resubmit", label: "Resubmit" },
-              { value: "reject", label: "Reject", tone: "danger" },
+              { value: "approve", label: labels.approve, tone: "success" },
+              { value: "resubmit", label: labels.resubmit },
+              { value: "reject", label: labels.reject, tone: "danger" },
             ]}
           />
         </div>
-        <Field label="Notes" hint="Shown to the user on reject/resubmit.">
-          {(p) => <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional reviewer notes…" {...p} />}
+        <Field label={tx("notesLabel")} hint={tx("notesHint")}>
+          {(p) => <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={tx("notesPlaceholder")} {...p} />}
         </Field>
         <div className="flex gap-2">
           <Button variant="secondary" className="flex-1" onClick={onClose} disabled={busy}>
-            Cancel
+            {tx("cancel")}
           </Button>
           <Button className="flex-1" onClick={submit} disabled={busy}>
-            {busy ? <Spinner /> : `Confirm ${decision}`}
+            {busy ? <Spinner /> : tx("confirm", { decision: labels[decision] })}
           </Button>
         </div>
       </div>

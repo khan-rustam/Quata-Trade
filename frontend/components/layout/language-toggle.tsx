@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Languages } from "lucide-react";
 
 /** EN ⇄ FR toggle. Persists to qt_locale cookie (SSR request config reads it). */
 export function LanguageToggle(): React.JSX.Element {
   const locale = useLocale();
   const router = useRouter();
+  const tx = useTranslations("languageToggle");
 
   const switchTo = (next: "en" | "fr") => {
     document.cookie = `qt_locale=${next};path=/;max-age=31536000;samesite=lax`;
@@ -19,7 +20,9 @@ export function LanguageToggle(): React.JSX.Element {
     <button
       type="button"
       onClick={() => switchTo(next)}
-      aria-label={`Switch language to ${next === "fr" ? "French" : "English"}`}
+      aria-label={tx("ariaSwitch", {
+        lang: next === "fr" ? tx("french") : tx("english"),
+      })}
       className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
     >
       <Languages size={16} aria-hidden />

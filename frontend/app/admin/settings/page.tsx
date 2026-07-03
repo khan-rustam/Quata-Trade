@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { Ban, Pause, Play } from "lucide-react";
 import { AdminTitle } from "@/components/admin/admin-ui";
@@ -18,6 +19,7 @@ import { apiErrorMessage } from "@/lib/api/errors";
 type Target = "withdrawals" | "trades";
 
 export default function AdminSettingsPage(): React.JSX.Element {
+  const tx = useTranslations("adminSettings");
   const { data, isLoading } = useAdminKillSwitch();
   const { data: me } = useAdminMe();
   const qc = useQueryClient();
@@ -25,6 +27,9 @@ export default function AdminSettingsPage(): React.JSX.Element {
   const [pending, setPending] = useState<{ target: Target; paused: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const targetLabel = (target: Target) =>
+    tx(target === "withdrawals" ? "targetWithdrawals" : "targetTrades");
 
   const submit = async (v: { totpCode: string; reason?: string }) => {
     if (!pending) return;
@@ -37,11 +42,16 @@ export default function AdminSettingsPage(): React.JSX.Element {
         totpCode: v.totpCode || undefined,
         reason: v.reason ?? "",
       });
-      toast.success(pending.paused ? "Paused" : "Resumed", `${pending.target} ${pending.paused ? "halted" : "resumed"}.`);
+      toast.success(
+        pending.paused ? tx("toastPausedTitle") : tx("toastResumedTitle"),
+        tx(pending.paused ? "toastPausedDetail" : "toastResumedDetail", {
+          target: targetLabel(pending.target),
+        }),
+      );
       setPending(null);
       void qc.invalidateQueries({ queryKey: ["admin", "kill-switch"] });
     } catch (err) {
-      setError(apiErrorMessage(err, "Could not update"));
+      setError(apiErrorMessage(err, tx("errorUpdate")));
     } finally {
       setBusy(false);
     }
@@ -49,11 +59,10 @@ export default function AdminSettingsPage(): React.JSX.Element {
 
   return (
     <div className="space-y-5">
-      <AdminTitle title="Settings & controls" subtitle="Emergency kill switches and platform configuration." />
+      <AdminTitle title={tx("pageTitle")} subtitle={tx("pageSubtitle")} />
 
-      <Alert tone="warning" title="Kill switches act immediately">
-        Pausing withdrawals or trades halts the relevant queues within seconds. Use during incidents; every toggle is
-        2FA-verified and audit-logged.
+      <Alert tone="warning" title={tx("alertTitle")}>
+        {tx("alertBody")}
       </Alert>
 
       {isLoading ? (
@@ -61,14 +70,14 @@ export default function AdminSettingsPage(): React.JSX.Element {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           <KillCard
-            title="Withdrawals"
-            description="Stop all withdrawal processing and new requests."
+            title={tx("withdrawalsTitle")}
+            description={tx("withdrawalsDesc")}
             paused={data?.withdrawalsPaused ?? false}
             onToggle={(paused) => { setError(null); setPending({ target: "withdrawals", paused }); }}
           />
           <KillCard
-            title="Trading"
-            description="Stop opening new trades (in-flight trades continue)."
+            title={tx("tradingTitle")}
+            description={tx("tradingDesc")}
             paused={data?.tradesPaused ?? false}
             onToggle={(paused) => { setError(null); setPending({ target: "trades", paused }); }}
           />
@@ -78,11 +87,11 @@ export default function AdminSettingsPage(): React.JSX.Element {
       <TotpActionDialog
         open={Boolean(pending)}
         onClose={() => setPending(null)}
-        title={pending ? `${pending.paused ? "Pause" : "Resume"} ${pending.target}` : ""}
-        description={pending?.paused ? "This halts the queue immediately." : "This resumes normal processing."}
-        actionLabel={pending?.paused ? "Pause now" : "Resume"}
+        title={pending ? tx(pending.paused ? "dialogTitlePause" : "dialogTitleResume", { target: targetLabel(pending.target) }) : ""}
+        description={pending?.paused ? tx("dialogDescPause") : tx("dialogDescResume")}
+        actionLabel={pending?.paused ? tx("actionPauseNow") : tx("actionResume")}
         destructive={pending?.paused}
-        reasonLabel="Reason"
+        reasonLabel={tx("reasonLabel")}
         reasonRequired
         requireTotp={Boolean(me?.totpEnabled)}
         busy={busy}
@@ -104,6 +113,7 @@ function KillCard({
   paused: boolean;
   onToggle: (paused: boolean) => void;
 }): React.JSX.Element {
+  const tx = useTranslations("adminSettings");
   return (
     <Card className={paused ? "border-danger/30 bg-danger/5" : ""}>
       <div className="flex items-start justify-between">
@@ -112,17 +122,17 @@ function KillCard({
           <p className="mt-0.5 text-sm text-text-2">{description}</p>
         </div>
         <Badge tone={paused ? "danger" : "success"} icon={paused ? <Ban size={11} /> : undefined}>
-          {paused ? "Paused" : "Live"}
+          {paused ? tx("badgePaused") : tx("badgeLive")}
         </Badge>
       </div>
       <div className="mt-4">
         {paused ? (
           <Button size="sm" onClick={() => onToggle(false)}>
-            <Play size={14} /> Resume {title.toLowerCase()}
+            <Play size={14} /> {tx("resumeAction", { target: title.toLowerCase() })}
           </Button>
         ) : (
           <Button size="sm" variant="danger" onClick={() => onToggle(true)}>
-            <Pause size={14} /> Pause {title.toLowerCase()}
+            <Pause size={14} /> {tx("pauseAction", { target: title.toLowerCase() })}
           </Button>
         )}
       </div>

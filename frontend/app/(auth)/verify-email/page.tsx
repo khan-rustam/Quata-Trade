@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { MailCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ function VerifyForm(): React.JSX.Element {
   const params = useSearchParams();
   const router = useRouter();
   const toast = useToast();
+  const tx = useTranslations("authVerify");
   const email = params.get("email") ?? "";
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -27,10 +29,10 @@ function VerifyForm(): React.JSX.Element {
     setError(null);
     try {
       await api.verifyEmail({ email, code });
-      toast.success("Email verified", "You're all set — log in to continue.");
+      toast.success(tx("verifiedTitle"), tx("verifiedBody"));
       router.replace("/login");
     } catch (err) {
-      setError(apiErrorMessage(err, "Invalid or expired code"));
+      setError(apiErrorMessage(err, tx("invalidCode")));
     } finally {
       setBusy(false);
     }
@@ -42,10 +44,10 @@ function VerifyForm(): React.JSX.Element {
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent-400/15 text-accent-400">
           <MailCheck size={22} />
         </div>
-        <h1 className="font-display text-2xl font-bold">Verify your email</h1>
+        <h1 className="font-display text-2xl font-bold">{tx("title")}</h1>
         <p className="mt-1 text-sm text-text-2">
-          We sent a 6-digit code to{" "}
-          <span className="font-medium text-text-1">{email || "your inbox"}</span>.
+          {tx("codeSentTo")}{" "}
+          <span className="font-medium text-text-1">{email || tx("yourInbox")}</span>.
         </p>
       </div>
 
@@ -58,14 +60,14 @@ function VerifyForm(): React.JSX.Element {
       <div className="space-y-4">
         <OtpInput value={code} onChange={setCode} autoFocus invalid={Boolean(error)} />
         <Button className="w-full" onClick={verify} disabled={busy || code.length < 6}>
-          {busy ? <Spinner /> : "Verify email"}
+          {busy ? <Spinner /> : tx("submit")}
         </Button>
       </div>
 
       <p className="mt-4 text-center text-sm text-text-2">
-        Wrong address?{" "}
+        {tx("wrongAddress")}{" "}
         <Link href="/register" className="font-medium text-accent-400 hover:underline">
-          Start over
+          {tx("startOver")}
         </Link>
       </p>
     </Card>

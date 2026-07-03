@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { zPassword } from "@quatatrade/shared";
 import { z } from "zod";
@@ -24,6 +25,7 @@ function ResetForm(): React.JSX.Element {
   const params = useSearchParams();
   const router = useRouter();
   const toast = useToast();
+  const tx = useTranslations("authReset");
   const token = params.get("token") ?? "";
   const [error, setError] = useState<string | null>(null);
   const {
@@ -36,23 +38,23 @@ function ResetForm(): React.JSX.Element {
     setError(null);
     try {
       await api.resetPassword({ token, password: values.password });
-      toast.success("Password updated", "Log in with your new password.");
+      toast.success(tx("toastUpdatedTitle"), tx("toastUpdatedBody"));
       router.replace("/login");
     } catch (err) {
-      setError(apiErrorMessage(err, "This reset link is invalid or expired"));
+      setError(apiErrorMessage(err, tx("errorInvalid")));
     }
   });
 
   return (
     <Card className="p-6">
       <div className="mb-6 text-center">
-        <h1 className="font-display text-2xl font-bold">Set a new password</h1>
-        <p className="mt-1 text-sm text-text-2">Choose a strong password you don&rsquo;t use elsewhere.</p>
+        <h1 className="font-display text-2xl font-bold">{tx("title")}</h1>
+        <p className="mt-1 text-sm text-text-2">{tx("subtitle")}</p>
       </div>
 
       {!token && (
         <Alert tone="warning" className="mb-4">
-          This link is missing its token. Request a new reset email.
+          {tx("missingToken")}
         </Alert>
       )}
       {error && (
@@ -62,19 +64,19 @@ function ResetForm(): React.JSX.Element {
       )}
 
       <form onSubmit={submit} className="space-y-4" noValidate>
-        <Field label="New password" error={errors.password?.message} required>
+        <Field label={tx("passwordLabel")} error={errors.password?.message} required>
           {(p) => (
             <PasswordInput autoComplete="new-password" placeholder="••••••••" {...p} {...register("password")} />
           )}
         </Field>
         <Button type="submit" className="w-full" disabled={isSubmitting || !token}>
-          {isSubmitting ? <Spinner /> : "Update password"}
+          {isSubmitting ? <Spinner /> : tx("submit")}
         </Button>
       </form>
 
       <p className="mt-4 text-center text-sm text-text-2">
         <Link href="/login" className="font-medium text-accent-400 hover:underline">
-          Back to login
+          {tx("backToLogin")}
         </Link>
       </p>
     </Card>

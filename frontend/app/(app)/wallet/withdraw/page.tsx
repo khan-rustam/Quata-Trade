@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { CheckCircle2 } from "lucide-react";
 import { fromDisplay, zTronAddress, type Withdrawal } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
@@ -20,6 +21,7 @@ import { apiErrorMessage } from "@/lib/api/errors";
 import { shortHash } from "@/lib/format";
 
 export default function WithdrawPage(): React.JSX.Element {
+  const tx = useTranslations("walletWithdraw");
   const toast = useToast();
   const { data: balances } = useBalances();
   const available = balances?.balances.find((b) => b.asset === "USDT_TRC20")?.available ?? "0";
@@ -36,18 +38,18 @@ export default function WithdrawPage(): React.JSX.Element {
   const validate = (): boolean => {
     let ok = true;
     if (!zTronAddress.safeParse(address).success) {
-      setAddrError("Enter a valid TRON (TRC20) address");
+      setAddrError(tx("addressError"));
       ok = false;
     } else setAddrError(undefined);
     try {
       const units = fromDisplay(amount || "0");
       if (units <= 0n) throw new Error();
       if (units > BigInt(available)) {
-        setAmountError("Amount exceeds your available balance");
+        setAmountError(tx("amountExceeds"));
         ok = false;
       } else setAmountError(undefined);
     } catch {
-      setAmountError("Enter a valid amount");
+      setAmountError(tx("amountInvalid"));
       ok = false;
     }
     return ok;
@@ -71,9 +73,9 @@ export default function WithdrawPage(): React.JSX.Element {
       });
       setConfirmOpen(false);
       setResult(w);
-      toast.success("Withdrawal requested", "We'll notify you as it progresses.");
+      toast.success(tx("toastSuccessTitle"), tx("toastSuccessBody"));
     } catch (err) {
-      setDialogError(apiErrorMessage(err, "Withdrawal failed"));
+      setDialogError(apiErrorMessage(err, tx("withdrawalFailed")));
     } finally {
       setBusy(false);
     }
@@ -82,26 +84,26 @@ export default function WithdrawPage(): React.JSX.Element {
   if (result) {
     return (
       <div className="mx-auto max-w-md space-y-5">
-        <PageHeader title="Withdrawal requested" backHref="/wallet" />
+        <PageHeader title={tx("resultTitle")} backHref="/wallet" />
         <Card className="space-y-4">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="text-success" size={28} />
             <div>
-              <p className="font-medium">Request submitted</p>
-              <p className="text-sm text-text-2">To {shortHash(result.toAddress)}</p>
+              <p className="font-medium">{tx("requestSubmitted")}</p>
+              <p className="text-sm text-text-2">{tx("toAddress", { address: shortHash(result.toAddress) })}</p>
             </div>
           </div>
           <div className="space-y-2 rounded-lg bg-surface-2 p-3 text-sm">
-            <Row label="Amount" value={<Usdt value={result.amount} size="sm" />} />
-            <Row label="Network fee" value={<Usdt value={result.fee} size="sm" />} />
+            <Row label={tx("rowAmount")} value={<Usdt value={result.amount} size="sm" />} />
+            <Row label={tx("rowNetworkFee")} value={<Usdt value={result.fee} size="sm" />} />
             <Row
-              label="Total debited"
+              label={tx("rowTotalDebited")}
               value={<Usdt value={(BigInt(result.amount) + BigInt(result.fee)).toString()} size="sm" />}
             />
-            <Row label="Status" value={<WithdrawalStatusBadge status={result.status} />} />
+            <Row label={tx("rowStatus")} value={<WithdrawalStatusBadge status={result.status} />} />
           </div>
           <Link href="/wallet">
-            <Button className="w-full">Back to wallet</Button>
+            <Button className="w-full">{tx("backToWallet")}</Button>
           </Link>
         </Card>
       </div>
@@ -110,15 +112,15 @@ export default function WithdrawPage(): React.JSX.Element {
 
   return (
     <div className="mx-auto max-w-md space-y-5">
-      <PageHeader title="Withdraw USDT" subtitle="TRON network (TRC20)" backHref="/wallet" />
+      <PageHeader title={tx("title")} subtitle={tx("subtitle")} backHref="/wallet" />
 
       <Card className="space-y-4">
         <div className="flex items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm">
-          <span className="text-text-2">Available</span>
+          <span className="text-text-2">{tx("available")}</span>
           <Usdt value={available} size="sm" />
         </div>
 
-        <Field label="Destination address" error={addrError} required>
+        <Field label={tx("destinationAddress")} error={addrError} required>
           {(p) => (
             <Input
               placeholder="T..."
@@ -129,7 +131,7 @@ export default function WithdrawPage(): React.JSX.Element {
           )}
         </Field>
 
-        <Field label="Amount" error={amountError} required>
+        <Field label={tx("amountLabel")} error={amountError} required>
           {(p) => (
             <Input
               inputMode="decimal"
@@ -143,19 +145,19 @@ export default function WithdrawPage(): React.JSX.Element {
           )}
         </Field>
 
-        <Alert tone="info">A network fee is deducted from your balance. You&rsquo;ll see the exact total before it&rsquo;s sent.</Alert>
+        <Alert tone="info">{tx("feeNotice")}</Alert>
 
         <Button className="w-full" onClick={openConfirm} disabled={!address || !amount}>
-          Review withdrawal
+          {tx("reviewWithdrawal")}
         </Button>
       </Card>
 
       <SecurityDialog
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        title="Confirm withdrawal"
-        description={`Send ${amount || "0"} USDT to ${shortHash(address)}`}
-        actionLabel={`Withdraw ${amount || "0"} USDT`}
+        title={tx("confirmTitle")}
+        description={tx("confirmDescription", { amount: amount || "0", address: shortHash(address) })}
+        actionLabel={tx("confirmAction", { amount: amount || "0" })}
         requirePin
         requireTotp
         busy={busy}

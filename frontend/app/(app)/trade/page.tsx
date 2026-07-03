@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Plus, ShieldCheck, Star } from "lucide-react";
 import type { OfferSide, PaymentMethod } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
@@ -19,6 +20,7 @@ import { useOffers } from "@/hooks/use-trade";
 import { formatRate, formatUsdt } from "@/lib/format";
 
 function TradeBrowser(): React.JSX.Element {
+  const tx = useTranslations("tradeBrowse");
   const params = useSearchParams();
   const initialSide = (params.get("side") as OfferSide) === "SELL" ? "SELL" : "BUY";
   const [side, setSide] = useState<OfferSide>(initialSide);
@@ -36,12 +38,12 @@ function TradeBrowser(): React.JSX.Element {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Trade"
-        subtitle="Buy and sell USDT with people you can trust."
+        title={tx("title")}
+        subtitle={tx("subtitle")}
         action={
           <Link href="/trade/new">
             <Button size="sm">
-              <Plus size={16} /> New offer
+              <Plus size={16} /> {tx("newOffer")}
             </Button>
           </Link>
         }
@@ -51,20 +53,20 @@ function TradeBrowser(): React.JSX.Element {
         <Segmented
           value={side}
           onChange={setSide}
-          aria-label="Buy or sell"
+          aria-label={tx("buyOrSell")}
           options={[
-            { value: "BUY", label: "Buy USDT", tone: "success" },
-            { value: "SELL", label: "Sell USDT", tone: "danger" },
+            { value: "BUY", label: tx("buyUsdt"), tone: "success" },
+            { value: "SELL", label: tx("sellUsdt"), tone: "danger" },
           ]}
         />
         <div className="w-44">
           <Select
-            aria-label="Payment method"
+            aria-label={tx("paymentMethod")}
             value={method}
             onChange={(e) => setMethod(e.target.value as PaymentMethod | "")}
-            placeholder="All payment methods"
+            placeholder={tx("allPaymentMethods")}
             options={[
-              { value: "", label: "All methods" },
+              { value: "", label: tx("allMethods") },
               { value: "MTN_MOMO", label: "MTN MoMo" },
               { value: "ORANGE_MONEY", label: "Orange Money" },
               { value: "QUATAPAY", label: "QuataPay" },
@@ -82,11 +84,11 @@ function TradeBrowser(): React.JSX.Element {
       ) : !data || data.items.length === 0 ? (
         <EmptyState
           image="/assets/empty-offers.png"
-          title="No offers here yet"
-          description={`No ${side === "BUY" ? "sellers" : "buyers"} for this filter — create the first offer.`}
+          title={tx("emptyTitle")}
+          description={side === "BUY" ? tx("emptyDescriptionBuy") : tx("emptyDescriptionSell")}
           action={
             <Link href="/trade/new">
-              <Button size="sm">Create an offer</Button>
+              <Button size="sm">{tx("createOffer")}</Button>
             </Link>
           }
         />
@@ -103,12 +105,12 @@ function TradeBrowser(): React.JSX.Element {
                         <p className="flex items-center gap-1.5 truncate font-medium">
                           {offer.trader.displayName}
                           {offer.trader.kycTier >= 2 && (
-                            <ShieldCheck size={14} className="text-accent-400" aria-label="Verified" />
+                            <ShieldCheck size={14} className="text-accent-400" aria-label={tx("verified")} />
                           )}
                         </p>
                         <p className="flex items-center gap-1 text-xs text-text-3">
                           <Star size={11} className="text-warning" /> {offer.trader.reputationScore} ·{" "}
-                          {offer.trader.completedTrades} trades · {Math.round(offer.trader.completionRate)}%
+                          {offer.trader.completedTrades} {tx("trades")} · {Math.round(offer.trader.completionRate)}%
                         </p>
                       </div>
                     </div>
@@ -120,7 +122,7 @@ function TradeBrowser(): React.JSX.Element {
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="font-money text-lg font-semibold tabular-nums">{formatRate(offer.priceXafPerUnit)}</p>
-                    <p className="text-xs text-text-3">per USDT</p>
+                    <p className="text-xs text-text-3">{tx("perUsdt")}</p>
                     <Badge tone="neutral" className="mt-2">
                       {formatUsdt(offer.minTrade, "USDT_TRC20", 0)}–{formatUsdt(offer.maxTrade, "USDT_TRC20", 0)} USDT
                     </Badge>

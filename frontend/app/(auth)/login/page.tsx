@@ -21,6 +21,7 @@ import { apiErrorMessage } from "@/lib/api/errors";
 
 export default function LoginPage(): React.JSX.Element {
   const t = useTranslations("nav");
+  const tx = useTranslations("authLogin");
   const router = useRouter();
   const toast = useToast();
   const login = useLogin();
@@ -45,18 +46,18 @@ export default function LoginPage(): React.JSX.Element {
         setTotpRequired(true);
         return;
       }
-      toast.success("Welcome back");
+      toast.success(tx("welcomeToast"));
       router.replace("/home");
     } catch (err) {
-      setFormError(apiErrorMessage(err, "Invalid email or password"));
+      setFormError(apiErrorMessage(err, tx("invalidCredentials")));
     }
   });
 
   return (
     <Card className="p-6">
       <div className="mb-6 text-center">
-        <h1 className="font-display text-2xl font-bold">Welcome back</h1>
-        <p className="mt-1 text-sm text-text-2">Log in to your QuataTrade account.</p>
+        <h1 className="font-display text-2xl font-bold">{tx("welcomeTitle")}</h1>
+        <p className="mt-1 text-sm text-text-2">{tx("subtitle")}</p>
       </div>
 
       {formError && (
@@ -67,12 +68,12 @@ export default function LoginPage(): React.JSX.Element {
 
       <form onSubmit={submit} className="space-y-4" noValidate>
         <fieldset disabled={totpRequired} className="space-y-4">
-          <Field label="Email" error={errors.email?.message} required>
+          <Field label={tx("emailLabel")} error={errors.email?.message} required>
             {(p) => (
-              <Input type="email" autoComplete="email" placeholder="you@example.com" {...p} {...register("email")} />
+              <Input type="email" autoComplete="email" placeholder={tx("emailPlaceholder")} {...p} {...register("email")} />
             )}
           </Field>
-          <Field label="Password" error={errors.password?.message} required>
+          <Field label={tx("passwordLabel")} error={errors.password?.message} required>
             {(p) => (
               <PasswordInput autoComplete="current-password" placeholder="••••••••" {...p} {...register("password")} />
             )}
@@ -81,23 +82,23 @@ export default function LoginPage(): React.JSX.Element {
 
         {totpRequired && (
           <div className="space-y-2">
-            <p className="text-sm font-medium text-text-1">Two-factor code</p>
-            <OtpInput value={totpCode} onChange={setTotpCode} autoFocus aria-label="Authenticator code" />
-            <p className="text-sm text-text-2">Enter the 6-digit code from your authenticator app.</p>
+            <p className="text-sm font-medium text-text-1">{tx("twoFactorCode")}</p>
+            <OtpInput value={totpCode} onChange={setTotpCode} autoFocus aria-label={tx("authenticatorAriaLabel")} />
+            <p className="text-sm text-text-2">{tx("twoFactorHint")}</p>
           </div>
         )}
 
         <Button type="submit" className="w-full" disabled={isSubmitting || (totpRequired && totpCode.length < 6)}>
-          {isSubmitting ? <Spinner /> : totpRequired ? "Verify & log in" : t("login")}
+          {isSubmitting ? <Spinner /> : totpRequired ? tx("verifyAndLogin") : t("login")}
         </Button>
       </form>
 
       <div className="mt-4 flex items-center justify-between text-sm">
         <Link href="/forgot" className="text-text-2 underline-offset-2 hover:text-text-1 hover:underline">
-          Forgot password?
+          {tx("forgotPassword")}
         </Link>
         <Link href="/register" className="font-medium text-accent-400 hover:underline">
-          Create account
+          {tx("createAccount")}
         </Link>
       </div>
     </Card>

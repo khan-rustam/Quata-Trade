@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ShieldCheck, Star } from "lucide-react";
@@ -25,6 +26,7 @@ import { formatRate, formatUsdt } from "@/lib/format";
 
 export default function OfferDetailPage(): React.JSX.Element {
   const { id } = useParams<{ id: string }>();
+  const tx = useTranslations("offerDetail");
   const router = useRouter();
   const toast = useToast();
   const { data: offer, isLoading } = useOffer(id);
@@ -65,24 +67,24 @@ export default function OfferDetailPage(): React.JSX.Element {
         paymentMethod: method,
         idempotencyKey: crypto.randomUUID(),
       });
-      toast.success("Trade opened", "Escrow is locked — follow the payment steps.");
+      toast.success(tx("tradeOpenedTitle"), tx("tradeOpenedBody"));
       router.replace(`/trade/room/${trade.id}`);
     } catch (err) {
-      setError(apiErrorMessage(err, "Could not open the trade"));
+      setError(apiErrorMessage(err, tx("openTradeError")));
     }
   };
 
   if (isLoading) return <Skeleton className="h-96 w-full rounded-xl" />;
   if (!offer)
     return (
-      <Alert tone="danger" title="Offer unavailable">
-        This offer no longer exists.
+      <Alert tone="danger" title={tx("offerUnavailable")}>
+        {tx("offerGone")}
       </Alert>
     );
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
-      <PageHeader title={offer.side === "SELL" ? "Buy USDT" : "Sell USDT"} backHref="/trade" />
+      <PageHeader title={offer.side === "SELL" ? tx("buyUsdt") : tx("sellUsdt")} backHref="/trade" />
 
       <Card>
         <div className="flex items-center gap-3">
@@ -94,18 +96,18 @@ export default function OfferDetailPage(): React.JSX.Element {
             </p>
             <p className="flex items-center gap-1 text-xs text-text-3">
               <Star size={11} className="text-warning" /> {offer.trader.reputationScore} ·{" "}
-              {offer.trader.completedTrades} trades · {Math.round(offer.trader.completionRate)}%
+              {offer.trader.completedTrades} {tx("tradesCount")} · {Math.round(offer.trader.completionRate)}%
             </p>
           </div>
           <div className="ml-auto text-right">
             <p className="font-money text-lg font-semibold">{formatRate(offer.priceXafPerUnit)}</p>
-            <p className="text-xs text-text-3">per USDT</p>
+            <p className="text-xs text-text-3">{tx("perUsdt")}</p>
           </div>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-          <Meta label="Limits" value={`${formatUsdt(offer.minTrade, "USDT_TRC20", 0)}–${formatUsdt(offer.maxTrade, "USDT_TRC20", 0)}`} />
-          <Meta label="Available" value={`${formatUsdt(offer.remaining, "USDT_TRC20", 0)} USDT`} />
+          <Meta label={tx("limits")} value={`${formatUsdt(offer.minTrade, "USDT_TRC20", 0)}–${formatUsdt(offer.maxTrade, "USDT_TRC20", 0)}`} />
+          <Meta label={tx("available")} value={`${formatUsdt(offer.remaining, "USDT_TRC20", 0)} USDT`} />
         </div>
 
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -116,14 +118,14 @@ export default function OfferDetailPage(): React.JSX.Element {
 
         {offer.terms && (
           <div className="mt-4 rounded-lg bg-surface-2 p-3 text-sm text-text-2">
-            <p className="mb-1 font-medium text-text-1">Trader&rsquo;s terms</p>
+            <p className="mb-1 font-medium text-text-1">{tx("tradersTerms")}</p>
             {offer.terms}
           </div>
         )}
       </Card>
 
       <Card className="space-y-4">
-        <Field label="Amount to trade" required>
+        <Field label={tx("amountToTrade")} required>
           {(p) => (
             <Input
               inputMode="decimal"
@@ -139,11 +141,11 @@ export default function OfferDetailPage(): React.JSX.Element {
 
         {offer.paymentMethods.length > 1 && method && (
           <div>
-            <p className="mb-1.5 text-sm font-medium">Payment method</p>
+            <p className="mb-1.5 text-sm font-medium">{tx("paymentMethod")}</p>
             <Segmented
               value={method}
               onChange={setPickedMethod}
-              aria-label="Payment method"
+              aria-label={tx("paymentMethod")}
               options={offer.paymentMethods.map((m) => ({
                 value: m,
                 label: m === "MTN_MOMO" ? "MTN" : m === "ORANGE_MONEY" ? "Orange" : "QuataPay",
@@ -153,17 +155,17 @@ export default function OfferDetailPage(): React.JSX.Element {
         )}
 
         <div className="space-y-2 rounded-lg bg-surface-2 p-3 text-sm">
-          <Row label="You pay (fiat)" value={preview ? <Xaf value={preview.fiatAmountXaf} /> : "—"} loading={previewing} />
-          <Row label="Trading fee" value={preview ? <Usdt value={preview.feeAmount} size="sm" /> : "—"} loading={previewing} />
+          <Row label={tx("youPayFiat")} value={preview ? <Xaf value={preview.fiatAmountXaf} /> : "—"} loading={previewing} />
+          <Row label={tx("tradingFee")} value={preview ? <Usdt value={preview.feeAmount} size="sm" /> : "—"} loading={previewing} />
           <Row
-            label="You receive"
+            label={tx("youReceive")}
             value={preview ? <Usdt value={preview.buyerCredit} size="sm" className="text-accent-400" /> : "—"}
             loading={previewing}
           />
         </div>
 
         {units && !withinLimits && (
-          <Alert tone="warning">Amount is outside this offer&rsquo;s limits or available balance.</Alert>
+          <Alert tone="warning">{tx("outsideLimits")}</Alert>
         )}
         {error && <Alert tone="danger">{error}</Alert>}
 
@@ -172,10 +174,10 @@ export default function OfferDetailPage(): React.JSX.Element {
           disabled={!withinLimits || !method || openTrade.isPending}
           onClick={submit}
         >
-          {openTrade.isPending ? <Spinner /> : amount ? `Open trade for ${amount} USDT` : "Open trade"}
+          {openTrade.isPending ? <Spinner /> : amount ? tx("openTradeFor", { amount }) : tx("openTrade")}
         </Button>
         <p className="text-center text-xs text-text-3">
-          Opening locks the seller&rsquo;s crypto in escrow until you&rsquo;re confirmed paid.
+          {tx("escrowNote")}
         </p>
       </Card>
     </div>

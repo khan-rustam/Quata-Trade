@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowDownToLine, ArrowUpFromLine, History, Send } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
@@ -16,16 +17,17 @@ import { shortHash, formatDateTime } from "@/lib/format";
 import { useBalances, useDeposits, useWithdrawals } from "@/hooks/use-wallet";
 
 export default function WalletPage(): React.JSX.Element {
+  const tx = useTranslations("wallet");
   const { data: balances, isLoading } = useBalances();
   const usdt = balances?.balances.find((b) => b.asset === "USDT_TRC20");
   const [tab, setTab] = useState<"deposits" | "withdrawals">("deposits");
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Wallet" subtitle="Your USDT balance, deposits, and withdrawals." />
+      <PageHeader title={tx("title")} subtitle={tx("subtitle")} />
 
       <Card>
-        <p className="text-sm text-text-2">Available</p>
+        <p className="text-sm text-text-2">{tx("available")}</p>
         {isLoading ? (
           <Skeleton className="mt-2 h-8 w-44" />
         ) : (
@@ -35,25 +37,25 @@ export default function WalletPage(): React.JSX.Element {
         )}
         <div className="mt-3 flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm">
           <Keyhole size={16} className="text-accent-400" />
-          <span className="text-text-2">In escrow</span>
+          <span className="text-text-2">{tx("inEscrow")}</span>
           <Usdt value={usdt?.inEscrow ?? "0"} size="sm" className="ml-auto" />
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2">
-          <WalletAction href="/wallet/deposit" icon={<ArrowDownToLine size={18} />} label="Deposit" />
-          <WalletAction href="/wallet/withdraw" icon={<ArrowUpFromLine size={18} />} label="Withdraw" />
-          <WalletAction href="/wallet/transfer" icon={<Send size={18} />} label="Transfer" />
+          <WalletAction href="/wallet/deposit" icon={<ArrowDownToLine size={18} />} label={tx("deposit")} />
+          <WalletAction href="/wallet/withdraw" icon={<ArrowUpFromLine size={18} />} label={tx("withdraw")} />
+          <WalletAction href="/wallet/transfer" icon={<Send size={18} />} label={tx("transfer")} />
         </div>
       </Card>
 
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-medium">History</h2>
+        <h2 className="font-display text-lg font-medium">{tx("history")}</h2>
         <Segmented
           value={tab}
           onChange={setTab}
-          aria-label="History type"
+          aria-label={tx("historyType")}
           options={[
-            { value: "deposits", label: "Deposits" },
-            { value: "withdrawals", label: "Withdrawals" },
+            { value: "deposits", label: tx("deposits") },
+            { value: "withdrawals", label: tx("withdrawals") },
           ]}
         />
       </div>
@@ -76,17 +78,18 @@ function WalletAction({ href, icon, label }: { href: string; icon: React.ReactNo
 }
 
 function DepositsList(): React.JSX.Element {
+  const tx = useTranslations("wallet");
   const { data, isLoading } = useDeposits(1);
   if (isLoading) return <ListSkeleton />;
   if (!data || data.items.length === 0) {
     return (
       <EmptyState
         image="/assets/empty-wallet.png"
-        title="No deposits yet"
-        description="Deposit USDT (TRC20) to start trading."
+        title={tx("noDepositsTitle")}
+        description={tx("noDepositsDescription")}
         action={
           <Link href="/wallet/deposit">
-            <Button size="sm">Get deposit address</Button>
+            <Button size="sm">{tx("getDepositAddress")}</Button>
           </Link>
         }
       />
@@ -111,10 +114,11 @@ function DepositsList(): React.JSX.Element {
 }
 
 function WithdrawalsList(): React.JSX.Element {
+  const tx = useTranslations("wallet");
   const { data, isLoading } = useWithdrawals(1);
   if (isLoading) return <ListSkeleton />;
   if (!data || data.items.length === 0) {
-    return <EmptyState icon={History} title="No withdrawals yet" description="Your withdrawal history will appear here." />;
+    return <EmptyState icon={History} title={tx("noWithdrawalsTitle")} description={tx("noWithdrawalsDescription")} />;
   }
   return (
     <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import type { ReactNode, ComponentType } from "react";
 import {
   ArrowUpFromLine,
@@ -28,22 +29,22 @@ import { cn } from "@/lib/utils";
 
 interface NavItem {
   href: string;
-  label: string;
+  labelKey: string;
   icon: ComponentType<LucideProps>;
   gate?: keyof typeof RBAC;
 }
 
 const NAV: NavItem[] = [
-  { href: "/admin", label: "Dashboard", icon: Gauge },
-  { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, gate: "approveWithdrawal" },
-  { href: "/admin/disputes", label: "Disputes", icon: ShieldAlert, gate: "resolveDispute" },
-  { href: "/admin/kyc", label: "KYC review", icon: BadgeCheck, gate: "kycReview" },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/trades", label: "Trades", icon: Repeat },
-  { href: "/admin/treasury", label: "Treasury", icon: Coins },
-  { href: "/admin/settings", label: "Settings", icon: Sliders, gate: "editSettings" },
-  { href: "/admin/audit", label: "Audit log", icon: ScrollText, gate: "viewAudit" },
-  { href: "/admin/profile", label: "My profile", icon: UserCog },
+  { href: "/admin", labelKey: "navDashboard", icon: Gauge },
+  { href: "/admin/withdrawals", labelKey: "navWithdrawals", icon: ArrowUpFromLine, gate: "approveWithdrawal" },
+  { href: "/admin/disputes", labelKey: "navDisputes", icon: ShieldAlert, gate: "resolveDispute" },
+  { href: "/admin/kyc", labelKey: "navKyc", icon: BadgeCheck, gate: "kycReview" },
+  { href: "/admin/users", labelKey: "navUsers", icon: Users },
+  { href: "/admin/trades", labelKey: "navTrades", icon: Repeat },
+  { href: "/admin/treasury", labelKey: "navTreasury", icon: Coins },
+  { href: "/admin/settings", labelKey: "navSettings", icon: Sliders, gate: "editSettings" },
+  { href: "/admin/audit", labelKey: "navAudit", icon: ScrollText, gate: "viewAudit" },
+  { href: "/admin/profile", labelKey: "navProfile", icon: UserCog },
 ];
 
 export function AdminShell({
@@ -55,13 +56,15 @@ export function AdminShell({
   email: string;
   children: ReactNode;
 }): React.JSX.Element {
+  const tx = useTranslations("adminShell");
   const pathname = usePathname();
   const router = useRouter();
   const qc = useQueryClient();
 
   const items = NAV.filter((n) => !n.gate || can(role, n.gate));
   const isActive = (href: string) => (href === "/admin" ? pathname === href : pathname.startsWith(href));
-  const current = items.find((n) => isActive(n.href))?.label ?? "Admin";
+  const currentItem = items.find((n) => isActive(n.href));
+  const current = currentItem ? tx(currentItem.labelKey) : tx("admin");
   const roleLabel = role.replace("_", " ").toLowerCase();
 
   return (
@@ -72,7 +75,7 @@ export function AdminShell({
           <BrandMark size={22} />
           <span className="font-display text-sm font-bold">Quata Admin</span>
         </div>
-        <nav aria-label="Admin" className="flex-1 space-y-1 overflow-y-auto p-3">
+        <nav aria-label={tx("navLabel")} className="flex-1 space-y-1 overflow-y-auto p-3">
           {items.map((item) => {
             const active = isActive(item.href);
             return (
@@ -86,7 +89,7 @@ export function AdminShell({
                 )}
               >
                 <item.icon size={17} className={active ? "text-accent-400" : ""} aria-hidden />
-                {item.label}
+                {tx(item.labelKey)}
               </Link>
             );
           })}
@@ -112,7 +115,7 @@ export function AdminShell({
             }}
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-danger transition-colors hover:bg-surface-2"
           >
-            <LogOut size={16} /> Log out
+            <LogOut size={16} /> {tx("logout")}
           </button>
         </div>
       </aside>
@@ -127,7 +130,7 @@ export function AdminShell({
           <h1 className="hidden font-display text-base font-semibold md:block">{current}</h1>
           <Link
             href="/admin/profile"
-            aria-label="Admin profile"
+            aria-label={tx("profileAria")}
             className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 transition-colors hover:bg-surface-2"
           >
             <Badge tone="accent" className="hidden sm:inline-flex">

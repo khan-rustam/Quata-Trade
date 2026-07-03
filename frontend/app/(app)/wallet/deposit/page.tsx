@@ -2,6 +2,7 @@
 
 import { QRCodeSVG } from "qrcode.react";
 import { AlertTriangle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
@@ -11,14 +12,15 @@ import { Usdt } from "@/components/ui/amount";
 import { useDepositAddress } from "@/hooks/use-wallet";
 
 export default function DepositPage(): React.JSX.Element {
+  const tx = useTranslations("walletDeposit");
   const { data, isLoading, isError } = useDepositAddress("USDT_TRC20");
 
   return (
     <div className="mx-auto max-w-md space-y-5">
-      <PageHeader title="Deposit USDT" subtitle="TRON network (TRC20)" backHref="/wallet" />
+      <PageHeader title={tx("title")} subtitle={tx("subtitle")} backHref="/wallet" />
 
-      <Alert tone="warning" title="Send only USDT on TRON (TRC20)">
-        Sending any other token or network will result in permanent loss. This address is yours alone.
+      <Alert tone="warning" title={tx("warningTitle")}>
+        {tx("warningBody")}
       </Alert>
 
       <Card className="flex flex-col items-center gap-4">
@@ -36,10 +38,10 @@ export default function DepositPage(): React.JSX.Element {
 
         {data && (
           <div className="w-full space-y-1 text-center">
-            <p className="text-xs uppercase tracking-wide text-text-3">Your USDT-TRC20 address</p>
+            <p className="text-xs uppercase tracking-wide text-text-3">{tx("addressLabel")}</p>
             <p className="break-all font-money text-sm text-text-1">{data.address}</p>
             <div className="flex justify-center pt-1">
-              <CopyButton value={data.address} label="Copy address" />
+              <CopyButton value={data.address} label={tx("copyAddress")} />
             </div>
           </div>
         )}
@@ -47,9 +49,9 @@ export default function DepositPage(): React.JSX.Element {
 
       {data && (
         <Card className="space-y-2 text-sm">
-          <Row label="Network" value={data.network} />
-          <Row label="Minimum deposit" value={<Usdt value={data.minDeposit} size="sm" />} />
-          <Row label="Credited after" value={`${data.confirmationsRequired} confirmations`} />
+          <Row label={tx("network")} value={data.network} />
+          <Row label={tx("minDeposit")} value={<Usdt value={data.minDeposit} size="sm" />} />
+          <Row label={tx("creditedAfter")} value={tx("confirmations", { count: data.confirmationsRequired })} />
         </Card>
       )}
     </div>

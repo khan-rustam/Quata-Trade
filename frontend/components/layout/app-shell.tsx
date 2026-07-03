@@ -42,6 +42,7 @@ function isActive(href: string, pathname: string): boolean {
 
 export function AppShell({ children }: { children: ReactNode }): React.JSX.Element {
   const t = useTranslations("nav");
+  const tx = useTranslations("appShell");
   const pathname = usePathname();
   const router = useRouter();
   const logout = useLogout();
@@ -66,7 +67,7 @@ export function AppShell({ children }: { children: ReactNode }): React.JSX.Eleme
     <div className="flex min-h-screen flex-col">
       {/* top bar */}
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-bg/80 px-4 backdrop-blur md:px-6">
-        <Link href="/home" aria-label="QuataTrade home" className="flex items-center">
+        <Link href="/home" aria-label={tx("homeAria")} className="flex items-center">
           <Logo size={20} />
         </Link>
         <div className="flex items-center gap-1">
@@ -74,7 +75,7 @@ export function AppShell({ children }: { children: ReactNode }): React.JSX.Eleme
           <ThemeToggle />
           <Link
             href="/account/notifications"
-            aria-label="Notifications"
+            aria-label={tx("notificationsAria")}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
           >
             <Bell size={18} />
@@ -85,7 +86,7 @@ export function AppShell({ children }: { children: ReactNode }): React.JSX.Eleme
               onClick={() => setMenuOpen((o) => !o)}
               aria-haspopup="menu"
               aria-expanded={menuOpen}
-              aria-label="Account menu"
+              aria-label={tx("accountMenuAria")}
               className={cn(
                 "flex h-9 items-center gap-2 rounded-full py-0.5 pl-0.5 pr-2 transition-colors hover:bg-surface-2",
                 menuOpen && "bg-surface-2",
@@ -153,7 +154,7 @@ export function AppShell({ children }: { children: ReactNode }): React.JSX.Eleme
       <div className="mx-auto flex w-full max-w-6xl flex-1">
         {/* desktop sidebar */}
         <nav
-          aria-label="Primary"
+          aria-label={tx("primaryNav")}
           className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-52 shrink-0 border-r border-border px-3 py-4 md:block"
         >
           <ul className="space-y-1">
@@ -184,7 +185,7 @@ export function AppShell({ children }: { children: ReactNode }): React.JSX.Eleme
 
       {/* mobile bottom nav */}
       <nav
-        aria-label="Primary"
+        aria-label={tx("primaryNav")}
         className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-bg/95 backdrop-blur md:hidden"
       >
         {NAV.map((item) => {

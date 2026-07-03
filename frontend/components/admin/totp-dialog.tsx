@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ShieldCheck } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ export function TotpActionDialog({
   error?: string | null;
   onConfirm: (v: { totpCode: string; reason?: string }) => void;
 }): React.JSX.Element {
+  const tx = useTranslations("totpDialog");
   const [totp, setTotp] = useState("");
   const [reason, setReason] = useState("");
   const reasonOk = !reasonRequired || reason.trim().length >= 5;
@@ -59,9 +61,9 @@ export function TotpActionDialog({
           <Field label={reasonLabel} required={reasonRequired}>
             {(p) =>
               reasonRequired ? (
-                <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (min 5 characters)…" {...p} />
+                <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder={tx("reasonPlaceholder")} {...p} />
               ) : (
-                <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Optional note" {...p} />
+                <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={tx("optionalNote")} {...p} />
               )
             }
           </Field>
@@ -69,14 +71,14 @@ export function TotpActionDialog({
         {requireTotp && (
           <div className="space-y-2">
             <label className="flex items-center gap-1.5 text-sm font-medium">
-              <ShieldCheck size={14} className="text-accent-400" /> Your authenticator code
+              <ShieldCheck size={14} className="text-accent-400" /> {tx("authenticatorCode")}
             </label>
-            <OtpInput value={totp} onChange={setTotp} aria-label="Authenticator code" invalid={Boolean(error)} />
+            <OtpInput value={totp} onChange={setTotp} aria-label={tx("authenticatorCodeAria")} invalid={Boolean(error)} />
           </div>
         )}
         <div className="flex gap-2">
           <Button variant="secondary" className="flex-1" onClick={onClose} disabled={busy}>
-            Cancel
+            {tx("cancel")}
           </Button>
           <Button
             variant={destructive ? "danger" : "primary"}

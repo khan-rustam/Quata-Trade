@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Repeat } from "lucide-react";
 import { AdminTitle, Pagination, TableFrame } from "@/components/admin/admin-ui";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,29 +12,30 @@ import { useAdminTrades } from "@/hooks/use-admin";
 import { formatDateTime } from "@/lib/format";
 
 export default function AdminTradesPage(): React.JSX.Element {
+  const tx = useTranslations("adminTrades");
   const [page, setPage] = useState(1);
   const { data, isLoading } = useAdminTrades(page);
 
   return (
     <div className="space-y-5">
-      <AdminTitle title="Trades" subtitle="All trades and their current escrow state." />
+      <AdminTitle title={tx("title")} subtitle={tx("subtitle")} />
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
       ) : !data || data.items.length === 0 ? (
-        <EmptyState icon={Repeat} title="No trades yet" description="Trades will appear here as users transact." />
+        <EmptyState icon={Repeat} title={tx("emptyTitle")} description={tx("emptyDescription")} />
       ) : (
         <>
           <TableFrame
             head={
               <tr>
-                <th className="px-4 py-2.5">Ref</th>
-                <th className="px-4 py-2.5">Seller</th>
-                <th className="px-4 py-2.5">Buyer</th>
-                <th className="px-4 py-2.5">Amount</th>
-                <th className="px-4 py-2.5">Fee</th>
-                <th className="px-4 py-2.5">Status</th>
-                <th className="px-4 py-2.5">Created</th>
+                <th className="px-4 py-2.5">{tx("colRef")}</th>
+                <th className="px-4 py-2.5">{tx("colSeller")}</th>
+                <th className="px-4 py-2.5">{tx("colBuyer")}</th>
+                <th className="px-4 py-2.5">{tx("colAmount")}</th>
+                <th className="px-4 py-2.5">{tx("colFee")}</th>
+                <th className="px-4 py-2.5">{tx("colStatus")}</th>
+                <th className="px-4 py-2.5">{tx("colCreated")}</th>
               </tr>
             }
           >

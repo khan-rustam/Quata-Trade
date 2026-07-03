@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { BadgeCheck, ShieldCheck } from "lucide-react";
 import { KYC_DOC_TYPES } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
@@ -18,12 +19,6 @@ import { api } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
 import { apiErrorMessage } from "@/lib/api/errors";
 
-const DOC_LABELS: Record<(typeof KYC_DOC_TYPES)[number], string> = {
-  national_id: "National ID card",
-  passport: "Passport",
-  drivers_license: "Driver's license",
-};
-
 const STATUS_TONE = {
   APPROVED: "success",
   PENDING: "warning",
@@ -33,6 +28,7 @@ const STATUS_TONE = {
 } as const;
 
 export default function KycPage(): React.JSX.Element {
+  const tx = useTranslations("accountKyc");
   const { data: me } = useMe();
   const qc = useQueryClient();
   const toast = useToast();
@@ -46,6 +42,20 @@ export default function KycPage(): React.JSX.Element {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const DOC_LABELS: Record<(typeof KYC_DOC_TYPES)[number], string> = {
+    national_id: tx("docNationalId"),
+    passport: tx("docPassport"),
+    drivers_license: tx("docDriversLicense"),
+  };
+
+  const STATUS_LABELS: Record<keyof typeof STATUS_TONE, string> = {
+    APPROVED: tx("statusApproved"),
+    PENDING: tx("statusPending"),
+    REJECTED: tx("statusRejected"),
+    RESUBMIT: tx("statusResubmit"),
+    NONE: tx("statusNone"),
+  };
+
   const nextTier = (me?.kycTier ?? 0) + 1;
   const files = [front, back, selfie].filter(Boolean) as string[];
   const canSubmit = Boolean(front && selfie && consent && (docType === "passport" || back));
@@ -56,9 +66,9 @@ export default function KycPage(): React.JSX.Element {
     try {
       await api.kycSubmit({ tier: Math.min(nextTier, 3), docType, files, consent: true });
       await qc.invalidateQueries({ queryKey: qk.kycStatus });
-      toast.success("Submitted for review", "We'll notify you once a reviewer checks your documents.");
+      toast.success(tx("toastSuccessTitle"), tx("toastSuccessBody"));
     } catch (err) {
-      setError(apiErrorMessage(err, "Could not submit your documents"));
+      setError(apiErrorMessage(err, tx("errorSubmit")));
     } finally {
       setBusy(false);
     }
@@ -69,45 +79,45 @@ export default function KycPage(): React.JSX.Element {
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
-      <PageHeader title="Verification" subtitle="Raise your trade and withdrawal limits." backHref="/account" />
+      <PageHeader title={tx("title")} subtitle={tx("subtitle")} backHref="/account" />
 
       <Card className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <ShieldCheck size={20} className="text-accent-400" />
           <div>
-            <p className="font-medium">Current tier</p>
-            <p className="text-sm text-text-2">Tier {me?.kycTier ?? 0}</p>
+            <p className="font-medium">{tx("currentTier")}</p>
+            <p className="text-sm text-text-2">{tx("tierValue", { tier: me?.kycTier ?? 0 })}</p>
           </div>
         </div>
         {isLoading ? (
           <Skeleton className="h-5 w-16" />
         ) : (
-          status && <Badge tone={STATUS_TONE[status.status]}>{status.status.toLowerCase()}</Badge>
+          status && <Badge tone={STATUS_TONE[status.status]}>{STATUS_LABELS[status.status]}</Badge>
         )}
       </Card>
 
       {status?.reviewNotes && status.status === "REJECTED" && (
-        <Alert tone="danger" title="Reviewer notes">
+        <Alert tone="danger" title={tx("reviewerNotes")}>
           {status.reviewNotes}
         </Alert>
       )}
 
       {approved ? (
-        <Alert tone="success" title="You're verified">
+        <Alert tone="success" title={tx("verifiedTitle")}>
           <span className="flex items-center gap-1.5">
-            <BadgeCheck size={16} /> Your identity is confirmed. Enjoy higher limits.
+            <BadgeCheck size={16} /> {tx("verifiedBody")}
           </span>
         </Alert>
       ) : pending ? (
-        <Alert tone="info" title="Under review">
-          Your documents are with a reviewer. Decisions are made by a person — never automatically.
+        <Alert tone="info" title={tx("underReviewTitle")}>
+          {tx("underReviewBody")}
         </Alert>
       ) : (
         <Card className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Document type</label>
+            <label className="text-sm font-medium">{tx("documentType")}</label>
             <Select
-              aria-label="Document type"
+              aria-label={tx("documentType")}
               value={docType}
               onChange={(e) => setDocType(e.target.value as (typeof KYC_DOC_TYPES)[number])}
               options={KYC_DOC_TYPES.map((d) => ({ value: d, label: DOC_LABELS[d] }))}
@@ -115,11 +125,11 @@ export default function KycPage(): React.JSX.Element {
           </div>
 
           <div className="space-y-2">
-            <DocumentUpload label="Document — front" onUploaded={setFront} onCleared={() => setFront(undefined)} />
+            <DocumentUpload label={tx("docFront")} onUploaded={setFront} onCleared={() => setFront(undefined)} />
             {docType !== "passport" && (
-              <DocumentUpload label="Document — back" onUploaded={setBack} onCleared={() => setBack(undefined)} />
+              <DocumentUpload label={tx("docBack")} onUploaded={setBack} onCleared={() => setBack(undefined)} />
             )}
-            <DocumentUpload label="Selfie holding your document" onUploaded={setSelfie} onCleared={() => setSelfie(undefined)} />
+            <DocumentUpload label={tx("selfie")} onUploaded={setSelfie} onCleared={() => setSelfie(undefined)} />
           </div>
 
           <label className="flex items-start gap-2.5 text-sm text-text-2">
@@ -129,16 +139,13 @@ export default function KycPage(): React.JSX.Element {
               onChange={(e) => setConsent(e.target.checked)}
               className="mt-0.5 h-4 w-4 rounded border-border accent-accent-400"
             />
-            <span>
-              I consent to QuataTrade processing these documents to verify my identity, kept only for the legal
-              retention period.
-            </span>
+            <span>{tx("consent")}</span>
           </label>
 
           {error && <Alert tone="danger">{error}</Alert>}
 
           <Button className="w-full" onClick={submit} disabled={!canSubmit || busy}>
-            {busy ? "Submitting…" : "Submit for review"}
+            {busy ? tx("submitting") : tx("submit")}
           </Button>
         </Card>
       )}

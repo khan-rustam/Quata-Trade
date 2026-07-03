@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { Search, Users } from "lucide-react";
 import type { z } from "zod";
 import { zAdminUserRow } from "@quatatrade/shared";
@@ -29,6 +30,7 @@ type Action = "freeze" | "suspend" | "restore";
 const STATUS_TONE = { active: "success", frozen: "warning", suspended: "danger", closed: "neutral" } as const;
 
 export default function AdminUsersPage(): React.JSX.Element {
+  const tx = useTranslations("adminUsers");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -37,7 +39,7 @@ export default function AdminUsersPage(): React.JSX.Element {
 
   return (
     <div className="space-y-5">
-      <AdminTitle title="Users" subtitle="Search, review, and moderate accounts." />
+      <AdminTitle title={tx("title")} subtitle={tx("subtitle")} />
 
       <form
         onSubmit={(e) => {
@@ -49,27 +51,27 @@ export default function AdminUsersPage(): React.JSX.Element {
       >
         <div className="relative flex-1">
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-3" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by email…" className="pl-9" aria-label="Search users" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={tx("searchPlaceholder")} className="pl-9" aria-label={tx("searchAria")} />
         </div>
         <Button type="submit" variant="secondary">
-          Search
+          {tx("searchButton")}
         </Button>
       </form>
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
       ) : !data || data.items.length === 0 ? (
-        <EmptyState icon={Users} title="No users found" description="Try a different search." />
+        <EmptyState icon={Users} title={tx("emptyTitle")} description={tx("emptyDescription")} />
       ) : (
         <>
           <TableFrame
             head={
               <tr>
-                <th className="px-4 py-2.5">Email</th>
-                <th className="px-4 py-2.5">KYC</th>
-                <th className="px-4 py-2.5">Status</th>
-                <th className="px-4 py-2.5">Joined</th>
-                <th className="px-4 py-2.5 text-right">Action</th>
+                <th className="px-4 py-2.5">{tx("colEmail")}</th>
+                <th className="px-4 py-2.5">{tx("colKyc")}</th>
+                <th className="px-4 py-2.5">{tx("colStatus")}</th>
+                <th className="px-4 py-2.5">{tx("colJoined")}</th>
+                <th className="px-4 py-2.5 text-right">{tx("colAction")}</th>
               </tr>
             }
           >
@@ -89,7 +91,7 @@ export default function AdminUsersPage(): React.JSX.Element {
                 <td className="px-4 py-3 text-xs text-text-3">{formatDateTime(u.createdAt)}</td>
                 <td className="px-4 py-3 text-right">
                   <Button size="sm" variant="secondary" onClick={() => setActive(u)}>
-                    Manage
+                    {tx("manage")}
                   </Button>
                 </td>
               </tr>
@@ -105,6 +107,7 @@ export default function AdminUsersPage(): React.JSX.Element {
 }
 
 function ModerateDialog({ user, onClose }: { user: Row; onClose: () => void }): React.JSX.Element {
+  const tx = useTranslations("adminUsers");
   const qc = useQueryClient();
   const toast = useToast();
   const [action, setAction] = useState<Action>(user.status === "active" ? "freeze" : "restore");
@@ -117,46 +120,46 @@ function ModerateDialog({ user, onClose }: { user: Row; onClose: () => void }): 
     setError(null);
     try {
       await adminApi.adminModerateUser(user.id, action, { reason });
-      toast.success(`User ${action}d`, user.email);
+      toast.success(tx("toastTitle", { action }), user.email);
       onClose();
       void qc.invalidateQueries({ queryKey: ["admin"] });
     } catch (err) {
-      setError(apiErrorMessage(err, "Action failed"));
+      setError(apiErrorMessage(err, tx("actionFailed")));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Dialog open onClose={onClose} title={`Manage ${user.email}`} description={`Current status: ${user.status}`}>
+    <Dialog open onClose={onClose} title={tx("dialogTitle", { email: user.email })} description={tx("dialogDescription", { status: user.status })}>
       <div className="space-y-4">
         {error && <Alert tone="danger">{error}</Alert>}
         <div>
-          <p className="mb-1.5 text-sm font-medium">Action</p>
+          <p className="mb-1.5 text-sm font-medium">{tx("actionLabel")}</p>
           <Segmented
             value={action}
             onChange={setAction}
-            aria-label="Moderation action"
+            aria-label={tx("moderationAria")}
             className="w-full"
             options={[
-              { value: "freeze", label: "Freeze", tone: "default" },
-              { value: "suspend", label: "Suspend", tone: "danger" },
-              { value: "restore", label: "Restore", tone: "success" },
+              { value: "freeze", label: tx("optionFreeze"), tone: "default" },
+              { value: "suspend", label: tx("optionSuspend"), tone: "danger" },
+              { value: "restore", label: tx("optionRestore"), tone: "success" },
             ]}
           />
           <p className="mt-1.5 text-xs text-text-3">
-            Freeze blocks trading & withdrawals. Suspend is stronger. Restore reactivates.
+            {tx("actionHelp")}
           </p>
         </div>
-        <Field label="Reason" required>
-          {(p) => <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Audit reason (min 5 characters)…" {...p} />}
+        <Field label={tx("reasonLabel")} required>
+          {(p) => <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder={tx("reasonPlaceholder")} {...p} />}
         </Field>
         <div className="flex gap-2">
           <Button variant="secondary" className="flex-1" onClick={onClose} disabled={busy}>
-            Cancel
+            {tx("cancel")}
           </Button>
           <Button variant={action === "restore" ? "primary" : "danger"} className="flex-1" onClick={submit} disabled={busy || reason.trim().length < 5}>
-            {busy ? <Spinner /> : `Confirm ${action}`}
+            {busy ? <Spinner /> : tx("confirmAction", { action })}
           </Button>
         </div>
       </div>

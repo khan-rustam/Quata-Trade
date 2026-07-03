@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -14,24 +15,25 @@ import { apiErrorMessage } from "@/lib/api/errors";
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-const TITLES: Record<string, string> = {
-  email_verify: "Verify your email",
-  deposit_credited: "Deposit credited",
-  withdrawal_requested: "Withdrawal requested",
-  withdrawal_confirmed: "Withdrawal confirmed",
-  trade_escrow_locked: "Escrow locked",
-  trade_payment_submitted: "Payment submitted",
-  trade_completed: "Trade completed",
-  trade_expired: "Trade expired",
-  trade_cancelled: "Trade cancelled",
-  trade_disputed: "Trade disputed",
-  dispute_resolved: "Dispute resolved",
-  kyc_reviewed: "KYC reviewed",
+const TEMPLATE_KEYS: Record<string, string> = {
+  email_verify: "templateEmailVerify",
+  deposit_credited: "templateDepositCredited",
+  withdrawal_requested: "templateWithdrawalRequested",
+  withdrawal_confirmed: "templateWithdrawalConfirmed",
+  trade_escrow_locked: "templateTradeEscrowLocked",
+  trade_payment_submitted: "templateTradePaymentSubmitted",
+  trade_completed: "templateTradeCompleted",
+  trade_expired: "templateTradeExpired",
+  trade_cancelled: "templateTradeCancelled",
+  trade_disputed: "templateTradeDisputed",
+  dispute_resolved: "templateDisputeResolved",
+  kyc_reviewed: "templateKycReviewed",
 };
 
 export default function NotificationsPage(): React.JSX.Element {
   const qc = useQueryClient();
   const toast = useToast();
+  const tx = useTranslations("accountNotifications");
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: qk.notifications(1),
     queryFn: () => api.notifications({ page: 1 }),
@@ -47,29 +49,29 @@ export default function NotificationsPage(): React.JSX.Element {
       await api.markNotificationRead(id);
       invalidate();
     } catch (err) {
-      toast.error("Couldn't update", apiErrorMessage(err));
+      toast.error(tx("updateErrorTitle"), apiErrorMessage(err));
     }
   };
 
   const markAllRead = async () => {
     try {
       await Promise.all(unread.map((n) => api.markNotificationRead(n.id)));
-      toast.success("All caught up", "Marked everything as read.");
+      toast.success(tx("markAllSuccessTitle"), tx("markAllSuccessBody"));
       invalidate();
     } catch (err) {
-      toast.error("Couldn't update", apiErrorMessage(err));
+      toast.error(tx("updateErrorTitle"), apiErrorMessage(err));
     }
   };
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
       <PageHeader
-        title="Notifications"
+        title={tx("title")}
         backHref="/account"
         action={
           unread.length > 0 ? (
             <Button size="sm" variant="secondary" onClick={() => void markAllRead()}>
-              <CheckCheck size={15} /> Mark all read
+              <CheckCheck size={15} /> {tx("markAllRead")}
             </Button>
           ) : undefined
         }
@@ -82,25 +84,26 @@ export default function NotificationsPage(): React.JSX.Element {
           ))}
         </div>
       ) : isError ? (
-        <Alert tone="danger" title="Couldn't load notifications">
+        <Alert tone="danger" title={tx("loadErrorTitle")}>
           <button
             type="button"
             onClick={() => void refetch()}
             className="font-medium underline underline-offset-2 hover:no-underline"
           >
-            Try again
+            {tx("tryAgain")}
           </button>
         </Alert>
       ) : items.length === 0 ? (
         <EmptyState
           image="/assets/empty-notifications.png"
-          title="You're all caught up"
-          description="Trade and wallet updates will show here."
+          title={tx("emptyTitle")}
+          description={tx("emptyBody")}
         />
       ) : (
         <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
           {items.map((n) => {
             const isUnread = !n.readAt;
+            const templateKey = TEMPLATE_KEYS[n.template];
             return (
               <button
                 key={n.id}
@@ -113,7 +116,7 @@ export default function NotificationsPage(): React.JSX.Element {
               >
                 <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", isUnread ? "bg-accent-400" : "bg-transparent")} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-text-1">{TITLES[n.template] ?? n.template}</p>
+                  <p className="text-sm font-medium text-text-1">{templateKey ? tx(templateKey) : n.template}</p>
                   <p className="text-xs text-text-3">{timeAgo(n.createdAt)}</p>
                 </div>
               </button>

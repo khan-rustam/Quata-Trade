@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { fromDisplay, PAYMENT_METHODS, type CreateOfferRequest, type OfferSide, type PaymentMethod } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
@@ -20,6 +21,7 @@ import { cn } from "@/lib/utils";
 export default function NewOfferPage(): React.JSX.Element {
   const router = useRouter();
   const toast = useToast();
+  const tx = useTranslations("tradeNew");
   const [side, setSide] = useState<OfferSide>("SELL");
   const [price, setPrice] = useState("");
   const [minTrade, setMinTrade] = useState("");
@@ -46,13 +48,13 @@ export default function NewOfferPage(): React.JSX.Element {
         paymentMethods: methods,
         terms: terms.trim() || undefined,
       };
-      if (methods.length === 0) throw new Error("Select at least one payment method");
+      if (methods.length === 0) throw new Error(tx("selectPaymentMethod"));
       setBusy(true);
       await api.createOffer(body);
-      toast.success("Offer published", "Traders can now find your offer.");
+      toast.success(tx("offerPublishedTitle"), tx("offerPublishedBody"));
       router.replace("/trade");
     } catch (err) {
-      setError(apiErrorMessage(err, "Could not create the offer"));
+      setError(apiErrorMessage(err, tx("createError")));
     } finally {
       setBusy(false);
     }
@@ -60,49 +62,49 @@ export default function NewOfferPage(): React.JSX.Element {
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
-      <PageHeader title="Create an offer" subtitle="Set your rate, limits, and payment methods." backHref="/trade" />
+      <PageHeader title={tx("title")} subtitle={tx("subtitle")} backHref="/trade" />
 
       <Card className="space-y-4">
         <div>
-          <p className="mb-1.5 text-sm font-medium">I want to</p>
+          <p className="mb-1.5 text-sm font-medium">{tx("iWantTo")}</p>
           <Segmented
             value={side}
             onChange={setSide}
-            aria-label="Offer side"
+            aria-label={tx("offerSideAria")}
             options={[
-              { value: "SELL", label: "Sell USDT", tone: "danger" },
-              { value: "BUY", label: "Buy USDT", tone: "success" },
+              { value: "SELL", label: tx("sellUsdt"), tone: "danger" },
+              { value: "BUY", label: tx("buyUsdt"), tone: "success" },
             ]}
           />
         </div>
 
-        <Field label="Price (XAF per USDT)" required>
+        <Field label={tx("priceLabel")} required>
           {(p) => (
             <Input inputMode="numeric" mono suffix="XAF" placeholder="650" value={price} onChange={(e) => setPrice(e.target.value.replace(/[^\d]/g, ""))} {...p} />
           )}
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Min trade" required>
+          <Field label={tx("minTrade")} required>
             {(p) => (
               <Input inputMode="decimal" mono suffix="USDT" placeholder="5" value={minTrade} onChange={(e) => setMinTrade(e.target.value.replace(/[^\d.]/g, ""))} {...p} />
             )}
           </Field>
-          <Field label="Max trade" required>
+          <Field label={tx("maxTrade")} required>
             {(p) => (
               <Input inputMode="decimal" mono suffix="USDT" placeholder="200" value={maxTrade} onChange={(e) => setMaxTrade(e.target.value.replace(/[^\d.]/g, ""))} {...p} />
             )}
           </Field>
         </div>
 
-        <Field label="Total amount to offer" hint="Must be backed by your available balance for SELL offers." required>
+        <Field label={tx("totalLabel")} hint={tx("totalHint")} required>
           {(p) => (
             <Input inputMode="decimal" mono suffix="USDT" placeholder="1000" value={total} onChange={(e) => setTotal(e.target.value.replace(/[^\d.]/g, ""))} {...p} />
           )}
         </Field>
 
         <div>
-          <p className="mb-1.5 text-sm font-medium">Payment methods</p>
+          <p className="mb-1.5 text-sm font-medium">{tx("paymentMethods")}</p>
           <div className="flex flex-wrap gap-2">
             {PAYMENT_METHODS.map((m) => {
               const active = methods.includes(m);
@@ -124,10 +126,10 @@ export default function NewOfferPage(): React.JSX.Element {
           </div>
         </div>
 
-        <Field label="Terms (optional)">
+        <Field label={tx("termsLabel")}>
           {(p) => (
             <Textarea
-              placeholder="e.g. Pay within 15 minutes. Use your real name as reference."
+              placeholder={tx("termsPlaceholder")}
               value={terms}
               onChange={(e) => setTerms(e.target.value)}
               maxLength={2000}
@@ -139,7 +141,7 @@ export default function NewOfferPage(): React.JSX.Element {
         {error && <Alert tone="danger">{error}</Alert>}
 
         <Button className="w-full" onClick={submit} disabled={busy}>
-          {busy ? <Spinner /> : "Publish offer"}
+          {busy ? <Spinner /> : tx("publish")}
         </Button>
       </Card>
     </div>

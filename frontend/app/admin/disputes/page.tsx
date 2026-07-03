@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
 import type { z } from "zod";
@@ -26,6 +27,7 @@ import { formatDateTime } from "@/lib/format";
 type Row = z.infer<typeof zAdminDisputeRow>;
 
 export default function AdminDisputesPage(): React.JSX.Element {
+  const tx = useTranslations("adminDisputes");
   const [page, setPage] = useState(1);
   const { data, isLoading } = useAdminDisputes(page);
   const { data: me } = useAdminMe();
@@ -33,22 +35,22 @@ export default function AdminDisputesPage(): React.JSX.Element {
 
   return (
     <div className="space-y-5">
-      <AdminTitle title="Disputes" subtitle="Freeze-protected escrows awaiting resolution. Only resolution moves funds." />
+      <AdminTitle title={tx("title")} subtitle={tx("subtitle")} />
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
       ) : !data || data.items.length === 0 ? (
-        <EmptyState icon={ShieldCheck} title="No open disputes" description="Escrows are flowing normally." />
+        <EmptyState icon={ShieldCheck} title={tx("emptyTitle")} description={tx("emptyDescription")} />
       ) : (
         <>
           <TableFrame
             head={
               <tr>
-                <th className="px-4 py-2.5">Trade</th>
-                <th className="px-4 py-2.5">Amount</th>
-                <th className="px-4 py-2.5">Reason</th>
-                <th className="px-4 py-2.5">Opened</th>
-                <th className="px-4 py-2.5 text-right">Action</th>
+                <th className="px-4 py-2.5">{tx("colTrade")}</th>
+                <th className="px-4 py-2.5">{tx("colAmount")}</th>
+                <th className="px-4 py-2.5">{tx("colReason")}</th>
+                <th className="px-4 py-2.5">{tx("colOpened")}</th>
+                <th className="px-4 py-2.5 text-right">{tx("colAction")}</th>
               </tr>
             }
           >
@@ -60,7 +62,7 @@ export default function AdminDisputesPage(): React.JSX.Element {
                 <td className="px-4 py-3 text-xs text-text-3">{formatDateTime(d.createdAt)}</td>
                 <td className="px-4 py-3 text-right">
                   <Button size="sm" onClick={() => setActive(d)}>
-                    Resolve
+                    {tx("resolve")}
                   </Button>
                 </td>
               </tr>
@@ -76,6 +78,7 @@ export default function AdminDisputesPage(): React.JSX.Element {
 }
 
 function ResolveDialog({ dispute, requireTotp, onClose }: { dispute: Row; requireTotp: boolean; onClose: () => void }): React.JSX.Element {
+  const tx = useTranslations("adminDisputes");
   const qc = useQueryClient();
   const toast = useToast();
   const [resolution, setResolution] = useState<DisputeResolution>("RELEASE_TO_BUYER");
@@ -89,11 +92,11 @@ function ResolveDialog({ dispute, requireTotp, onClose }: { dispute: Row; requir
     setError(null);
     try {
       await adminApi.adminResolveDispute(dispute.id, { resolution, notes, totpCode: totp || undefined });
-      toast.success("Dispute resolved", resolution === "RELEASE_TO_BUYER" ? "Escrow released to the buyer." : "Escrow refunded to the seller.");
+      toast.success(tx("toastResolvedTitle"), resolution === "RELEASE_TO_BUYER" ? tx("toastReleasedDetail") : tx("toastRefundedDetail"));
       onClose();
       void qc.invalidateQueries({ queryKey: ["admin"] });
     } catch (err) {
-      setError(apiErrorMessage(err, "Could not resolve"));
+      setError(apiErrorMessage(err, tx("errorCouldNotResolve")));
     } finally {
       setBusy(false);
     }
@@ -103,46 +106,46 @@ function ResolveDialog({ dispute, requireTotp, onClose }: { dispute: Row; requir
     <Dialog
       open
       onClose={onClose}
-      title={`Resolve ${dispute.tradeShortRef}`}
-      description={requireTotp ? "This moves the frozen escrow. Choose the outcome, then confirm with your 2FA." : "This moves the frozen escrow. Choose the outcome, then confirm."}
+      title={tx("resolveTitle", { ref: dispute.tradeShortRef })}
+      description={requireTotp ? tx("dialogDescTotp") : tx("dialogDesc")}
     >
       <div className="space-y-4">
         {error && <Alert tone="danger">{error}</Alert>}
         <div className="rounded-lg bg-surface-2 p-3 text-sm">
           <div className="flex items-center justify-between">
-            <span className="text-text-2">Frozen escrow</span>
+            <span className="text-text-2">{tx("frozenEscrow")}</span>
             <Usdt value={dispute.amount} size="sm" />
           </div>
           <p className="mt-1 text-xs text-text-3">{dispute.reason}</p>
         </div>
         <div>
-          <p className="mb-1.5 text-sm font-medium">Outcome</p>
+          <p className="mb-1.5 text-sm font-medium">{tx("outcome")}</p>
           <Segmented
             value={resolution}
             onChange={setResolution}
-            aria-label="Resolution outcome"
+            aria-label={tx("resolutionOutcomeAria")}
             className="w-full"
             options={[
-              { value: "RELEASE_TO_BUYER", label: "Release to buyer", tone: "success" },
-              { value: "REFUND_TO_SELLER", label: "Refund to seller", tone: "danger" },
+              { value: "RELEASE_TO_BUYER", label: tx("releaseToBuyer"), tone: "success" },
+              { value: "REFUND_TO_SELLER", label: tx("refundToSeller"), tone: "danger" },
             ]}
           />
         </div>
-        <Field label="Resolution notes" required>
-          {(p) => <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Explain the decision (min 10 characters)…" {...p} />}
+        <Field label={tx("resolutionNotes")} required>
+          {(p) => <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={tx("notesPlaceholder")} {...p} />}
         </Field>
         {requireTotp && (
           <div className="space-y-2">
-            <label className="text-sm font-medium">Your authenticator code</label>
-            <OtpInput value={totp} onChange={setTotp} aria-label="Authenticator code" invalid={Boolean(error)} />
+            <label className="text-sm font-medium">{tx("authenticatorCodeLabel")}</label>
+            <OtpInput value={totp} onChange={setTotp} aria-label={tx("authenticatorCodeAria")} invalid={Boolean(error)} />
           </div>
         )}
         <div className="flex gap-2">
           <Button variant="secondary" className="flex-1" onClick={onClose} disabled={busy}>
-            Cancel
+            {tx("cancel")}
           </Button>
           <Button className="flex-1" disabled={busy || notes.trim().length < 10 || (requireTotp && totp.length < 6)} onClick={submit}>
-            {busy ? <Spinner /> : "Resolve dispute"}
+            {busy ? <Spinner /> : tx("resolveDispute")}
           </Button>
         </div>
       </div>

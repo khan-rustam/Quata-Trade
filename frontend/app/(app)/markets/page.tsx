@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowDownRight, ArrowUpRight, TrendingUp } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
@@ -13,9 +14,10 @@ import { Badge } from "@/components/ui/badge";
  * service; this shows the indicative rate and routes into Trade.
  */
 export default function MarketsPage(): React.JSX.Element {
+  const tx = useTranslations("markets");
   return (
     <div className="space-y-5">
-      <PageHeader title="Markets" subtitle="Live USDT rate against the Central African franc." />
+      <PageHeader title={tx("title")} subtitle={tx("subtitle")} />
 
       <Card>
         <div className="flex items-start justify-between">
@@ -29,14 +31,14 @@ export default function MarketsPage(): React.JSX.Element {
             </div>
           </div>
           <Badge tone="success" icon={<TrendingUp size={12} />}>
-            Indicative
+            {tx("indicative")}
           </Badge>
         </div>
 
         <div className="mt-5 flex items-end justify-between">
           <div>
             <p className="font-money text-3xl font-bold tabular-nums">650 XAF</p>
-            <p className="text-sm text-text-2">per USDT</p>
+            <p className="text-sm text-text-2">{tx("perUsdt")}</p>
           </div>
           <div className="text-right text-sm">
             <p className="flex items-center justify-end gap-1 text-success">
@@ -47,29 +49,26 @@ export default function MarketsPage(): React.JSX.Element {
         </div>
 
         <div className="mt-5 grid grid-cols-3 gap-2 text-center text-sm">
-          <Stat label="24h high" value="654" up />
-          <Stat label="24h low" value="646" />
-          <Stat label="Spread" value="~1.2%" />
+          <Stat label={tx("high24h")} value="654" up />
+          <Stat label={tx("low24h")} value="646" />
+          <Stat label={tx("spread")} value="~1.2%" />
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-2">
           <Link href="/trade?side=BUY">
             <Button className="w-full">
-              <ArrowDownRight size={16} /> Buy USDT
+              <ArrowDownRight size={16} /> {tx("buyUsdt")}
             </Button>
           </Link>
           <Link href="/trade?side=SELL">
             <Button variant="secondary" className="w-full">
-              <ArrowUpRight size={16} /> Sell USDT
+              <ArrowUpRight size={16} /> {tx("sellUsdt")}
             </Button>
           </Link>
         </div>
       </Card>
 
-      <Card className="text-sm text-text-2">
-        Prices are indicative P2P rates set by traders — the price you get is the offer you accept, shown before
-        every trade. QuataTrade never sets a mandatory rate.
-      </Card>
+      <Card className="text-sm text-text-2">{tx("disclaimer")}</Card>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ export function EmailChange({
 }): React.JSX.Element {
   const qc = useQueryClient();
   const toast = useToast();
+  const tx = useTranslations("emailChange");
   const [stage, setStage] = useState<Stage>(pendingEmail ? "code" : "idle");
   const [newEmail, setNewEmail] = useState(pendingEmail ?? "");
   const [password, setPassword] = useState("");
@@ -42,9 +44,9 @@ export function EmailChange({
       await qc.invalidateQueries({ queryKey: qk.me });
       setPassword("");
       setStage("code");
-      toast.success("Code sent", `Check ${newEmail.trim()} for a confirmation code.`);
+      toast.success(tx("codeSentTitle"), tx("codeSentDetail", { email: newEmail.trim() }));
     } catch (err) {
-      toast.error("Could not start email change", apiErrorMessage(err));
+      toast.error(tx("changeErrorTitle"), apiErrorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -60,9 +62,9 @@ export function EmailChange({
       setStage("idle");
       setCode("");
       setNewEmail("");
-      toast.success("Email updated");
+      toast.success(tx("emailUpdated"));
     } catch (err) {
-      toast.error("Could not confirm", apiErrorMessage(err));
+      toast.error(tx("confirmErrorTitle"), apiErrorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -72,11 +74,11 @@ export function EmailChange({
     return (
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs text-text-3">Email</p>
+          <p className="text-xs text-text-3">{tx("emailLabel")}</p>
           <p className="truncate text-sm text-text-1">{currentEmail}</p>
         </div>
         <Button type="button" variant="secondary" size="sm" onClick={() => setStage("form")}>
-          Change
+          {tx("change")}
         </Button>
       </div>
     );
@@ -85,19 +87,19 @@ export function EmailChange({
   if (stage === "form") {
     return (
       <form onSubmit={request} className="space-y-3" noValidate>
-        <Field label="New email">
+        <Field label={tx("newEmailLabel")}>
           {(p) => (
             <Input
               {...p}
               type="email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={tx("emailPlaceholder")}
               autoComplete="email"
             />
           )}
         </Field>
-        <Field label="Current password">
+        <Field label={tx("currentPasswordLabel")}>
           {(p) => (
             <Input
               {...p}
@@ -110,7 +112,7 @@ export function EmailChange({
         </Field>
         <div className="flex gap-2">
           <Button type="submit" size="sm" disabled={busy || !newEmail.trim() || !password}>
-            {busy ? <Spinner /> : "Send code"}
+            {busy ? <Spinner /> : tx("sendCode")}
           </Button>
           <Button
             type="button"
@@ -121,7 +123,7 @@ export function EmailChange({
               setPassword("");
             }}
           >
-            Cancel
+            {tx("cancel")}
           </Button>
         </div>
       </form>
@@ -131,9 +133,9 @@ export function EmailChange({
   return (
     <form onSubmit={verify} className="space-y-3" noValidate>
       <p className="text-sm text-text-2">
-        Enter the 6-digit code we sent to <span className="text-text-1">{pendingEmail ?? newEmail}</span>.
+        {tx("codeIntroPrefix")}<span className="text-text-1">{pendingEmail ?? newEmail}</span>{tx("codeIntroSuffix")}
       </p>
-      <Field label="Confirmation code">
+      <Field label={tx("confirmationCodeLabel")}>
         {(p) => (
           <Input
             {...p}
@@ -147,7 +149,7 @@ export function EmailChange({
       </Field>
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={busy || code.length !== 6}>
-          {busy ? <Spinner /> : "Confirm email"}
+          {busy ? <Spinner /> : tx("confirmEmail")}
         </Button>
         <Button
           type="button"
@@ -158,7 +160,7 @@ export function EmailChange({
             setCode("");
           }}
         >
-          Cancel
+          {tx("cancel")}
         </Button>
       </div>
     </form>

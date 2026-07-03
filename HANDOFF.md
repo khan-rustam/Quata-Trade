@@ -3,6 +3,18 @@
 **Date:** 2026-07-03 · **Branch:** `main` · **Last commit:** `653b55e` (pushed to `origin/main`)
 **Repo:** github.com/khan-rustam/Quata-Trade
 
+## ✅ Update — 2026-07-03 (session 3): app-wide i18n sweep DONE
+
+The whole app is now bilingual EN+FR. Localized **42 files** (15 app + 11 admin + 5 auth + 11 shared
+components) via next-intl → **42 new namespaces, ~750 keys** in `messages/{en,fr}.json` (one agent per
+file → central merge with HTML-entity decoding). A French glossary kept terminology consistent
+(escrow=séquestre, withdrawal=retrait, deposit=dépôt, wallet=portefeuille, …). Verified: `tsc` 0 ·
+ESLint 0 · static missing-key scan (every `t()` resolves in BOTH locales) → 0 missing · dynamic keys
+(KYC status, etc.) enumerate all enum values · all 5 auth pages render 200 in EN+FR.
+**RESIDUAL:** in-browser render of the *behind-auth* pages couldn't run here (Playwright needs Chrome;
+Chrome install needs sudo, unavailable) — do a quick logged-in click-through in EN+FR on a machine with
+a browser to eyeball the French visually. Money/dates/hooks were left untouched (display strings only).
+
 ## ✅ Update — 2026-07-03 (session 2)
 
 Shipped + pushed since the original handoff:
@@ -17,14 +29,11 @@ Shipped + pushed since the original handoff:
 All verified: shared build + backend/frontend tsc + eslint clean; notify unit tests 26/26; a fresh
 register queues the verification email and `EmailSendJob` attempts delivery (attempts++ w/o SMTP).
 
-**THE ONE REMAINING TASK: app-wide i18n sweep.** The public site is 100% bilingual, but the logged-in
-app (15 pages in `frontend/app/(app)`) + admin (11 pages in `frontend/app/admin`) are still ~English.
-Proven approach (from the public-pages sweep): a Workflow, one agent per page → each rewrites its page
-to `useTranslations` + returns a FLAT EN/FR key map → merge maps into `messages/{en,fr}.json` centrally
-(DECODE HTML entities — `&amp;`→`&`), then `tsc` + a static missing-key check. Only swap DISPLAY
-strings; never touch money (`<Usdt>`/`<Xaf>`), dates, or query hooks. CAVEAT: these pages are behind
-auth, so to render-verify EN/FR you need a session — set a user's `email_verified_at` in the DB, log
-in for a token, then drive the pages. Best done in a session where the app can be exercised.
+~~**THE ONE REMAINING TASK: app-wide i18n sweep.**~~ ✅ **DONE in session 3 (see top).** All
+app/admin/auth strings are now EN+FR. The proven approach was: a Workflow, one agent per file →
+`useTranslations` + a FLAT EN/FR key map → central merge (decode HTML entities `&amp;`→`&`) → `tsc` +
+a static missing-key scan. Only DISPLAY strings were swapped; money (`<Usdt>`/`<Xaf>`), dates, and
+query hooks untouched. Only residual is a visual in-browser EN/FR pass on the behind-auth pages.
 
 > **Next Claude: start here.** Read this file, then `CLAUDE.md`, `Documents/01-overview.md`, and
 > `Documents/02-tech-stack.md`. The `Documents/` folder is the single source of truth.

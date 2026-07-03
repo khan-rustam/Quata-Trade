@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { CheckCircle2, ScrollText, ShieldAlert } from "lucide-react";
 import { AdminTitle, Pagination, TableFrame } from "@/components/admin/admin-ui";
 import { Card } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import { apiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime, shortHash } from "@/lib/format";
 
 export default function AdminAuditPage(): React.JSX.Element {
+  const tx = useTranslations("adminAudit");
   const [page, setPage] = useState(1);
   const { data, isLoading } = useAdminAuditLogs(page);
   const toast = useToast();
@@ -27,10 +29,10 @@ export default function AdminAuditPage(): React.JSX.Element {
     try {
       const res = await adminApi.adminVerifyAudit();
       setVerifyResult({ broken: res.broken.length });
-      if (res.broken.length === 0) toast.success("Chain intact", "No tampering detected.");
-      else toast.error("Tamper detected", `${res.broken.length} row(s) failed verification.`);
+      if (res.broken.length === 0) toast.success(tx("chainIntactTitle"), tx("chainIntactBody"));
+      else toast.error(tx("tamperDetectedTitle"), tx("tamperDetectedBody", { count: res.broken.length }));
     } catch (err) {
-      toast.error("Verify failed", apiErrorMessage(err));
+      toast.error(tx("verifyFailedTitle"), apiErrorMessage(err));
     } finally {
       setVerifying(false);
     }
@@ -39,11 +41,11 @@ export default function AdminAuditPage(): React.JSX.Element {
   return (
     <div className="space-y-5">
       <AdminTitle
-        title="Audit log"
-        subtitle="Append-only, hash-chained record of every admin & security action."
+        title={tx("title")}
+        subtitle={tx("subtitle")}
         action={
           <Button size="sm" variant="secondary" onClick={verify} disabled={verifying}>
-            {verifying ? <Spinner /> : <ShieldAlert size={14} />} Verify chain
+            {verifying ? <Spinner /> : <ShieldAlert size={14} />} {tx("verifyChain")}
           </Button>
         }
       />
@@ -53,11 +55,11 @@ export default function AdminAuditPage(): React.JSX.Element {
           <p className="flex items-center gap-2 text-sm">
             {verifyResult.broken === 0 ? (
               <>
-                <CheckCircle2 size={16} className="text-success" /> Hash chain verified — no tampering.
+                <CheckCircle2 size={16} className="text-success" /> {tx("hashChainVerified")}
               </>
             ) : (
               <>
-                <ShieldAlert size={16} className="text-danger" /> {verifyResult.broken} row(s) failed the hash check.
+                <ShieldAlert size={16} className="text-danger" /> {tx("rowsFailedHashCheck", { count: verifyResult.broken })}
               </>
             )}
           </p>
@@ -67,17 +69,17 @@ export default function AdminAuditPage(): React.JSX.Element {
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
       ) : !data || data.items.length === 0 ? (
-        <EmptyState icon={ScrollText} title="No audit entries" description="Actions will be recorded here." />
+        <EmptyState icon={ScrollText} title={tx("emptyTitle")} description={tx("emptyBody")} />
       ) : (
         <>
           <TableFrame
             head={
               <tr>
-                <th className="px-4 py-2.5">When</th>
-                <th className="px-4 py-2.5">Actor</th>
-                <th className="px-4 py-2.5">Action</th>
-                <th className="px-4 py-2.5">Target</th>
-                <th className="px-4 py-2.5">IP</th>
+                <th className="px-4 py-2.5">{tx("colWhen")}</th>
+                <th className="px-4 py-2.5">{tx("colActor")}</th>
+                <th className="px-4 py-2.5">{tx("colAction")}</th>
+                <th className="px-4 py-2.5">{tx("colTarget")}</th>
+                <th className="px-4 py-2.5">{tx("colIp")}</th>
               </tr>
             }
           >

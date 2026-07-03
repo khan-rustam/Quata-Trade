@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ShieldAlert, X } from "lucide-react";
 import type { z } from "zod";
@@ -27,6 +28,7 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
   const { data: me } = useAdminMe();
   const qc = useQueryClient();
   const toast = useToast();
+  const tx = useTranslations("adminWithdrawals");
 
   const [action, setAction] = useState<{ row: Row; kind: "approve" | "reject" } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -39,15 +41,15 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
     try {
       if (action.kind === "approve") {
         await adminApi.adminApproveWithdrawal(action.row.id, { totpCode: v.totpCode || undefined });
-        toast.success("Approved", "The withdrawal moves to the signer pipeline.");
+        toast.success(tx("approvedToastTitle"), tx("approvedToastBody"));
       } else {
         await adminApi.adminRejectWithdrawal(action.row.id, { totpCode: v.totpCode || undefined, reason: v.reason ?? "" });
-        toast.success("Rejected", "Funds were refunded to the user.");
+        toast.success(tx("rejectedToastTitle"), tx("rejectedToastBody"));
       }
       setAction(null);
       void qc.invalidateQueries({ queryKey: ["admin"] });
     } catch (err) {
-      setError(apiErrorMessage(err, "Action failed"));
+      setError(apiErrorMessage(err, tx("actionFailed")));
     } finally {
       setBusy(false);
     }
@@ -57,23 +59,23 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
 
   return (
     <div className="space-y-5">
-      <AdminTitle title="Withdrawals" subtitle="Approve or reject pending withdrawals. Large amounts need two approvers." />
+      <AdminTitle title={tx("title")} subtitle={tx("subtitle")} />
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
       ) : !data || data.items.length === 0 ? (
-        <EmptyState icon={Check} title="Queue is clear" description="No withdrawals awaiting review." />
+        <EmptyState icon={Check} title={tx("emptyTitle")} description={tx("emptyDescription")} />
       ) : (
         <>
           <TableFrame
             head={
               <tr>
-                <th className="px-4 py-2.5">User</th>
-                <th className="px-4 py-2.5">Amount</th>
-                <th className="px-4 py-2.5">Destination</th>
-                <th className="px-4 py-2.5">Risk</th>
-                <th className="px-4 py-2.5">Status</th>
-                <th className="px-4 py-2.5 text-right">Action</th>
+                <th className="px-4 py-2.5">{tx("colUser")}</th>
+                <th className="px-4 py-2.5">{tx("colAmount")}</th>
+                <th className="px-4 py-2.5">{tx("colDestination")}</th>
+                <th className="px-4 py-2.5">{tx("colRisk")}</th>
+                <th className="px-4 py-2.5">{tx("colStatus")}</th>
+                <th className="px-4 py-2.5 text-right">{tx("colAction")}</th>
               </tr>
             }
           >
@@ -83,13 +85,13 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
                   <p className="truncate">{w.userEmail}</p>
                   {w.requiresSecondApprover && (
                     <Badge tone="warning" className="mt-0.5">
-                      2 approvers
+                      {tx("twoApprovers")}
                     </Badge>
                   )}
                 </td>
                 <td className="px-4 py-3">
                   <Usdt value={w.amount} size="sm" />
-                  <p className="text-xs text-text-3">fee <Usdt value={w.fee} size="sm" showUnit={false} /></p>
+                  <p className="text-xs text-text-3">{tx("fee")} <Usdt value={w.fee} size="sm" showUnit={false} /></p>
                 </td>
                 <td className="px-4 py-3 font-money text-xs">{shortHash(w.toAddress, 8, 6)}</td>
                 <td className="px-4 py-3">
@@ -108,15 +110,15 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
                   {actionable(w.status) ? (
                     <div className="flex justify-end gap-2">
                       <Button size="sm" variant="secondary" className="text-danger" onClick={() => { setError(null); setAction({ row: w, kind: "reject" }); }}>
-                        <X size={14} /> Reject
+                        <X size={14} /> {tx("reject")}
                       </Button>
                       <Button size="sm" onClick={() => { setError(null); setAction({ row: w, kind: "approve" }); }}>
-                        <Check size={14} /> Approve
+                        <Check size={14} /> {tx("approve")}
                       </Button>
                     </div>
                   ) : (
                     <span className="block text-right text-xs text-text-3">
-                      {w.approvedBy ? "1st approved" : "—"}
+                      {w.approvedBy ? tx("firstApproved") : "—"}
                     </span>
                   )}
                 </td>
@@ -130,19 +132,19 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
       <TotpActionDialog
         open={Boolean(action)}
         onClose={() => setAction(null)}
-        title={action?.kind === "approve" ? "Approve withdrawal" : "Reject withdrawal"}
+        title={action?.kind === "approve" ? tx("approveTitle") : tx("rejectTitle")}
         description={
           action
             ? action.kind === "approve"
               ? action.row.requiresSecondApprover
-                ? "This is a large withdrawal — it needs a second, different approver before signing."
-                : "This releases the withdrawal to the signer pipeline."
-              : "The debited funds will be refunded to the user."
+                ? tx("approveDescLarge")
+                : tx("approveDesc")
+              : tx("rejectDesc")
             : undefined
         }
-        actionLabel={action?.kind === "approve" ? "Approve" : "Reject"}
+        actionLabel={action?.kind === "approve" ? tx("approve") : tx("reject")}
         destructive={action?.kind === "reject"}
-        reasonLabel={action?.kind === "reject" ? "Reason" : undefined}
+        reasonLabel={action?.kind === "reject" ? tx("reason") : undefined}
         reasonRequired={action?.kind === "reject"}
         requireTotp={Boolean(me?.totpEnabled)}
         busy={busy}

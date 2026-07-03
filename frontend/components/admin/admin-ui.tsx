@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 export function AdminTitle({
@@ -33,18 +34,17 @@ export function Pagination({
   total: number;
   onPage: (p: number) => void;
 }): React.JSX.Element | null {
+  const tx = useTranslations("adminUi");
   const pages = Math.ceil(total / pageSize);
   if (pages <= 1) return null;
   return (
     <div className="flex items-center justify-between pt-1 text-sm text-text-2">
-      <span>
-        Page {page} of {pages} · {total} total
-      </span>
+      <span>{tx("pageStatus", { page, pages, total })}</span>
       <div className="flex gap-2">
-        <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label="Previous page">
+        <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label={tx("previousPage")}>
           <ChevronLeft size={16} />
         </Button>
-        <Button size="sm" variant="secondary" disabled={page >= pages} onClick={() => onPage(page + 1)} aria-label="Next page">
+        <Button size="sm" variant="secondary" disabled={page >= pages} onClick={() => onPage(page + 1)} aria-label={tx("nextPage")}>
           <ChevronRight size={16} />
         </Button>
       </div>

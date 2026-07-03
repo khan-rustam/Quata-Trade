@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { AlertTriangle, ArrowUpFromLine, BadgeCheck, Coins, ShieldAlert, TrendingUp, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,21 +9,22 @@ import { Usdt } from "@/components/ui/amount";
 import { useAdminKpis } from "@/hooks/use-admin";
 
 export default function AdminDashboard(): React.JSX.Element {
+  const tx = useTranslations("adminDash");
   const { data, isLoading } = useAdminKpis();
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-text-2">Platform health at a glance.</p>
+        <h1 className="font-display text-2xl font-bold tracking-tight">{tx("title")}</h1>
+        <p className="text-sm text-text-2">{tx("subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi label="Total users" value={data?.totalUsers} loading={isLoading} icon={<Users size={16} />} />
-        <Kpi label="Active trades" value={data?.activeTrades} loading={isLoading} icon={<TrendingUp size={16} />} />
-        <Kpi label="Trades (24h)" value={data?.tradesLast24h} loading={isLoading} />
+        <Kpi label={tx("totalUsers")} value={data?.totalUsers} loading={isLoading} icon={<Users size={16} />} />
+        <Kpi label={tx("activeTrades")} value={data?.activeTrades} loading={isLoading} icon={<TrendingUp size={16} />} />
+        <Kpi label={tx("trades24h")} value={data?.tradesLast24h} loading={isLoading} />
         <Kpi
-          label="Volume (24h)"
+          label={tx("volume24h")}
           value={data ? <Usdt value={data.volumeLast24h} size="md" /> : undefined}
           loading={isLoading}
         />
@@ -32,20 +34,20 @@ export default function AdminDashboard(): React.JSX.Element {
         <Card className="flex items-center justify-between">
           <div>
             <p className="flex items-center gap-1.5 text-sm text-text-2">
-              <Coins size={14} className="text-accent-400" /> Escrow locked
+              <Coins size={14} className="text-accent-400" /> {tx("escrowLocked")}
             </p>
             {isLoading ? <Skeleton className="mt-1 h-6 w-28" /> : <div className="mt-1"><Usdt value={data?.escrowLockedTotal ?? "0"} size="lg" /></div>}
           </div>
           <div className="text-right">
-            <p className="text-sm text-text-2">Treasury</p>
+            <p className="text-sm text-text-2">{tx("treasury")}</p>
             {isLoading ? <Skeleton className="mt-1 h-6 w-24" /> : <div className="mt-1"><Usdt value={data?.treasuryBalance ?? "0"} size="lg" /></div>}
           </div>
         </Card>
 
         <div className="grid grid-cols-3 gap-3">
-          <ActionTile href="/admin/withdrawals" label="Pending" value={data?.pendingWithdrawals} loading={isLoading} icon={<ArrowUpFromLine size={16} />} tone="warning" />
-          <ActionTile href="/admin/disputes" label="Disputes" value={data?.openDisputes} loading={isLoading} icon={<ShieldAlert size={16} />} tone="danger" />
-          <ActionTile href="/admin/kyc" label="KYC queue" value={data?.pendingKyc} loading={isLoading} icon={<BadgeCheck size={16} />} tone="info" />
+          <ActionTile href="/admin/withdrawals" label={tx("pending")} value={data?.pendingWithdrawals} loading={isLoading} icon={<ArrowUpFromLine size={16} />} tone="warning" />
+          <ActionTile href="/admin/disputes" label={tx("disputes")} value={data?.openDisputes} loading={isLoading} icon={<ShieldAlert size={16} />} tone="danger" />
+          <ActionTile href="/admin/kyc" label={tx("kycQueue")} value={data?.pendingKyc} loading={isLoading} icon={<BadgeCheck size={16} />} tone="info" />
         </div>
       </div>
 
@@ -53,7 +55,7 @@ export default function AdminDashboard(): React.JSX.Element {
         <Card className="flex items-center gap-3 border-warning/30 bg-warning/5">
           <AlertTriangle size={18} className="text-warning" />
           <p className="text-sm">
-            <span className="font-semibold text-warning">{data.riskFlagsLast24h}</span> risk flags in the last 24h.
+            <span className="font-semibold text-warning">{data.riskFlagsLast24h}</span> {tx("riskFlags24h")}
           </p>
         </Card>
       )}

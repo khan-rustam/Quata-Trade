@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { ShieldCheck } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -37,7 +36,6 @@ export function SecurityDialog({
   error?: string | null;
   onConfirm: (creds: { pin?: string; totpCode?: string }) => void;
 }): React.JSX.Element {
-  const tx = useTranslations("securityDialog");
   const [pin, setPin] = useState("");
   const [totp, setTotp] = useState("");
 
@@ -53,20 +51,20 @@ export function SecurityDialog({
         {requireTotp && (
           <div className="space-y-2">
             <label className="flex items-center gap-1.5 text-sm font-medium text-text-1">
-              <ShieldCheck size={14} className="text-accent-400" /> {tx("authenticatorCode")}
+              <ShieldCheck size={14} className="text-accent-400" /> Authenticator code
             </label>
-            <OtpInput value={totp} onChange={setTotp} aria-label={tx("authenticatorCode")} invalid={Boolean(error)} />
+            <OtpInput value={totp} onChange={setTotp} aria-label="Authenticator code" invalid={Boolean(error)} />
           </div>
         )}
         {requirePin && (
           <div className="space-y-2">
-            <label className="text-sm font-medium text-text-1">{tx("transactionPin")}</label>
-            <OtpInput value={pin} onChange={setPin} aria-label={tx("transactionPin")} invalid={Boolean(error)} />
+            <label className="text-sm font-medium text-text-1">Transaction PIN</label>
+            <OtpInput value={pin} onChange={setPin} aria-label="Transaction PIN" invalid={Boolean(error)} />
           </div>
         )}
         <div className="flex gap-2 pt-1">
           <Button variant="secondary" className="flex-1" onClick={onClose} disabled={busy}>
-            {tx("cancel")}
+            Cancel
           </Button>
           <Button
             className="flex-1"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Check, Loader2, Upload, X } from "lucide-react";
 import { KYC_UPLOAD_MIMES } from "@quatatrade/shared";
 import { api } from "@/lib/api/client";
@@ -19,6 +20,7 @@ export function DocumentUpload({
   onUploaded: (key: string) => void;
   onCleared: () => void;
 }): React.JSX.Element {
+  const tx = useTranslations("documentUpload");
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<"idle" | "uploading" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -29,12 +31,12 @@ export function DocumentUpload({
   const onFile = async (file: File) => {
     setError(null);
     if (!(KYC_UPLOAD_MIMES as readonly string[]).includes(file.type)) {
-      setError("Use a JPG, PNG, WebP, or PDF file");
+      setError(tx("errWrongType"));
       setState("error");
       return;
     }
     if (file.size > MAX_BYTES) {
-      setError("File must be under 5 MB");
+      setError(tx("errTooLarge"));
       setState("error");
       return;
     }
@@ -46,7 +48,7 @@ export function DocumentUpload({
       onUploaded(key);
       setState("done");
     } catch (err) {
-      setError(apiErrorMessage(err, "Upload failed"));
+      setError(apiErrorMessage(err, tx("errUploadFailed")));
       setState("error");
     }
   };
@@ -86,14 +88,14 @@ export function DocumentUpload({
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-medium text-text-1">{label}</span>
           <span className="block truncate text-xs text-text-3">
-            {state === "done" ? name : state === "uploading" ? "Uploading…" : "JPG, PNG, WebP or PDF · max 5 MB"}
+            {state === "done" ? name : state === "uploading" ? tx("uploading") : tx("hint")}
           </span>
         </span>
         {state === "done" && (
           <span
             role="button"
             tabIndex={0}
-            aria-label="Remove file"
+            aria-label={tx("removeFile")}
             onClick={(e) => {
               e.stopPropagation();
               clear();

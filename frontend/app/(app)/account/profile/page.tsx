@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AvatarStyle, UpdateProfileRequest } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
@@ -23,6 +24,7 @@ export default function ProfilePage(): React.JSX.Element {
   const { data: me } = useMe();
   const qc = useQueryClient();
   const toast = useToast();
+  const tx = useTranslations("accountProfile");
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -48,7 +50,7 @@ export default function ProfilePage(): React.JSX.Element {
     if (!me || saving) return;
     const handle = displayName.trim();
     if (handle && (handle.length < 2 || handle.length > 24)) {
-      toast.error("Display name must be 2–24 characters");
+      toast.error(tx("displayNameLength"));
       return;
     }
     const body: UpdateProfileRequest = {
@@ -64,9 +66,9 @@ export default function ProfilePage(): React.JSX.Element {
     try {
       await api.updateProfile(body);
       await qc.invalidateQueries({ queryKey: qk.me });
-      toast.success("Profile updated");
+      toast.success(tx("profileUpdated"));
     } catch (err) {
-      toast.error("Could not update", apiErrorMessage(err));
+      toast.error(tx("couldNotUpdate"), apiErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -74,50 +76,49 @@ export default function ProfilePage(): React.JSX.Element {
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
-      <PageHeader title="Profile details" backHref="/account" />
+      <PageHeader title={tx("title")} backHref="/account" />
       <form onSubmit={submit} className="space-y-5" noValidate>
         <Card className="space-y-3">
           <div>
-            <p className="text-sm font-medium text-text-1">Avatar</p>
-            <p className="mt-0.5 text-xs text-text-3">Pick a style, then shuffle for a face you like.</p>
+            <p className="text-sm font-medium text-text-1">{tx("avatar")}</p>
+            <p className="mt-0.5 text-xs text-text-3">{tx("avatarHint")}</p>
           </div>
           {me && <AvatarPicker userId={me.id} style={avatar.style} seed={avatar.seed} onChange={setAvatar} />}
         </Card>
 
         <Card className="space-y-4">
-          <Field label="Display name">
+          <Field label={tx("displayName")}>
             {(p) => (
               <Input
                 {...p}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="e.g. AichaTrades"
+                placeholder={tx("displayNamePlaceholder")}
                 maxLength={24}
               />
             )}
           </Field>
           <p className="-mt-2 text-xs text-text-3">
-            Optional public handle shown to people you trade with. Leave blank to stay anonymous — we show a masked
-            name instead.
+            {tx("displayNameHint")}
           </p>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="First name">
-              {(p) => <Input {...p} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Marie" />}
+            <Field label={tx("firstName")}>
+              {(p) => <Input {...p} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder={tx("firstNamePlaceholder")} />}
             </Field>
-            <Field label="Last name">
-              {(p) => <Input {...p} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Nkeng" />}
+            <Field label={tx("lastName")}>
+              {(p) => <Input {...p} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder={tx("lastNamePlaceholder")} />}
             </Field>
           </div>
 
-          <Field label="Bio">
+          <Field label={tx("bio")}>
             {(p) => (
               <textarea
                 {...p}
                 value={bio}
                 onChange={(e) => setBio(e.target.value.slice(0, BIO_MAX))}
                 rows={3}
-                placeholder="A short line about you (optional)."
+                placeholder={tx("bioPlaceholder")}
                 className="w-full resize-none rounded-btn border border-border bg-surface-1 px-3 py-2 text-sm text-text-1 placeholder:text-text-3"
               />
             )}
@@ -128,14 +129,14 @@ export default function ProfilePage(): React.JSX.Element {
         </Card>
 
         <Button type="submit" disabled={saving || !me}>
-          {saving ? <Spinner /> : "Save changes"}
+          {saving ? <Spinner /> : tx("saveChanges")}
         </Button>
       </form>
 
       {/* Email change manages its own forms — must NOT nest inside the save form */}
       <Card className="space-y-4">
         {me && <EmailChange currentEmail={me.email} pendingEmail={me.pendingEmail} />}
-        <Field label="Phone">{(p) => <Input {...p} value={me?.phone ?? "—"} disabled />}</Field>
+        <Field label={tx("phone")}>{(p) => <Input {...p} value={me?.phone ?? "—"} disabled />}</Field>
       </Card>
     </div>
   );

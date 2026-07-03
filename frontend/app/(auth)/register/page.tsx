@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { zRegisterRequest, type RegisterRequest } from "@quatatrade/shared";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
@@ -25,26 +26,27 @@ type FormValues = RegisterRequest & { acceptTerms: true };
 const STEPS = [
   {
     key: "you",
-    title: "What should we call you?",
-    subtitle: "First things first — the name other traders will see.",
+    titleKey: "step1Title",
+    subtitleKey: "step1Subtitle",
     fields: ["firstName", "lastName"],
   },
   {
     key: "contact",
-    title: "How do we reach you?",
-    subtitle: "We send your verification link and trade alerts here.",
+    titleKey: "step2Title",
+    subtitleKey: "step2Subtitle",
     fields: ["email", "phone"],
   },
   {
     key: "secure",
-    title: "Lock it down",
-    subtitle: "One strong password and your account is ready.",
+    titleKey: "step3Title",
+    subtitleKey: "step3Subtitle",
     fields: ["password", "acceptTerms"],
   },
 ] as const;
 const LAST = STEPS.length - 1;
 
 export default function RegisterPage(): React.JSX.Element {
+  const tx = useTranslations("authRegister");
   const router = useRouter();
   const toast = useToast();
   const registerMut = useRegister();
@@ -70,10 +72,10 @@ export default function RegisterPage(): React.JSX.Element {
     setFormError(null);
     try {
       await registerMut.mutateAsync(values);
-      toast.success("Account created", "Check your email to verify your address.");
+      toast.success(tx("toastCreatedTitle"), tx("toastCreatedBody"));
       router.replace(`/verify-email?email=${encodeURIComponent(values.email)}`);
     } catch (err) {
-      setFormError(apiErrorMessage(err, "Could not create your account"));
+      setFormError(apiErrorMessage(err, tx("errorCreate")));
     }
   });
 
@@ -100,11 +102,9 @@ export default function RegisterPage(): React.JSX.Element {
       {/* progress */}
       <div className="mb-5">
         <div className="mb-2 flex items-center justify-between text-xs text-text-3">
-          <span>
-            Step {step + 1} of {STEPS.length}
-          </span>
+          <span>{tx("stepOf", { current: step + 1, total: STEPS.length })}</span>
           <span className="flex items-center gap-1">
-            <Sparkles size={12} className="text-accent-400" /> Crypto to cash. Protected.
+            <Sparkles size={12} className="text-accent-400" /> {tx("tagline")}
           </span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-surface-3">
@@ -118,8 +118,8 @@ export default function RegisterPage(): React.JSX.Element {
       {/* the step animates in on change; key remount also focuses its first field */}
       <div key={current.key} className="qt-animate-fade">
         <div className="mb-5">
-          <h1 className="font-display text-2xl font-bold tracking-tight">{current.title}</h1>
-          <p className="mt-1 text-sm text-text-2">{current.subtitle}</p>
+          <h1 className="font-display text-2xl font-bold tracking-tight">{tx(current.titleKey)}</h1>
+          <p className="mt-1 text-sm text-text-2">{tx(current.subtitleKey)}</p>
         </div>
 
         {formError && (
@@ -131,10 +131,10 @@ export default function RegisterPage(): React.JSX.Element {
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           {step === 0 && (
             <div className="grid grid-cols-2 gap-3">
-              <Field label="First name" error={errors.firstName?.message}>
+              <Field label={tx("firstNameLabel")} error={errors.firstName?.message}>
                 {(p) => <Input autoComplete="given-name" placeholder="Marie" autoFocus {...p} {...register("firstName", emptyToUndefined)} />}
               </Field>
-              <Field label="Last name" error={errors.lastName?.message}>
+              <Field label={tx("lastNameLabel")} error={errors.lastName?.message}>
                 {(p) => <Input autoComplete="family-name" placeholder="Nkeng" {...p} {...register("lastName", emptyToUndefined)} />}
               </Field>
             </div>
@@ -142,10 +142,10 @@ export default function RegisterPage(): React.JSX.Element {
 
           {step === 1 && (
             <>
-              <Field label="Email" error={errors.email?.message} required>
-                {(p) => <Input type="email" autoComplete="email" placeholder="you@example.com" autoFocus {...p} {...register("email")} />}
+              <Field label={tx("emailLabel")} error={errors.email?.message} required>
+                {(p) => <Input type="email" autoComplete="email" placeholder={tx("emailPlaceholder")} autoFocus {...p} {...register("email")} />}
               </Field>
-              <Field label="Phone" hint="Optional — E.164, e.g. +2376XXXXXXXX" error={errors.phone?.message}>
+              <Field label={tx("phoneLabel")} hint={tx("phoneHint")} error={errors.phone?.message}>
                 {(p) => <Input type="tel" autoComplete="tel" placeholder="+2376XXXXXXXX" {...p} {...register("phone", emptyToUndefined)} />}
               </Field>
             </>
@@ -154,8 +154,8 @@ export default function RegisterPage(): React.JSX.Element {
           {step === 2 && (
             <>
               <Field
-                label="Password"
-                hint="At least 10 characters, with upper, lower, and a number."
+                label={tx("passwordLabel")}
+                hint={tx("passwordHint")}
                 error={errors.password?.message}
                 required
               >
@@ -164,20 +164,20 @@ export default function RegisterPage(): React.JSX.Element {
               <label className="flex items-start gap-2.5 text-sm text-text-2">
                 <input type="checkbox" className="mt-0.5 h-4 w-4 rounded border-border accent-accent-400" {...register("acceptTerms")} />
                 <span>
-                  I agree to the{" "}
+                  {tx("agreePrefix")}{" "}
                   <Link href="/legal/terms" className="text-accent-400 hover:underline">
-                    Terms
+                    {tx("termsLink")}
                   </Link>{" "}
-                  and{" "}
+                  {tx("agreeConnector")}{" "}
                   <Link href="/legal/privacy" className="text-accent-400 hover:underline">
-                    Privacy Policy
+                    {tx("privacyLink")}
                   </Link>
-                  .
+                  {tx("agreeSuffix")}
                 </span>
               </label>
               {errors.acceptTerms && (
                 <p role="alert" className="text-sm text-danger">
-                  You must accept the terms to continue.
+                  {tx("acceptTermsError")}
                 </p>
               )}
             </>
@@ -194,20 +194,20 @@ export default function RegisterPage(): React.JSX.Element {
                   setStep((s) => s - 1);
                 }}
               >
-                Back
+                {tx("back")}
               </Button>
             )}
             <Button type="submit" className="flex-1" disabled={isSubmitting}>
-              {step < LAST ? "Continue" : isSubmitting ? <Spinner /> : "Create account"}
+              {step < LAST ? tx("continue") : isSubmitting ? <Spinner /> : tx("createAccount")}
             </Button>
           </div>
         </form>
       </div>
 
       <p className="mt-5 text-center text-sm text-text-2">
-        Already have an account?{" "}
+        {tx("alreadyHaveAccount")}{" "}
         <Link href="/login" className="font-medium text-accent-400 hover:underline">
-          Log in
+          {tx("login")}
         </Link>
       </p>
     </Card>

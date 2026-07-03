@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { KeyRound, Lock, Monitor, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
@@ -24,11 +25,12 @@ import { apiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime } from "@/lib/format";
 
 export default function SecurityPage(): React.JSX.Element {
+  const tx = useTranslations("accountSecurity");
   const { data: me, refetch } = useMe();
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
-      <PageHeader title="Security center" subtitle="Protect your account and your funds." backHref="/account" />
+      <PageHeader title={tx("title")} subtitle={tx("subtitle")} backHref="/account" />
 
       {/* 2FA */}
       <Card>
@@ -36,12 +38,12 @@ export default function SecurityPage(): React.JSX.Element {
           <div className="flex gap-3">
             <ShieldCheck size={20} className="mt-0.5 text-accent-400" />
             <div>
-              <p className="font-medium">Two-factor authentication</p>
-              <p className="text-sm text-text-2">Required for withdrawals and releasing escrow.</p>
+              <p className="font-medium">{tx("twoFactorTitle")}</p>
+              <p className="text-sm text-text-2">{tx("twoFactorDesc")}</p>
             </div>
           </div>
           {me ? (
-            <Badge tone={me.totpEnabled ? "success" : "neutral"}>{me.totpEnabled ? "On" : "Off"}</Badge>
+            <Badge tone={me.totpEnabled ? "success" : "neutral"}>{me.totpEnabled ? tx("on") : tx("off")}</Badge>
           ) : (
             <Skeleton className="h-5 w-10" />
           )}
@@ -55,11 +57,11 @@ export default function SecurityPage(): React.JSX.Element {
           <div className="flex gap-3">
             <KeyRound size={20} className="mt-0.5 text-accent-400" />
             <div>
-              <p className="font-medium">Transaction PIN</p>
-              <p className="text-sm text-text-2">A 6-digit PIN for confirming money actions.</p>
+              <p className="font-medium">{tx("pinTitle")}</p>
+              <p className="text-sm text-text-2">{tx("pinDesc")}</p>
             </div>
           </div>
-          {me ? <Badge tone={me.pinSet ? "success" : "neutral"}>{me.pinSet ? "Set" : "Not set"}</Badge> : null}
+          {me ? <Badge tone={me.pinSet ? "success" : "neutral"}>{me.pinSet ? tx("set") : tx("notSet")}</Badge> : null}
         </div>
         <SetPin onDone={() => void refetch()} pinSet={Boolean(me?.pinSet)} />
       </Card>
@@ -69,13 +71,13 @@ export default function SecurityPage(): React.JSX.Element {
         <div className="flex gap-3">
           <Lock size={20} className="mt-0.5 text-accent-400" />
           <div>
-            <p className="font-medium">Password</p>
-            <p className="text-sm text-text-2">Reset it via a secure email link.</p>
+            <p className="font-medium">{tx("passwordTitle")}</p>
+            <p className="text-sm text-text-2">{tx("passwordDesc")}</p>
           </div>
         </div>
         <Link href="/forgot">
           <Button size="sm" variant="secondary">
-            Reset
+            {tx("reset")}
           </Button>
         </Link>
       </Card>
@@ -86,6 +88,7 @@ export default function SecurityPage(): React.JSX.Element {
 }
 
 function TwoFactorSetup({ onEnabled }: { onEnabled: () => void }): React.JSX.Element {
+  const tx = useTranslations("accountSecurity");
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
@@ -109,11 +112,11 @@ function TwoFactorSetup({ onEnabled }: { onEnabled: () => void }): React.JSX.Ele
     setError(null);
     try {
       await api.totpEnable({ code });
-      toast.success("Two-factor enabled", "Your account is better protected now.");
+      toast.success(tx("twoFactorEnabledToastTitle"), tx("twoFactorEnabledToastBody"));
       setOpen(false);
       onEnabled();
     } catch (err) {
-      setError(apiErrorMessage(err, "Invalid code"));
+      setError(apiErrorMessage(err, tx("invalidCode")));
     } finally {
       setBusy(false);
     }
@@ -122,21 +125,21 @@ function TwoFactorSetup({ onEnabled }: { onEnabled: () => void }): React.JSX.Ele
   return (
     <div className="mt-3">
       <Button size="sm" onClick={start}>
-        Enable 2FA
+        {tx("enable2fa")}
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title="Set up two-factor" description="Scan the QR with your authenticator app, then enter the 6-digit code.">
+      <Dialog open={open} onClose={() => setOpen(false)} title={tx("setupTwoFactorTitle")} description={tx("setupTwoFactorDesc")}>
         <div className="space-y-4">
           <div className="flex justify-center">
             {isFetching || !data ? (
               <Skeleton className="h-40 w-40 rounded-xl" />
             ) : (
-              <Image src={data.qrDataUrl} alt="Authenticator QR code" width={160} height={160} className="rounded-xl bg-white p-2" unoptimized />
+              <Image src={data.qrDataUrl} alt={tx("qrAlt")} width={160} height={160} className="rounded-xl bg-white p-2" unoptimized />
             )}
           </div>
           {error && <Alert tone="danger">{error}</Alert>}
-          <OtpInput value={code} onChange={setCode} aria-label="Authenticator code" invalid={Boolean(error)} />
+          <OtpInput value={code} onChange={setCode} aria-label={tx("authenticatorCodeLabel")} invalid={Boolean(error)} />
           <Button className="w-full" onClick={enable} disabled={busy || code.length < 6}>
-            {busy ? <Spinner /> : "Verify & enable"}
+            {busy ? <Spinner /> : tx("verifyEnable")}
           </Button>
         </div>
       </Dialog>
@@ -145,6 +148,7 @@ function TwoFactorSetup({ onEnabled }: { onEnabled: () => void }): React.JSX.Ele
 }
 
 function SetPin({ onDone, pinSet }: { onDone: () => void; pinSet: boolean }): React.JSX.Element {
+  const tx = useTranslations("accountSecurity");
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const [pin, setPin] = useState("");
@@ -157,13 +161,13 @@ function SetPin({ onDone, pinSet }: { onDone: () => void; pinSet: boolean }): Re
     setError(null);
     try {
       await api.setPin({ pin, currentPassword: password });
-      toast.success(pinSet ? "PIN updated" : "PIN set");
+      toast.success(pinSet ? tx("pinUpdated") : tx("pinSetToast"));
       setOpen(false);
       setPin("");
       setPassword("");
       onDone();
     } catch (err) {
-      setError(apiErrorMessage(err, "Could not set PIN"));
+      setError(apiErrorMessage(err, tx("couldNotSetPin")));
     } finally {
       setBusy(false);
     }
@@ -172,22 +176,22 @@ function SetPin({ onDone, pinSet }: { onDone: () => void; pinSet: boolean }): Re
   return (
     <div className="mt-3">
       <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>
-        {pinSet ? "Change PIN" : "Set PIN"}
+        {pinSet ? tx("changePin") : tx("setPin")}
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title={pinSet ? "Change your PIN" : "Set a transaction PIN"}>
+      <Dialog open={open} onClose={() => setOpen(false)} title={pinSet ? tx("changePinTitle") : tx("setPinTitle")}>
         <div className="space-y-4">
           {error && <Alert tone="danger">{error}</Alert>}
           <div className="space-y-2">
-            <label className="text-sm font-medium">New 6-digit PIN</label>
-            <OtpInput value={pin} onChange={setPin} aria-label="New PIN" />
+            <label className="text-sm font-medium">{tx("newPinLabel")}</label>
+            <OtpInput value={pin} onChange={setPin} aria-label={tx("newPinAria")} />
           </div>
-          <Field label="Confirm with your password" required>
+          <Field label={tx("confirmPassword")} required>
             {(p) => (
               <Input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} {...p} />
             )}
           </Field>
           <Button className="w-full" onClick={submit} disabled={busy || pin.length < 6 || !password}>
-            {busy ? <Spinner /> : "Save PIN"}
+            {busy ? <Spinner /> : tx("savePin")}
           </Button>
         </div>
       </Dialog>
@@ -196,23 +200,24 @@ function SetPin({ onDone, pinSet }: { onDone: () => void; pinSet: boolean }): Re
 }
 
 function Sessions(): React.JSX.Element {
+  const tx = useTranslations("accountSecurity");
   const toast = useToast();
   const { data, isLoading, refetch } = useQuery({ queryKey: qk.sessions, queryFn: () => api.sessions() });
 
   const revoke = async (id: string) => {
     try {
       await api.revokeSession(id);
-      toast.success("Session revoked");
+      toast.success(tx("sessionRevoked"));
       void refetch();
     } catch (err) {
-      toast.error("Could not revoke", apiErrorMessage(err));
+      toast.error(tx("couldNotRevoke"), apiErrorMessage(err));
     }
   };
 
   return (
     <div>
       <h2 className="mb-2 flex items-center gap-2 font-display text-lg font-medium">
-        <Monitor size={18} /> Active sessions
+        <Monitor size={18} /> {tx("activeSessions")}
       </h2>
       {isLoading ? (
         <Skeleton className="h-20 w-full rounded-xl" />
@@ -222,8 +227,8 @@ function Sessions(): React.JSX.Element {
             <div key={s.id} className="flex items-center justify-between px-4 py-3">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">
-                  {s.userAgent ?? "Unknown device"}
-                  {s.current && <span className="ml-2 text-xs text-accent-400">This device</span>}
+                  {s.userAgent ?? tx("unknownDevice")}
+                  {s.current && <span className="ml-2 text-xs text-accent-400">{tx("thisDevice")}</span>}
                 </p>
                 <p className="text-xs text-text-3">
                   {s.ip ?? "—"} · {formatDateTime(s.createdAt)}
@@ -231,7 +236,7 @@ function Sessions(): React.JSX.Element {
               </div>
               {!s.current && (
                 <Button size="sm" variant="ghost" className="text-danger" onClick={() => revoke(s.id)}>
-                  Revoke
+                  {tx("revoke")}
                 </Button>
               )}
             </div>

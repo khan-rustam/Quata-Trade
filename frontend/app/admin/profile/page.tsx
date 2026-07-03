@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { ShieldCheck } from "lucide-react";
 import { AdminTitle } from "@/components/admin/admin-ui";
 import { Card } from "@/components/ui/card";
@@ -20,15 +21,16 @@ import { apiErrorMessage } from "@/lib/api/errors";
 
 export default function AdminProfilePage(): React.JSX.Element {
   const { data: me } = useAdminMe();
+  const tx = useTranslations("adminProfile");
 
   return (
     <div className="max-w-lg space-y-5">
-      <AdminTitle title="My profile" subtitle="Your admin account and sign-in security." />
+      <AdminTitle title={tx("title")} subtitle={tx("subtitle")} />
 
       {/* Account */}
       <Card className="space-y-3">
-        <Row label="Email" value={me?.email} />
-        <Row label="Role" value={me ? <Badge tone="accent">{me.role.replace("_", " ").toLowerCase()}</Badge> : undefined} />
+        <Row label={tx("emailLabel")} value={me?.email} />
+        <Row label={tx("roleLabel")} value={me ? <Badge tone="accent">{me.role.replace("_", " ").toLowerCase()}</Badge> : undefined} />
       </Card>
 
       {/* 2FA */}
@@ -37,15 +39,14 @@ export default function AdminProfilePage(): React.JSX.Element {
           <div className="flex gap-3">
             <ShieldCheck size={20} className="mt-0.5 text-accent-400" />
             <div>
-              <p className="font-medium">Two-factor authentication</p>
+              <p className="font-medium">{tx("twoFactorHeading")}</p>
               <p className="text-sm text-text-2">
-                Adds a step-up code to sign-in and every money action. Optional while testing — it will be mandatory in
-                production.
+                {tx("twoFactorDescription")}
               </p>
             </div>
           </div>
           {me ? (
-            <Badge tone={me.totpEnabled ? "success" : "neutral"}>{me.totpEnabled ? "On" : "Off"}</Badge>
+            <Badge tone={me.totpEnabled ? "success" : "neutral"}>{me.totpEnabled ? tx("statusOn") : tx("statusOff")}</Badge>
           ) : (
             <Skeleton className="h-5 w-10" />
           )}
@@ -54,12 +55,12 @@ export default function AdminProfilePage(): React.JSX.Element {
         {me && !me.totpEnabled && (
           <div className="mt-4 flex items-center gap-3">
             <TwoFactorSetup />
-            <span className="text-sm text-text-3">You can skip this for now.</span>
+            <span className="text-sm text-text-3">{tx("skipHint")}</span>
           </div>
         )}
         {me?.totpEnabled && (
           <Alert tone="success" className="mt-4">
-            Two-factor authentication is active. You&rsquo;ll be asked for a code at sign-in and on sensitive actions.
+            {tx("activeAlert")}
           </Alert>
         )}
       </Card>
@@ -79,6 +80,7 @@ function Row({ label, value }: { label: string; value?: React.ReactNode }): Reac
 function TwoFactorSetup(): React.JSX.Element {
   const qc = useQueryClient();
   const toast = useToast();
+  const tx = useTranslations("adminProfile");
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -102,11 +104,11 @@ function TwoFactorSetup(): React.JSX.Element {
     setError(null);
     try {
       await adminApi.adminTotpEnable({ code });
-      toast.success("Two-factor enabled", "Your admin account is better protected now.");
+      toast.success(tx("enabledToastTitle"), tx("enabledToastBody"));
       setOpen(false);
       void qc.invalidateQueries({ queryKey: ["admin", "me"] });
     } catch (err) {
-      setError(apiErrorMessage(err, "Invalid code"));
+      setError(apiErrorMessage(err, tx("invalidCode")));
     } finally {
       setBusy(false);
     }
@@ -115,26 +117,26 @@ function TwoFactorSetup(): React.JSX.Element {
   return (
     <>
       <Button size="sm" onClick={start}>
-        Enable 2FA
+        {tx("enableButton")}
       </Button>
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        title="Set up two-factor"
-        description="Scan the QR with your authenticator app, then enter the 6-digit code to confirm."
+        title={tx("setupTitle")}
+        description={tx("setupDescription")}
       >
         <div className="space-y-4">
           <div className="flex justify-center">
             {isFetching || !data ? (
               <Skeleton className="h-40 w-40 rounded-xl" />
             ) : (
-              <Image src={data.qrDataUrl} alt="Authenticator QR code" width={160} height={160} className="rounded-xl bg-white p-2" unoptimized />
+              <Image src={data.qrDataUrl} alt={tx("qrAlt")} width={160} height={160} className="rounded-xl bg-white p-2" unoptimized />
             )}
           </div>
           {error && <Alert tone="danger">{error}</Alert>}
-          <OtpInput value={code} onChange={setCode} aria-label="Authenticator code" invalid={Boolean(error)} />
+          <OtpInput value={code} onChange={setCode} aria-label={tx("codeAriaLabel")} invalid={Boolean(error)} />
           <Button className="w-full" onClick={enable} disabled={busy || code.length < 6}>
-            {busy ? <Spinner /> : "Verify & enable"}
+            {busy ? <Spinner /> : tx("verifyEnable")}
           </Button>
         </div>
       </Dialog>

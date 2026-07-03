@@ -1,6 +1,7 @@
 "use client";
 
 import { Coins, TrendingUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { AdminTitle } from "@/components/admin/admin-ui";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,36 +9,36 @@ import { Usdt } from "@/components/ui/amount";
 import { useAdminRevenue, useAdminTreasury } from "@/hooks/use-admin";
 
 export default function AdminTreasuryPage(): React.JSX.Element {
+  const tx = useTranslations("adminTreasury");
   const { data: revenue, isLoading: loadingRev } = useAdminRevenue();
   const { data: balances, isLoading: loadingBal } = useAdminTreasury();
 
   return (
     <div className="space-y-5">
-      <AdminTitle title="Treasury" subtitle="Fee revenue and platform balances, straight from the ledger." />
+      <AdminTitle title={tx("title")} subtitle={tx("subtitle")} />
 
       <div>
         <h2 className="mb-2 flex items-center gap-2 font-display text-lg font-medium">
-          <TrendingUp size={18} className="text-accent-400" /> Fee revenue
+          <TrendingUp size={18} className="text-accent-400" /> {tx("feeRevenue")}
         </h2>
         <div className="grid grid-cols-3 gap-3">
-          <RevTile label="Today" value={revenue?.today} loading={loadingRev} />
-          <RevTile label="This month" value={revenue?.month} loading={loadingRev} />
-          <RevTile label="Lifetime" value={revenue?.lifetime} loading={loadingRev} highlight />
+          <RevTile label={tx("today")} value={revenue?.today} loading={loadingRev} />
+          <RevTile label={tx("thisMonth")} value={revenue?.month} loading={loadingRev} />
+          <RevTile label={tx("lifetime")} value={revenue?.lifetime} loading={loadingRev} highlight />
         </div>
       </div>
 
       <div>
         <h2 className="mb-2 flex items-center gap-2 font-display text-lg font-medium">
-          <Coins size={18} className="text-accent-400" /> Platform balances
+          <Coins size={18} className="text-accent-400" /> {tx("platformBalances")}
         </h2>
         <Card className="divide-y divide-border">
-          <BalRow label="Treasury (fees collected)" value={balances?.treasury} loading={loadingBal} />
-          <BalRow label="Pending sweep (in-flight withdrawals)" value={balances?.pendingSweep} loading={loadingBal} />
-          <BalRow label="External (net on-chain position)" value={balances?.external} loading={loadingBal} allowNegative />
+          <BalRow label={tx("treasuryLabel")} value={balances?.treasury} loading={loadingBal} />
+          <BalRow label={tx("pendingSweepLabel")} value={balances?.pendingSweep} loading={loadingBal} />
+          <BalRow label={tx("externalLabel")} value={balances?.external} loading={loadingBal} allowNegative />
         </Card>
         <p className="mt-2 text-xs text-text-3">
-          External is a contra account and may be negative — it mirrors funds that have left to user
-          balances vs. arrived on-chain. Reconciliation compares these against the chain nightly.
+          {tx("externalNote")}
         </p>
       </div>
     </div>

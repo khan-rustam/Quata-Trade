@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
+import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,10 +33,11 @@ export default function AccountPage(): React.JSX.Element {
   const { data: me, isLoading } = useMe();
   const logout = useLogout();
   const router = useRouter();
+  const tx = useTranslations("account");
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
-      <PageHeader title="Account" />
+      <PageHeader title={tx("title")} />
 
       <Card className="flex items-center gap-4">
         {me ? (
@@ -55,7 +57,7 @@ export default function AccountPage(): React.JSX.Element {
               {me && (
                 <div className="mt-1.5 flex items-center gap-2">
                   <Badge tone={KYC_TONE[me.kycStatus]} icon={<ShieldCheck size={12} />}>
-                    Tier {me.kycTier} · {me.kycStatus === "APPROVED" ? "Verified" : me.kycStatus.toLowerCase()}
+                    {tx("tier")} {me.kycTier} · {tx(`status_${me.kycStatus}`)}
                   </Badge>
                 </div>
               )}
@@ -65,11 +67,11 @@ export default function AccountPage(): React.JSX.Element {
       </Card>
 
       <div className="overflow-hidden rounded-xl border border-border">
-        <MenuLink href="/account/kyc" icon={BadgeCheck} label="Verification & KYC" />
-        <MenuLink href="/account/security" icon={ShieldCheck} label="Security center" />
-        <MenuLink href="/account/notifications" icon={Bell} label="Notifications" />
-        <MenuLink href="/account/profile" icon={User} label="Profile details" />
-        <MenuLink href="/legal/terms" icon={FileText} label="Terms & policies" />
+        <MenuLink href="/account/kyc" icon={BadgeCheck} label={tx("kyc")} />
+        <MenuLink href="/account/security" icon={ShieldCheck} label={tx("security")} />
+        <MenuLink href="/account/notifications" icon={Bell} label={tx("notifications")} />
+        <MenuLink href="/account/profile" icon={User} label={tx("profile")} />
+        <MenuLink href="/legal/terms" icon={FileText} label={tx("terms")} />
       </div>
 
       <button
@@ -77,7 +79,7 @@ export default function AccountPage(): React.JSX.Element {
         onClick={() => logout.mutate(undefined, { onSettled: () => router.replace("/login") })}
         className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-3 text-sm font-medium text-danger transition-colors hover:bg-surface-2"
       >
-        <LogOut size={16} /> Log out
+        <LogOut size={16} /> {tx("logout")}
       </button>
     </div>
   );

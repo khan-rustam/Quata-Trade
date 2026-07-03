@@ -1,6 +1,7 @@
 "use client";
 
 import { Shuffle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { AVATAR_STYLES, type AvatarStyle } from "@quatatrade/shared";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ export function AvatarPicker({
   seed: string | null;
   onChange: (next: { style: AvatarStyle | null; seed: string | null }) => void;
 }): React.JSX.Element {
+  const tx = useTranslations("avatarPicker");
   const effectiveSeed = seed ?? userId;
   const shuffle = () => {
     // Frontend-only randomness (allowed; only workflow scripts ban Math.random).
@@ -37,7 +39,7 @@ export function AvatarPicker({
           onClick={shuffle}
           className="inline-flex items-center gap-1.5 rounded-btn border border-border px-3 py-1.5 text-sm font-medium text-text-1 transition-colors hover:bg-surface-2"
         >
-          <Shuffle size={14} aria-hidden /> Shuffle face
+          <Shuffle size={14} aria-hidden /> {tx("shuffleFace")}
         </button>
       </div>
       <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
@@ -48,7 +50,7 @@ export function AvatarPicker({
               key={st}
               type="button"
               onClick={() => onChange({ style: st, seed })}
-              aria-label={`Avatar style ${st}`}
+              aria-label={tx("styleLabel", { style: st })}
               aria-pressed={selected}
               className={cn(
                 "rounded-lg border p-1 transition-colors",

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { zAdminLoginRequest } from "@quatatrade/shared";
@@ -25,6 +26,7 @@ import { apiErrorMessage } from "@/lib/api/errors";
 
 export default function AdminLoginPage(): React.JSX.Element {
   const router = useRouter();
+  const tx = useTranslations("adminLogin");
   const login = useAdminLogin();
   const [totpRequired, setTotpRequired] = useState(false);
   const [totp, setTotp] = useState("");
@@ -50,7 +52,7 @@ export default function AdminLoginPage(): React.JSX.Element {
       }
       router.replace("/admin");
     } catch (err) {
-      setError(apiErrorMessage(err, "Invalid credentials"));
+      setError(apiErrorMessage(err, tx("invalidCredentials")));
     }
   });
 
@@ -59,8 +61,8 @@ export default function AdminLoginPage(): React.JSX.Element {
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
           <BrandMark size={40} />
-          <h1 className="font-display text-xl font-bold">Quata Admin</h1>
-          <p className="text-sm text-text-2">Sign in with your email and password.</p>
+          <h1 className="font-display text-xl font-bold">{tx("title")}</h1>
+          <p className="text-sm text-text-2">{tx("subtitle")}</p>
         </div>
         <Card className="p-6">
           {error && (
@@ -70,10 +72,10 @@ export default function AdminLoginPage(): React.JSX.Element {
           )}
           <form onSubmit={submit} className="space-y-4" noValidate>
             <fieldset disabled={totpRequired} className="space-y-4">
-              <Field label="Email" error={errors.email?.message} required>
+              <Field label={tx("emailLabel")} error={errors.email?.message} required>
                 {(p) => <Input type="email" autoComplete="username" placeholder="admin@quatatrade.com" {...p} {...register("email")} />}
               </Field>
-              <Field label="Password" error={errors.password?.message} required>
+              <Field label={tx("passwordLabel")} error={errors.password?.message} required>
                 {(p) => <PasswordInput autoComplete="current-password" placeholder="••••••••" {...p} {...register("password")} />}
               </Field>
             </fieldset>
@@ -81,15 +83,15 @@ export default function AdminLoginPage(): React.JSX.Element {
             {totpRequired && (
               <div className="space-y-2">
                 <label className="flex items-center gap-1.5 text-sm font-medium">
-                  <ShieldCheck size={14} className="text-accent-400" /> Authenticator code
+                  <ShieldCheck size={14} className="text-accent-400" /> {tx("authenticatorCode")}
                 </label>
-                <OtpInput value={totp} onChange={setTotp} autoFocus aria-label="Authenticator code" invalid={Boolean(error)} />
-                <p className="text-sm text-text-2">Enter the 6-digit code from your authenticator app.</p>
+                <OtpInput value={totp} onChange={setTotp} autoFocus aria-label={tx("authenticatorCode")} invalid={Boolean(error)} />
+                <p className="text-sm text-text-2">{tx("authenticatorHint")}</p>
               </div>
             )}
 
             <Button type="submit" className="w-full" disabled={isSubmitting || (totpRequired && totp.length < 6)}>
-              {isSubmitting ? <Spinner /> : totpRequired ? "Verify & sign in" : "Sign in"}
+              {isSubmitting ? <Spinner /> : totpRequired ? tx("verifyAndSignIn") : tx("signIn")}
             </Button>
           </form>
         </Card>
