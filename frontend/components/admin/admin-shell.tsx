@@ -9,7 +9,9 @@ import {
   ArrowUpFromLine,
   BadgeCheck,
   Coins,
+  FileText,
   Gauge,
+  Inbox,
   LogOut,
   ScrollText,
   ShieldAlert,
@@ -43,6 +45,8 @@ const NAV: NavItem[] = [
   { href: "/admin/trades", labelKey: "navTrades", icon: Repeat },
   { href: "/admin/treasury", labelKey: "navTreasury", icon: Coins },
   { href: "/admin/settings", labelKey: "navSettings", icon: Sliders, gate: "editSettings" },
+  { href: "/admin/content", labelKey: "navContent", icon: FileText, gate: "editSettings" },
+  { href: "/admin/enquiries", labelKey: "navEnquiries", icon: Inbox, gate: "editSettings" },
   { href: "/admin/audit", labelKey: "navAudit", icon: ScrollText, gate: "viewAudit" },
   { href: "/admin/profile", labelKey: "navProfile", icon: UserCog },
 ];
