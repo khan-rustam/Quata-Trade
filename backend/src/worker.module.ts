@@ -12,6 +12,7 @@ import { SettingsModule } from "./modules/settings/settings.module";
 import { LedgerModule } from "./modules/ledger/ledger.module";
 import { EscrowModule } from "./modules/escrow/escrow.module";
 import { DepositsModule } from "./modules/deposits/deposits.module";
+import { ScreeningModule } from "./modules/screening/screening.module";
 import { SignerModule } from "./modules/signer/signer.module";
 import { NotifyModule } from "./modules/notify/notify.module";
 import { KycModule } from "./modules/kyc/kyc.module";
@@ -44,6 +45,7 @@ import { EmailSendJob } from "./jobs/email-send.job";
     LedgerModule,
     EscrowModule,
     DepositsModule,
+    ScreeningModule,
     SignerModule,
     NotifyModule,
     KycModule,

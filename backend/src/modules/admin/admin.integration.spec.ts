@@ -21,6 +21,7 @@ import type { AccessTokenPayload, AuthenticatedRequest } from "../../common/auth
 import { LedgerService } from "../ledger/ledger.service";
 import { InsufficientFundsError } from "../ledger/ledger.errors";
 import { SettingsService } from "../settings/settings.service";
+import { ScreeningService } from "../screening/screening.service";
 import { WithdrawalsService } from "../withdrawals/withdrawals.service";
 import { ApprovalNotAllowedError, DualApprovalError } from "../withdrawals/withdrawals.errors";
 import { AdminAuthService } from "./admin-auth.service";
@@ -298,7 +299,7 @@ describe("admin flows (Testcontainers PG16)", () => {
     jwt = new JwtService({ secret: JWT_SECRET, signOptions: { expiresIn: 600 } });
     adminAuth = new AdminAuthService(t.db, jwt, config, audit);
     admin = new AdminService(t.db, ledger, settings, audit, adminAuth);
-    withdrawals = new WithdrawalsService(t.db, ledger, settings, audit, config);
+    withdrawals = new WithdrawalsService(t.db, ledger, settings, audit, config, new ScreeningService(t.db));
     passwordHash = await argon2.hash(PASSWORD, { type: argon2.argon2id });
   });
 

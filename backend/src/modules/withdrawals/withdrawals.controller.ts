@@ -31,6 +31,7 @@ import { ZodPipe } from "../../common/zod.pipe";
 import { CurrentUserId } from "../../common/auth/decorators";
 import { RiskService } from "../risk/risk.service";
 import { InsufficientFundsError, SerializationRetryExhaustedError } from "../ledger/ledger.errors";
+import { BlockedAddressError } from "../screening/screening.errors";
 import { WithdrawalsService, type WithdrawalRow } from "./withdrawals.service";
 import {
   IdempotencyConflictError,
@@ -145,6 +146,8 @@ export class WithdrawalsController {
     if (err instanceof WithdrawalVerificationError) return new ForbiddenException(err.message);
     if (err instanceof WithdrawalNotEligibleError) return new ForbiddenException(err.message);
     if (err instanceof InvalidWithdrawalAddressError) return new BadRequestException(err.message);
+    // Generic — never disclose that an address is specifically sanctioned/blacklisted.
+    if (err instanceof BlockedAddressError) return new ForbiddenException("this address is not permitted");
     if (err instanceof WithdrawalCapExceededError) return new UnprocessableEntityException(err.message);
     if (err instanceof IdempotencyConflictError) return new ConflictException(err.message);
     if (err instanceof WithdrawalAddressExistsError) return new ConflictException(err.message);

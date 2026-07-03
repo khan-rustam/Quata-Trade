@@ -11,6 +11,7 @@ const SECURITY_EVENTS: Record<string, { severity: Severity; title: string }> = {
   "ledger.adjustment": { severity: "critical", title: "Manual ledger adjustment posted" },
   "admin.kill_switch": { severity: "critical", title: "Kill switch toggled" },
   "risk.flagged": { severity: "warning", title: "Risk score escalated" },
+  "aml.hit": { severity: "critical", title: "AML / sanctions blocklist hit" },
 };
 
 const ICON: Record<Severity, string> = { info: "info", warning: "warn", critical: "CRITICAL" };

@@ -88,6 +88,11 @@ import {
   type RejectWithdrawalRequest,
   type UpdateSettingRequest,
 } from "../schemas/admin.js";
+import {
+  zBlockedAddress,
+  zBlockedAddressesResponse,
+  type BlockAddressRequest,
+} from "../schemas/screening.js";
 import type { KycReviewRequest } from "../schemas/kyc.js";
 import type { ResolveDisputeRequest } from "../schemas/disputes.js";
 
@@ -289,6 +294,13 @@ export class QuataApiClient {
     this.request("GET", `/api/v1/admin/users/${id}`, zAdminUserDetail);
   adminModerateUser = (id: string, action: "freeze" | "suspend" | "restore", body: { reason: string }) =>
     this.request("POST", `/api/v1/admin/users/${id}/${action}`, zModerationResult, body);
+  // ---- AML / sanctions blocklist (compliance) ----
+  adminBlockedAddresses = () =>
+    this.request("GET", "/api/v1/admin/screening/addresses", zBlockedAddressesResponse);
+  adminBlockAddress = (body: BlockAddressRequest) =>
+    this.request("POST", "/api/v1/admin/screening/addresses", zBlockedAddress, body);
+  adminUnblockAddress = (id: string): Promise<Ok> =>
+    this.request("DELETE", `/api/v1/admin/screening/addresses/${id}`, zOk);
   adminTrades = (query?: Query) =>
     this.request("GET", "/api/v1/admin/trades", zAdminTradesResponse, undefined, query);
   adminWithdrawals = (query?: Query) =>

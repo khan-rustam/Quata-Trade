@@ -385,6 +385,20 @@ export interface WithdrawalAddressesTable {
   created_at: Timestamp;
 }
 
+/** AML / sanctions / wallet-blacklist (migration 0012). Deterministic screening only. */
+export interface BlockedAddressesTable {
+  id: string;
+  asset: AssetCode;
+  address: string;
+  category: string;
+  reason: string;
+  source: Generated<string>;
+  active: Generated<boolean>;
+  created_by: Generated<string>;
+  created_at: Timestamp;
+  updated_at: ColumnType<Date | null, never, Date | string>;
+}
+
 export interface Database {
   users: UsersTable;
   sessions: SessionsTable;
@@ -398,6 +412,7 @@ export interface Database {
   deposits: DepositsTable;
   withdrawals: WithdrawalsTable;
   withdrawal_addresses: WithdrawalAddressesTable;
+  blocked_addresses: BlockedAddressesTable;
   offers: OffersTable;
   trades: TradesTable;
   trade_events: TradeEventsTable;

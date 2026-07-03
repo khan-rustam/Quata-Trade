@@ -18,6 +18,7 @@ import { newId } from "../../common/ids";
 import { AuditService } from "../../common/audit/audit.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { SettingsService } from "../settings/settings.service";
+import { ScreeningService } from "../screening/screening.service";
 import { decryptSecret } from "./secret-crypto";
 import { RISK_HOLD_SCORE, scoreWithdrawalRisk } from "./withdrawal-risk";
 import {
@@ -76,6 +77,7 @@ export class WithdrawalsService {
     private readonly settings: SettingsService,
     private readonly audit: AuditService,
     private readonly config: ConfigService<Env, true>,
+    private readonly screening: ScreeningService,
   ) {}
 
   // ------------------------------------------------------------------ request
@@ -104,6 +106,9 @@ export class WithdrawalsService {
       .where("address", "=", dto.address)
       .executeTakeFirst();
     if (own) throw new InvalidWithdrawalAddressError("cannot whitelist a platform deposit address");
+
+    // AML: refuse (and alert) if the destination is sanctioned/blacklisted.
+    await this.screening.assertAllowed(dto.asset, dto.address, { userId, stage: "whitelist" });
 
     const existing = await this.db
       .selectFrom("withdrawal_addresses")
@@ -200,6 +205,9 @@ export class WithdrawalsService {
     if (approved.usable_at.getTime() > Date.now()) {
       throw new InvalidWithdrawalAddressError("this address is still in its security cooldown");
     }
+    // AML: re-screen at spend time — an address can be blacklisted AFTER it was
+    // whitelisted. On a hit this raises an aml.hit alert and refuses the withdrawal.
+    await this.screening.assertAllowed(dto.asset, dto.toAddress, { userId, stage: "withdrawal" });
 
     const fee = await this.settings.withdrawalFee(dto.asset);
     const caps = await this.settings.withdrawalCaps();

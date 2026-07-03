@@ -12,6 +12,8 @@ import { validateEnv, type Env } from "../../config/env";
 import { AuditService } from "../../common/audit/audit.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { SettingsService } from "../settings/settings.service";
+import { ScreeningService } from "../screening/screening.service";
+import { BlockedAddressError } from "../screening/screening.errors";
 import { MockSignerService } from "../signer/mock-signer.service";
 import { WithdrawalPipelineService } from "../signer/withdrawal-pipeline.service";
 import { encryptSecret } from "./secret-crypto";
@@ -68,7 +70,8 @@ describe("Withdrawals (Phase 3)", () => {
       USDT_TRC20_CONTRACT: DEST,
     });
     const config = new ConfigService<Env, true>(env);
-    withdrawals = new WithdrawalsService(t.db, ledger, settings, audit, config);
+    const screening = new ScreeningService(t.db);
+    withdrawals = new WithdrawalsService(t.db, ledger, settings, audit, config, screening);
     const signer = new MockSignerService(config, t.db, settings);
     pipeline = new WithdrawalPipelineService(withdrawals, settings, signer);
     externalId = await ledger.getOrCreateAccount(null, "external", "USDT_TRC20");
@@ -285,6 +288,18 @@ describe("Withdrawals (Phase 3)", () => {
       InvalidWithdrawalAddressError,
     );
     expect(await available(user)).toBe(100n * USDT);
+  });
+
+  it("AML: a blacklisted destination is refused at request time and nothing is debited", async () => {
+    const user = await fundedUser(100n * USDT);
+    const screening = new ScreeningService(t.db);
+    const blocked = await screening.block(
+      { asset: "USDT_TRC20", address: DEST, category: "sanctions", reason: "test SDN match" },
+      "admin-aml",
+    );
+    await expect(request(user, 10n * USDT)).rejects.toBeInstanceOf(BlockedAddressError);
+    expect(await available(user)).toBe(100n * USDT); // debit never happened
+    await screening.unblock(blocked.id); // restore DEST for later tests
   });
 
   it("dual approval: >= threshold needs two DIFFERENT admins; single or repeated admin cannot release", async () => {

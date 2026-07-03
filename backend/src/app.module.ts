@@ -27,6 +27,7 @@ import { WithdrawalsModule } from "./modules/withdrawals/withdrawals.module";
 import { DisputesModule } from "./modules/disputes/disputes.module";
 import { ChatModule } from "./modules/chat/chat.module";
 import { RiskModule } from "./modules/risk/risk.module";
+import { ScreeningModule } from "./modules/screening/screening.module";
 import { NotifyModule } from "./modules/notify/notify.module";
 import { AdminModule } from "./modules/admin/admin.module";
 import { TreasuryModule } from "./modules/treasury/treasury.module";
@@ -93,6 +94,7 @@ import { ContentModule } from "./modules/content/content.module";
     DisputesModule,
     ChatModule,
     RiskModule,
+    ScreeningModule,
     NotifyModule,
     AdminModule,
     TreasuryModule,
