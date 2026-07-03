@@ -51,6 +51,8 @@ export const envSchema = z.object({
   DEPOSIT_CONFIRMATIONS: z.coerce.number().int().min(1).default(19),
   DEPOSIT_MIN_AMOUNT: z.coerce.bigint().positive().default(1_000_000n),
   WALLET_XPUB: z.string().default(""),
+  /** Signer hot-wallet (base58) — enables the on-chain reserve check (item 5b). Optional. */
+  WALLET_HOT_ADDRESS: z.string().default(""),
 
   SIGNER_MODE: z.enum(["mock", "remote"]).default("mock"),
   SIGNER_URL: z.string().default(""),

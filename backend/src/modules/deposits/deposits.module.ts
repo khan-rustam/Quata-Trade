@@ -24,6 +24,6 @@ import { HttpTronGridClient, TRONGRID_CLIENT } from "./trongrid.client";
     DepositScannerService,
     DepositConfirmationService,
   ],
-  exports: [DepositScannerService, DepositConfirmationService],
+  exports: [DepositScannerService, DepositConfirmationService, TRONGRID_CLIENT],
 })
 export class DepositsModule {}

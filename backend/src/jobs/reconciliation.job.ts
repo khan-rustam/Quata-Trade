@@ -1,13 +1,33 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import type { Kysely } from "kysely";
 import { DB } from "../db/database.module";
 import type { Database } from "../db/types";
+import type { Env } from "../config/env";
 import { LedgerService } from "../modules/ledger/ledger.service";
+import { TRONGRID_CLIENT, type TronGridClient } from "../modules/deposits/trongrid.client";
 import { newId } from "../common/ids";
 
 /** A withdrawal broadcast on-chain but not confirmed within this window is stuck. */
 const STALE_BROADCAST_MS = 2 * 60 * 60 * 1000;
+/** Slack (smallest units) allowed between on-chain custody and ledger obligations. */
+const RESERVE_TOLERANCE = 1_000_000n; // 1 USDT
+
+export interface ReserveStatus {
+  breached: boolean;
+  /** obligations − onChain when positive, else 0n. */
+  shortfall: bigint;
+}
+
+/**
+ * Pure reserve check (item 5b): custody is healthy when the on-chain balance
+ * plus a small tolerance covers the ledger's on-chain obligations.
+ */
+export function reserveShortfall(onChain: bigint, obligations: bigint, tolerance: bigint): ReserveStatus {
+  const deficit = obligations - onChain;
+  return { breached: deficit > tolerance, shortfall: deficit > 0n ? deficit : 0n };
+}
 
 /**
  * Reconciliation (Documents/09): cached balances vs recomputed SUM(entries).
@@ -22,12 +42,15 @@ export class ReconciliationJob {
   constructor(
     @Inject(DB) private readonly db: Kysely<Database>,
     private readonly ledger: LedgerService,
+    @Inject(TRONGRID_CLIENT) private readonly tron: TronGridClient,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async run(): Promise<void> {
     await this.reconcileLedgerCache();
     await this.alertStuckBroadcasts();
+    await this.checkOnChainReserves();
   }
 
   /** cached balances vs recomputed SUM(entries) — mismatch pauses withdrawals. */
@@ -89,6 +112,60 @@ export class ReconciliationJob {
         id: newId(),
         event_type: "withdrawal.broadcast_stale",
         payload: JSON.stringify({ count, staleHours: STALE_BROADCAST_MS / 3_600_000 }),
+      })
+      .execute();
+  }
+
+  /**
+   * On-chain↔ledger reserve check (item 5b). Opt-in: runs only when
+   * WALLET_HOT_ADDRESS is configured. Compares the signer hot-wallet's on-chain
+   * USDT balance against the ledger obligations it must be able to cover
+   * (pending withdrawals in flight + accrued treasury fees).
+   *
+   * ALERT-ONLY — never auto-pauses: on-chain reads can be transient/rate-limited,
+   * and the exact reserve formula depends on the Host B sweep design. A human
+   * confirms the shortfall before acting. The obligations formula (pending_sweep
+   * + treasury) is a conservative lower bound and is FLAGGED for human review.
+   */
+  private async checkOnChainReserves(): Promise<void> {
+    const hot = this.config.get("WALLET_HOT_ADDRESS", { infer: true });
+    if (hot.trim() === "") {
+      this.logger.warn("on-chain reserve check skipped — WALLET_HOT_ADDRESS not configured");
+      return;
+    }
+    let onChain: bigint;
+    try {
+      onChain = await this.tron.getTrc20Balance(hot);
+    } catch (err) {
+      // A read failure must NOT raise a false shortfall — skip this cycle.
+      this.logger.warn(
+        `reserve check skipped — hot-wallet balance read failed: ${err instanceof Error ? err.message : "unknown"}`,
+      );
+      return;
+    }
+    const pendingSweep = await this.ledger.balanceOf(
+      await this.ledger.getOrCreateAccount(null, "platform_pending_sweep", "USDT_TRC20"),
+    );
+    const treasury = await this.ledger.balanceOf(
+      await this.ledger.getOrCreateAccount(null, "platform_treasury", "USDT_TRC20"),
+    );
+    const obligations = pendingSweep + treasury;
+    const { breached, shortfall } = reserveShortfall(onChain, obligations, RESERVE_TOLERANCE);
+    if (!breached) {
+      this.logger.log(`reserve ok: hot=${onChain} covers obligations=${obligations}`);
+      return;
+    }
+    this.logger.error(`RESERVE SHORTFALL: hot=${onChain} obligations=${obligations} shortfall=${shortfall}`);
+    await this.db
+      .insertInto("outbox")
+      .values({
+        id: newId(),
+        event_type: "reconciliation.reserve_shortfall",
+        payload: JSON.stringify({
+          onChain: onChain.toString(),
+          obligations: obligations.toString(),
+          shortfall: shortfall.toString(),
+        }),
       })
       .execute();
   }
