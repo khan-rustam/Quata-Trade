@@ -71,6 +71,33 @@ export type Withdrawal = z.infer<typeof zWithdrawal>;
 
 export const zWithdrawalsResponse = zPaginated(zWithdrawal);
 
+/**
+ * Withdrawal address whitelist. A withdrawal may ONLY go to a saved, active address
+ * whose cooldown has elapsed (usableAt ≤ now) — an attacker can't add + immediately
+ * drain to a fresh address.
+ */
+export const zWithdrawalAddress = z.object({
+  id: zUuid,
+  asset: zAssetCode,
+  address: z.string(),
+  label: z.string().nullable(),
+  usableAt: z.string(), // ISO — withdrawals allowed only at/after this time
+  active: z.boolean(),
+  createdAt: z.string(),
+});
+export type WithdrawalAddress = z.infer<typeof zWithdrawalAddress>;
+
+export const zWithdrawalAddressesResponse = z.object({ addresses: z.array(zWithdrawalAddress) });
+
+export const zAddWithdrawalAddressRequest = z
+  .object({
+    asset: zAssetCode,
+    address: zTronAddress,
+    label: z.string().trim().max(60).optional(),
+  })
+  .strict();
+export type AddWithdrawalAddressRequest = z.infer<typeof zAddWithdrawalAddressRequest>;
+
 export const zInternalTransferRequest = z
   .object({
     toEmail: z.string().email(),

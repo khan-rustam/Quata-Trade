@@ -5,6 +5,7 @@ import { ASSET_DECIMALS } from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
 import type { Database } from "../../db/types";
 import { newId, newShortRef } from "../../common/ids";
+import { parsePgEnumArray } from "../../common/pg";
 import { fiatValueXaf, split } from "../fees/fees";
 import { LedgerService } from "../ledger/ledger.service";
 import { EscrowService, type TradeRow } from "../escrow/escrow.service";
@@ -51,7 +52,8 @@ export class TradesService {
       if (!offer) throw new OfferUnavailableError("not found");
       if (offer.status !== "ACTIVE") throw new OfferUnavailableError(`status ${offer.status}`);
       if (offer.user_id === takerId) throw new OfferUnavailableError("cannot trade with yourself");
-      if (!offer.payment_methods.includes(dto.paymentMethod)) {
+      // pg returns enum-array columns as a raw literal string — normalize before membership check.
+      if (!parsePgEnumArray(offer.payment_methods).includes(dto.paymentMethod)) {
         throw new OfferUnavailableError("payment method not accepted");
       }
       if (amount < offer.min_trade || amount > offer.max_trade) {

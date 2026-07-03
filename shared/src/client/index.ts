@@ -26,13 +26,17 @@ import {
   zDepositAddressResponse,
   zDepositsResponse,
   zWithdrawal,
+  zWithdrawalAddress,
+  zWithdrawalAddressesResponse,
   zWithdrawalsResponse,
+  type AddWithdrawalAddressRequest,
   type InternalTransferRequest,
   type WithdrawalRequest,
 } from "../schemas/wallet.js";
 import {
   zOffer,
   zOffersResponse,
+  zMyOffersResponse,
   type CreateOfferRequest,
   type OffersQuery,
   type UpdateOfferRequest,
@@ -194,10 +198,18 @@ export class QuataApiClient {
   withdrawals = (query?: Query) => this.request("GET", "/api/v1/withdrawals", zWithdrawalsResponse, undefined, query);
   internalTransfer = (body: InternalTransferRequest): Promise<Ok> =>
     this.request("POST", "/api/v1/wallet/transfer", zOk, body);
+  withdrawalAddresses = () =>
+    this.request("GET", "/api/v1/withdrawals/addresses", zWithdrawalAddressesResponse);
+  addWithdrawalAddress = (body: AddWithdrawalAddressRequest) =>
+    this.request("POST", "/api/v1/withdrawals/addresses", zWithdrawalAddress, body);
+  removeWithdrawalAddress = (id: string): Promise<Ok> =>
+    this.request("DELETE", `/api/v1/withdrawals/addresses/${id}`, zOk);
 
   // ---- offers ----
   offers = (query?: OffersQuery) =>
     this.request("GET", "/api/v1/offers", zOffersResponse, undefined, query as Query);
+  /** The caller's own offers (all statuses except deleted) for self-service management. */
+  myOffers = () => this.request("GET", "/api/v1/offers/mine", zMyOffersResponse);
   offer = (id: string) => this.request("GET", `/api/v1/offers/${id}`, zOffer);
   createOffer = (body: CreateOfferRequest) => this.request("POST", "/api/v1/offers", zOffer, body);
   updateOffer = (id: string, body: UpdateOfferRequest) =>

@@ -1,6 +1,7 @@
 import type { Kysely } from "kysely";
-import { zOffer, type Offer } from "@quatatrade/shared";
+import { zOffer, type Offer, type PaymentMethod } from "@quatatrade/shared";
 import type { Database } from "../../db/types";
+import { parsePgEnumArray } from "../../common/pg";
 import { displayNameOf } from "../trades/trades.mapper";
 import type { OfferRow } from "./offers.service";
 
@@ -99,7 +100,8 @@ export function mapOffer(row: OfferRow, trader: TraderContext): Offer {
     minTrade: row.min_trade.toString(),
     maxTrade: row.max_trade.toString(),
     remaining: row.remaining.toString(),
-    paymentMethods: row.payment_methods,
+    // pg returns enum-array columns as a raw literal string — normalize to an array.
+    paymentMethods: parsePgEnumArray<PaymentMethod>(row.payment_methods),
     terms: row.terms,
     status: row.status,
     trader: {

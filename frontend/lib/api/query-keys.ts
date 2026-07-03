@@ -8,6 +8,7 @@ export const qk = {
   deposits: (page: number) => ["wallet", "deposits", page] as const,
   withdrawals: (page: number) => ["withdrawals", page] as const,
   offers: (filters: Record<string, unknown>) => ["offers", filters] as const,
+  myOffers: ["offers", "mine"] as const,
   offer: (id: string) => ["offers", id] as const,
   trades: (filters: Record<string, unknown>) => ["trades", filters] as const,
   trade: (id: string) => ["trades", id] as const,

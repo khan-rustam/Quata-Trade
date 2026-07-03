@@ -421,7 +421,8 @@
     "createOffer": "Create an offer",
     "verified": "Verified",
     "trades": "trades",
-    "perUsdt": "per USDT"
+    "perUsdt": "per USDT",
+    "available": "Available"
   },
   "tradeNew": {
     "selectPaymentMethod": "Select at least one payment method",
@@ -548,7 +549,8 @@
     "notifications": "Notifications",
     "profile": "Profile details",
     "terms": "Terms & policies",
-    "logout": "Log out"
+    "logout": "Log out",
+    "myOffers": "My offers"
   },
   "accountProfile": {
     "title": "Profile details",
@@ -1129,5 +1131,41 @@
     "mark_read": "Mark read",
     "mark_replied": "Mark replied",
     "mark_archived": "Archive"
+  },
+  "myOffers": {
+    "title": "My offers",
+    "subtitle": "Manage your buy and sell listings — they appear on the marketplace for other traders.",
+    "newOffer": "New offer",
+    "emptyTitle": "No offers yet",
+    "emptyBody": "Publish a buy or sell offer and it shows up on the marketplace for other traders to find.",
+    "side_BUY": "Buying USDT",
+    "side_SELL": "Selling USDT",
+    "status_ACTIVE": "Active",
+    "status_PAUSED": "Paused",
+    "status_EXHAUSTED": "Exhausted",
+    "status_DELETED": "Deleted",
+    "perUsdt": "per USDT",
+    "limits": "Limits",
+    "available": "Available",
+    "pause": "Pause",
+    "activate": "Activate",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "editTitle": "Edit offer",
+    "priceLabel": "Price",
+    "minTrade": "Min",
+    "maxTrade": "Max",
+    "paymentMethods": "Payment methods",
+    "termsLabel": "Terms (optional)",
+    "selectPaymentMethod": "Select at least one payment method",
+    "deleteTitle": "Delete offer?",
+    "deleteConfirm": "This removes it from the marketplace. Past trades are unaffected.",
+    "deletedTitle": "Offer deleted",
+    "deletedBody": "It no longer appears on the marketplace.",
+    "savedTitle": "Offer updated",
+    "savedBody": "Your changes are live on the marketplace.",
+    "actionError": "Something went wrong"
   }
 }

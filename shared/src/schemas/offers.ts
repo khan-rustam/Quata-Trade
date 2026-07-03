@@ -75,3 +75,7 @@ export const zOffersQuery = z.object({
 export type OffersQuery = z.infer<typeof zOffersQuery>;
 
 export const zOffersResponse = zPaginated(zOffer);
+
+/** A user's own offers — includes PAUSED/EXHAUSTED (not just ACTIVE), newest first. */
+export const zMyOffersResponse = z.object({ items: z.array(zOffer) });
+export type MyOffersResponse = z.infer<typeof zMyOffersResponse>;

@@ -421,7 +421,8 @@
     "createOffer": "Créer une offre",
     "verified": "Vérifié",
     "trades": "échanges",
-    "perUsdt": "par USDT"
+    "perUsdt": "par USDT",
+    "available": "Disponible"
   },
   "tradeNew": {
     "selectPaymentMethod": "Sélectionnez au moins un moyen de paiement",
@@ -548,7 +549,8 @@
     "notifications": "Notifications",
     "profile": "Détails du profil",
     "terms": "Conditions et politiques",
-    "logout": "Se déconnecter"
+    "logout": "Se déconnecter",
+    "myOffers": "Mes offres"
   },
   "accountProfile": {
     "title": "Détails du profil",
@@ -1129,5 +1131,41 @@
     "mark_read": "Marquer lu",
     "mark_replied": "Marquer répondu",
     "mark_archived": "Archiver"
+  },
+  "myOffers": {
+    "title": "Mes offres",
+    "subtitle": "Gérez vos annonces d'achat et de vente — elles apparaissent sur la place de marché pour les autres traders.",
+    "newOffer": "Nouvelle offre",
+    "emptyTitle": "Aucune offre pour l'instant",
+    "emptyBody": "Publiez une offre d'achat ou de vente et elle apparaîtra sur la place de marché pour les autres traders.",
+    "side_BUY": "Achat d'USDT",
+    "side_SELL": "Vente d'USDT",
+    "status_ACTIVE": "Active",
+    "status_PAUSED": "En pause",
+    "status_EXHAUSTED": "Épuisée",
+    "status_DELETED": "Supprimée",
+    "perUsdt": "par USDT",
+    "limits": "Limites",
+    "available": "Disponible",
+    "pause": "Mettre en pause",
+    "activate": "Activer",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "editTitle": "Modifier l'offre",
+    "priceLabel": "Prix",
+    "minTrade": "Min",
+    "maxTrade": "Max",
+    "paymentMethods": "Moyens de paiement",
+    "termsLabel": "Conditions (facultatif)",
+    "selectPaymentMethod": "Sélectionnez au moins un moyen de paiement",
+    "deleteTitle": "Supprimer l'offre ?",
+    "deleteConfirm": "Cela la retire de la place de marché. Les transactions passées ne sont pas affectées.",
+    "deletedTitle": "Offre supprimée",
+    "deletedBody": "Elle n'apparaît plus sur la place de marché.",
+    "savedTitle": "Offre mise à jour",
+    "savedBody": "Vos modifications sont en ligne sur la place de marché.",
+    "actionError": "Une erreur s'est produite"
   }
 }

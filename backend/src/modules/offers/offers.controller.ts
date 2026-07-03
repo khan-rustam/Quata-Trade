@@ -74,6 +74,22 @@ export class OffersController {
     return { items: mapped, page: query.page, pageSize: query.pageSize, total };
   }
 
+  /**
+   * The caller's own offers for self-service management (edit / pause / delete).
+   * Declared BEFORE `:id` so the literal "mine" is not matched as an offer id.
+   */
+  @Get("mine")
+  async mine(@CurrentUserId() userId: string): Promise<{ items: Offer[] }> {
+    const rows = await this.offers.listForUser(userId);
+    const traders = await fetchTraders(this.db, rows.map((o) => o.user_id));
+    const items: Offer[] = [];
+    for (const row of rows) {
+      const trader = traders.get(row.user_id);
+      if (trader) items.push(mapOffer(row, trader));
+    }
+    return { items };
+  }
+
   /** 404 when missing or soft-DELETED — deleted offers are indistinguishable from absent. */
   @Get(":id")
   async detail(@Param("id", new ZodPipe(zUuid)) id: string): Promise<Offer> {

@@ -126,6 +126,9 @@ function TradeBrowser(): React.JSX.Element {
                     <Badge tone="neutral" className="mt-2">
                       {formatUsdt(offer.minTrade, "USDT_TRC20", 0)}–{formatUsdt(offer.maxTrade, "USDT_TRC20", 0)} USDT
                     </Badge>
+                    <p className="mt-1.5 text-xs text-text-3">
+                      {tx("available")}: {formatUsdt(offer.remaining, "USDT_TRC20", 0)} USDT
+                    </p>
                   </div>
                 </div>
               </Card>
