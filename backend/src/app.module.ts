@@ -29,6 +29,7 @@ import { RiskModule } from "./modules/risk/risk.module";
 import { NotifyModule } from "./modules/notify/notify.module";
 import { AdminModule } from "./modules/admin/admin.module";
 import { TreasuryModule } from "./modules/treasury/treasury.module";
+import { ContentModule } from "./modules/content/content.module";
 
 @Module({
   imports: [
@@ -93,6 +94,7 @@ import { TreasuryModule } from "./modules/treasury/treasury.module";
     NotifyModule,
     AdminModule,
     TreasuryModule,
+    ContentModule,
     // DepositsModule + SignerModule run ONLY in the worker process (crons)
   ],
   providers: [

@@ -341,6 +341,38 @@ export interface OutboxTable {
   next_attempt_at: ColumnType<Date | null, Date | null | undefined, Date | null>;
 }
 
+export interface FaqsTable {
+  id: string;
+  category: Generated<string>;
+  question: string;
+  answer: string;
+  sort_order: Generated<number>;
+  published: Generated<boolean>;
+  created_at: Timestamp;
+  updated_at: ColumnType<Date | null, Date | null | undefined, Date | null>;
+}
+
+export interface ReviewsTable {
+  id: string;
+  author_name: string;
+  location: string | null;
+  rating: number;
+  body: string;
+  sort_order: Generated<number>;
+  published: Generated<boolean>;
+  created_at: Timestamp;
+}
+
+export interface EnquiriesTable {
+  id: string;
+  name: string;
+  email: string;
+  subject: string | null;
+  message: string;
+  status: Generated<string>;
+  created_at: Timestamp;
+}
+
 export interface Database {
   users: UsersTable;
   sessions: SessionsTable;
@@ -367,4 +399,7 @@ export interface Database {
   notifications: NotificationsTable;
   settings: SettingsTable;
   outbox: OutboxTable;
+  faqs: FaqsTable;
+  reviews: ReviewsTable;
+  enquiries: EnquiriesTable;
 }

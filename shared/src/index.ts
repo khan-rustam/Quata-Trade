@@ -3,6 +3,7 @@ export * from "./money.js";
 export * from "./reputation.js";
 
 export * from "./schemas/common.js";
+export * from "./schemas/content.js";
 export * from "./schemas/auth.js";
 export * from "./schemas/users.js";
 export * from "./schemas/kyc.js";

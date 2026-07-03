@@ -51,6 +51,19 @@ import { zDispute, type OpenDisputeRequest, type SubmitEvidenceRequest } from ".
 import { zMessagesResponse, type SendMessageRequest } from "../schemas/chat.js";
 import { zNotificationsResponse } from "../schemas/notifications.js";
 import {
+  zCompanyInfo,
+  zEnquiryList,
+  zFaq,
+  zFaqList,
+  zReview,
+  zReviewList,
+  type EnquiryRequest,
+  type UpdateCompanyRequest,
+  type UpdateEnquiryStatusRequest,
+  type UpsertFaqRequest,
+  type UpsertReviewRequest,
+} from "../schemas/content.js";
+import {
   zAdminDisputesResponse,
   zAdminKpisResponse,
   zAdminKycQueueResponse,
@@ -224,6 +237,29 @@ export class QuataApiClient {
     this.request("GET", "/api/v1/notifications", zNotificationsResponse, undefined, query);
   markNotificationRead = (id: string): Promise<Ok> =>
     this.request("POST", `/api/v1/notifications/${id}/read`, zOk);
+
+  // ---- content (public: company, faq, reviews, contact enquiry) ----
+  company = () => this.request("GET", "/api/v1/content/company", zCompanyInfo);
+  faqs = () => this.request("GET", "/api/v1/content/faqs", zFaqList);
+  reviews = () => this.request("GET", "/api/v1/content/reviews", zReviewList);
+  submitEnquiry = (body: EnquiryRequest): Promise<Ok> =>
+    this.request("POST", "/api/v1/content/enquiries", zOk, body);
+
+  // ---- content (admin: manage company/faq/reviews/enquiries) ----
+  adminUpdateCompany = (body: UpdateCompanyRequest) =>
+    this.request("PATCH", "/api/v1/admin/content/company", zCompanyInfo, body);
+  adminFaqs = () => this.request("GET", "/api/v1/admin/content/faqs", zFaqList);
+  adminUpsertFaq = (body: UpsertFaqRequest) => this.request("POST", "/api/v1/admin/content/faqs", zFaq, body);
+  adminDeleteFaq = (id: string): Promise<Ok> => this.request("DELETE", `/api/v1/admin/content/faqs/${id}`, zOk);
+  adminReviews = () => this.request("GET", "/api/v1/admin/content/reviews", zReviewList);
+  adminUpsertReview = (body: UpsertReviewRequest) =>
+    this.request("POST", "/api/v1/admin/content/reviews", zReview, body);
+  adminDeleteReview = (id: string): Promise<Ok> =>
+    this.request("DELETE", `/api/v1/admin/content/reviews/${id}`, zOk);
+  adminEnquiries = (query?: Query) =>
+    this.request("GET", "/api/v1/admin/content/enquiries", zEnquiryList, undefined, query);
+  adminUpdateEnquiryStatus = (id: string, body: UpdateEnquiryStatusRequest): Promise<Ok> =>
+    this.request("PATCH", `/api/v1/admin/content/enquiries/${id}`, zOk, body);
 
   // ---- admin (uses a separate admin token; RBAC enforced server-side) ----
   adminLogin = (body: AdminLoginRequest) =>
