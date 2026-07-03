@@ -67,6 +67,10 @@
       "title": "Prêt à échanger en toute confiance ?",
       "body": "Créez votre compte en quelques minutes. De la crypto au cash. Protégé.",
       "button": "Commencer"
+    },
+    "reviews": {
+      "eyebrow": "Témoignages",
+      "title": "La confiance des traders au Cameroun"
     }
   },
   "footer": {
@@ -229,7 +233,8 @@
     "faq5Q": "Y a-t-il des frais cachés ?",
     "faq5A": "Non. Les frais de transaction sont publiés sur la page Frais (0,3 % à 0,5 % par méthode) et affichés avant l'ouverture d'une transaction. Les retraits ne paient que les frais de réseau de la blockchain, indiqués avant votre confirmation.",
     "stuckPrefix": "Toujours bloqué ?",
-    "stuckLink": "Contacter le support"
+    "stuckLink": "Contacter le support",
+    "faqEmpty": "Les réponses arrivent bientôt — revenez plus tard."
   },
   "contact": {
     "eyebrow": "Contact",
@@ -251,7 +256,21 @@
     "fraudEmail": "[[abuse@quatatrade.com]]",
     "fraudWarning": "Ne partagez jamais votre mot de passe, votre code PIN ni vos codes 2FA — le personnel de QuataTrade ne vous les demandera jamais.",
     "toWireLabel": "À connecter :",
-    "toWireBody": "un formulaire de ticket de support intégré à l’application (la plateforme dispose d’une surface de notifications/tickets à connecter). En attendant, cette page redirige les utilisateurs vers l’e-mail du support ci-dessus."
+    "toWireBody": "un formulaire de ticket de support intégré à l’application (la plateforme dispose d’une surface de notifications/tickets à connecter). En attendant, cette page redirige les utilisateurs vers l’e-mail du support ci-dessus.",
+    "addressTitle": "Bureau",
+    "addressNote": "Adresse enregistrée",
+    "formTitle": "Envoyez-nous un message",
+    "formSubtitle": "Nous répondrons à votre e-mail. Ne partagez jamais votre mot de passe, votre code PIN ni vos clés de portefeuille.",
+    "nameLabel": "Votre nom",
+    "emailLabel": "E-mail",
+    "subjectLabel": "Objet (facultatif)",
+    "messageLabel": "Message",
+    "submit": "Envoyer le message",
+    "sending": "Envoi…",
+    "successTitle": "Message envoyé",
+    "successBody": "Merci — nous vous répondrons bientôt par e-mail.",
+    "errorTitle": "Échec de l'envoi",
+    "sendAnother": "Envoyer un autre"
   },
   "about": {
     "eyebrow": "À propos",

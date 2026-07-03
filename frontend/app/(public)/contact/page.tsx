@@ -1,28 +1,35 @@
 import type { Metadata } from "next";
-import { AlertOctagon, Clock, Mail, MessageCircle, Scale } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { AlertOctagon, Clock, Mail, MapPin, MessageCircle, Scale } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Section, SectionHeading } from "@/components/public/marketing";
 import { Reveal } from "@/components/motion/reveal";
+import { ContactForm } from "@/components/public/contact-form";
+import { getCompany } from "@/lib/content-server";
 
 export const metadata: Metadata = {
   title: "Contact & Support — QuataTrade",
   description: "Get help with your QuataTrade account, trades, and disputes.",
 };
 
-const CHANNELS: {
-  icon: typeof Mail;
-  titleKey: string;
-  valueKey: string;
-  noteKey: string;
-}[] = [
-  { icon: Mail, titleKey: "emailTitle", valueKey: "emailValue", noteKey: "emailNote" },
-  { icon: Clock, titleKey: "hoursTitle", valueKey: "hoursValue", noteKey: "hoursNote" },
-  { icon: MessageCircle, titleKey: "whatsappTitle", valueKey: "whatsappValue", noteKey: "whatsappNote" },
-  { icon: Scale, titleKey: "legalTitle", valueKey: "legalValue", noteKey: "legalNote" },
-];
+export default async function ContactPage(): Promise<React.JSX.Element> {
+  const t = await getTranslations("contact");
+  const company = await getCompany();
 
-export default function ContactPage(): React.JSX.Element {
-  const t = useTranslations("contact");
+  const legalValue =
+    company.legalName && company.registrationNo
+      ? `${company.legalName} · ${company.registrationNo}`
+      : company.legalName || t("legalValue");
+  const address = [company.addressLine, company.city, company.country].filter(Boolean).join(", ");
+
+  const channels: { icon: typeof Mail; title: string; value: string; note: string }[] = [
+    { icon: Mail, title: t("emailTitle"), value: company.email || t("emailValue"), note: t("emailNote") },
+    { icon: Clock, title: t("hoursTitle"), value: t("hoursValue"), note: t("hoursNote") },
+    ...(company.whatsapp
+      ? [{ icon: MessageCircle, title: t("whatsappTitle"), value: company.whatsapp, note: t("whatsappNote") }]
+      : []),
+    ...(address ? [{ icon: MapPin, title: t("addressTitle"), value: address, note: t("addressNote") }] : []),
+    { icon: Scale, title: t("legalTitle"), value: legalValue, note: t("legalNote") },
+  ];
 
   return (
     <Section narrow>
@@ -31,9 +38,9 @@ export default function ContactPage(): React.JSX.Element {
       </Reveal>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        {CHANNELS.map((c, i) => (
-          <Reveal key={c.titleKey} delay={i * 0.07} className="h-full">
-            <Channel icon={c.icon} title={t(c.titleKey)} value={t(c.valueKey)} note={t(c.noteKey)} />
+        {channels.map((c, i) => (
+          <Reveal key={c.title} delay={i * 0.07} className="h-full">
+            <Channel icon={c.icon} title={c.title} value={c.value} note={c.note} />
           </Reveal>
         ))}
       </div>
@@ -43,15 +50,14 @@ export default function ContactPage(): React.JSX.Element {
           <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
           <p className="text-text-2">
             {t("fraudLead")}{" "}
-            <span className="font-medium text-text-1">{t("fraudEmail")}</span>. {t("fraudWarning")}
+            <span className="font-medium text-text-1">{company.email || t("fraudEmail")}</span>. {t("fraudWarning")}
           </p>
         </div>
       </Reveal>
 
       <Reveal delay={0.07}>
-        <div className="mt-6 rounded-xl border border-dashed border-accent-400/40 bg-accent-400/5 px-3 py-2 text-sm">
-          <span className="font-semibold text-accent-400">{t("toWireLabel")}</span>{" "}
-          <span className="text-text-2">{t("toWireBody")}</span>
+        <div className="mt-6">
+          <ContactForm />
         </div>
       </Reveal>
     </Section>
@@ -75,7 +81,7 @@ function Channel({
         <Icon size={16} className="text-accent-400" />
         <span className="text-sm font-medium text-text-1">{title}</span>
       </div>
-      <p className="mt-2 font-medium">{value}</p>
+      <p className="mt-2 font-medium break-words">{value}</p>
       <p className="mt-0.5 text-xs text-text-3">{note}</p>
     </div>
   );

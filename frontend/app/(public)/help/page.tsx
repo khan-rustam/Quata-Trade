@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import {
   ArrowUpFromLine,
   BadgeCheck,
@@ -12,8 +12,10 @@ import {
   ShoppingCart,
   Tag,
 } from "lucide-react";
+import type { Faq } from "@quatatrade/shared";
 import { Section, SectionHeading } from "@/components/public/marketing";
 import { Reveal } from "@/components/motion/reveal";
+import { getFaqs } from "@/lib/content-server";
 
 export const metadata: Metadata = {
   title: "Help Center — QuataTrade",
@@ -31,10 +33,25 @@ const CATEGORIES = [
   { icon: ShieldCheck, key: "cat8" },
 ] as const;
 
-const STARTERS = ["faq1", "faq2", "faq3", "faq4", "faq5"] as const;
+/** Preserve API order (sortOrder) while bucketing FAQs under their category. */
+function groupByCategory(faqs: Faq[]): { category: string; items: Faq[] }[] {
+  const groups: { category: string; items: Faq[] }[] = [];
+  for (const faq of faqs) {
+    const key = faq.category || "";
+    let group = groups.find((g) => g.category === key);
+    if (!group) {
+      group = { category: key, items: [] };
+      groups.push(group);
+    }
+    group.items.push(faq);
+  }
+  return groups;
+}
 
-export default function HelpPage(): React.JSX.Element {
-  const t = useTranslations("help");
+export default async function HelpPage(): Promise<React.JSX.Element> {
+  const t = await getTranslations("help");
+  const faqs = await getFaqs();
+  const groups = groupByCategory(faqs);
 
   return (
     <>
@@ -72,18 +89,33 @@ export default function HelpPage(): React.JSX.Element {
               <HelpCircle size={20} className="text-accent-400" /> {t("faqHeading")}
             </h2>
           </Reveal>
-          <div className="mt-5 space-y-3">
-            {STARTERS.map((k, i) => (
-              <Reveal key={k} delay={i * 0.06}>
-                <details className="group rounded-xl border border-border bg-bg p-4">
-                  <summary className="cursor-pointer list-none font-medium text-text-1 [&::-webkit-details-marker]:hidden">
-                    {t(`${k}Q`)}
-                  </summary>
-                  <p className="mt-2 text-sm leading-relaxed text-text-2">{t(`${k}A`)}</p>
-                </details>
-              </Reveal>
-            ))}
-          </div>
+          {groups.length === 0 ? (
+            <p className="mt-5 rounded-xl border border-border bg-bg p-4 text-sm text-text-2">{t("faqEmpty")}</p>
+          ) : (
+            <div className="mt-5 space-y-6">
+              {groups.map((group) => (
+                <div key={group.category || "general"}>
+                  {group.category && (
+                    <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-3">
+                      {group.category}
+                    </h3>
+                  )}
+                  <div className="space-y-3">
+                    {group.items.map((faq, i) => (
+                      <Reveal key={faq.id} delay={i * 0.04}>
+                        <details className="group rounded-xl border border-border bg-bg p-4">
+                          <summary className="cursor-pointer list-none font-medium text-text-1 [&::-webkit-details-marker]:hidden">
+                            {faq.question}
+                          </summary>
+                          <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-text-2">{faq.answer}</p>
+                        </details>
+                      </Reveal>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           <Reveal>
             <p className="mt-6 text-sm text-text-2">
               {t("stuckPrefix")}{" "}

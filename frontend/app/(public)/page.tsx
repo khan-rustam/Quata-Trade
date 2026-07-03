@@ -8,7 +8,9 @@ import { BrandMark } from "@/components/brand/logo";
 import { Hero } from "@/components/public/hero";
 import { EscrowSteps } from "@/components/public/escrow-steps";
 import { OfferPreviewCard } from "@/components/public/offer-preview-card";
+import { ReviewsSection } from "@/components/public/reviews-section";
 import { Reveal } from "@/components/motion/reveal";
+import { getReviews } from "@/lib/content-server";
 
 /**
  * Illustrative offers for the "know who you trade with" band. Clearly labelled as
@@ -65,6 +67,7 @@ const TRUST_ICONS = [Lock, ShieldCheck, MessageSquare, Wallet] as const;
 
 export default async function LandingPage(): Promise<React.JSX.Element> {
   const t = await getTranslations("landing");
+  const reviews = await getReviews();
 
   return (
     <>
@@ -104,6 +107,9 @@ export default async function LandingPage(): Promise<React.JSX.Element> {
           ))}
         </div>
       </Section>
+
+      {/* Trader reviews (admin-managed; hidden until published) */}
+      <ReviewsSection reviews={reviews} eyebrow={t("reviews.eyebrow")} title={t("reviews.title")} />
 
       {/* CTA */}
       <div className="border-t border-border">

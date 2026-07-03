@@ -67,6 +67,10 @@
       "title": "Ready to trade with confidence?",
       "body": "Create your account in minutes. Crypto to cash. Protected.",
       "button": "Get started"
+    },
+    "reviews": {
+      "eyebrow": "Trader stories",
+      "title": "Trusted by traders across Cameroon"
     }
   },
   "footer": {
@@ -229,7 +233,8 @@
     "faq5Q": "Are there any hidden fees?",
     "faq5A": "No. Trading fees are published on the Fees page (0.3%–0.5% per method) and shown before you open a trade. Withdrawals pay only the blockchain network fee, shown before you confirm.",
     "stuckPrefix": "Still stuck?",
-    "stuckLink": "Contact support"
+    "stuckLink": "Contact support",
+    "faqEmpty": "Answers are on the way — check back soon."
   },
   "contact": {
     "eyebrow": "Contact",
@@ -251,7 +256,21 @@
     "fraudEmail": "[[abuse@quatatrade.com]]",
     "fraudWarning": "Never share your password, PIN, or 2FA codes — QuataTrade staff will never ask for them.",
     "toWireLabel": "To wire:",
-    "toWireBody": "an in-app support ticket form (the platform has a notifications/ticket surface to connect). Until then this page routes users to the support email above."
+    "toWireBody": "an in-app support ticket form (the platform has a notifications/ticket surface to connect). Until then this page routes users to the support email above.",
+    "addressTitle": "Office",
+    "addressNote": "Registered address",
+    "formTitle": "Send us a message",
+    "formSubtitle": "We'll reply to your email. Never share your password, PIN, or wallet keys.",
+    "nameLabel": "Your name",
+    "emailLabel": "Email",
+    "subjectLabel": "Subject (optional)",
+    "messageLabel": "Message",
+    "submit": "Send message",
+    "sending": "Sending…",
+    "successTitle": "Message sent",
+    "successBody": "Thanks — we'll reply to your email soon.",
+    "errorTitle": "Could not send",
+    "sendAnother": "Send another"
   },
   "about": {
     "eyebrow": "About us",

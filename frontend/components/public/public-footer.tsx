@@ -1,6 +1,10 @@
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
+import { Facebook, Instagram, Linkedin, Mail, Phone, Send, Twitter } from "lucide-react";
+import type { ComponentType } from "react";
+import type { LucideProps } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
+import { getCompany } from "@/lib/content-server";
 
 type FooterLink = { key: string; href: string; soon?: boolean };
 
@@ -46,10 +50,22 @@ const COLUMNS: { titleKey: string; links: FooterLink[] }[] = [
   },
 ];
 
+const SOCIAL: { key: keyof CompanySocial; icon: ComponentType<LucideProps>; label: string }[] = [
+  { key: "facebook", icon: Facebook, label: "Facebook" },
+  { key: "x", icon: Twitter, label: "X" },
+  { key: "instagram", icon: Instagram, label: "Instagram" },
+  { key: "linkedin", icon: Linkedin, label: "LinkedIn" },
+  { key: "telegram", icon: Send, label: "Telegram" },
+];
+
+type CompanySocial = { facebook: string; x: string; instagram: string; linkedin: string; telegram: string };
+
 /** Marketing + legal footer, fully localized (Documents/14 §13.C). */
-export function PublicFooter(): React.JSX.Element {
-  const t = useTranslations("footer");
+export async function PublicFooter(): Promise<React.JSX.Element> {
+  const t = await getTranslations("footer");
+  const company = await getCompany();
   const year = 2026;
+  const socials = SOCIAL.filter((s) => company.social[s.key]?.trim());
 
   return (
     <footer className="border-t border-border bg-surface-1">
@@ -57,7 +73,43 @@ export function PublicFooter(): React.JSX.Element {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-1">
             <Logo size={18} />
-            <p className="mt-3 max-w-xs text-sm text-text-2">{t("tagline")}</p>
+            <p className="mt-3 max-w-xs text-sm text-text-2">{company.tagline || t("tagline")}</p>
+            {(company.email || company.phone) && (
+              <div className="mt-4 space-y-1.5">
+                {company.email && (
+                  <a
+                    href={`mailto:${company.email}`}
+                    className="flex items-center gap-2 text-sm text-text-2 transition-colors hover:text-text-1"
+                  >
+                    <Mail size={14} className="text-accent-400" aria-hidden /> {company.email}
+                  </a>
+                )}
+                {company.phone && (
+                  <a
+                    href={`tel:${company.phone.replace(/\s+/g, "")}`}
+                    className="flex items-center gap-2 text-sm text-text-2 transition-colors hover:text-text-1"
+                  >
+                    <Phone size={14} className="text-accent-400" aria-hidden /> {company.phone}
+                  </a>
+                )}
+              </div>
+            )}
+            {socials.length > 0 && (
+              <div className="mt-4 flex gap-2">
+                {socials.map((s) => (
+                  <a
+                    key={s.key}
+                    href={company.social[s.key]}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label={s.label}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-text-2 transition-colors hover:border-accent-400/50 hover:text-accent-400"
+                  >
+                    <s.icon size={15} aria-hidden />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
           {COLUMNS.map((col) => (
             <div key={col.titleKey}>
