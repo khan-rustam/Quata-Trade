@@ -17,7 +17,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const field = (
       <input
         ref={ref}
-        className={cn(base, "h-11 px-3 text-base", mono && "font-money text-right tabular-nums", className)}
+        className={cn(
+          base,
+          "h-11 pl-3 text-base",
+          // leave room on the right for the absolutely-positioned suffix so the
+          // right-aligned value never collides with it (XAF / USDT).
+          suffix ? "pr-14" : "pr-3",
+          mono && "font-money text-right tabular-nums",
+          className,
+        )}
         {...props}
       />
     );
