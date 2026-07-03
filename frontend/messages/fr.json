@@ -871,7 +871,10 @@
     "colActor": "Acteur",
     "colAction": "Action",
     "colTarget": "Cible",
-    "colIp": "IP"
+    "colIp": "IP",
+    "filterActor": "Acteur",
+    "filterAction": "Action",
+    "actionPlaceholder": "Rechercher une action…"
   },
   "adminProfile": {
     "title": "Mon profil",
@@ -1038,7 +1041,14 @@
     "previousPage": "Page précédente",
     "nextPage": "Page suivante",
     "export": "Exporter CSV",
-    "refresh": "Actualiser"
+    "refresh": "Actualiser",
+    "perPage": "{n} / page",
+    "perPageAria": "Lignes par page",
+    "clearFilters": "Effacer",
+    "dateFrom": "Du",
+    "dateTo": "Au",
+    "filterStatus": "Statut",
+    "filterAll": "Tous"
   },
   "totpDialog": {
     "reasonPlaceholder": "Raison (5 caractères minimum)…",

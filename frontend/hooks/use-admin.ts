@@ -49,8 +49,36 @@ export function useAdminUserDetail(id: string) {
     enabled: Boolean(id),
   });
 }
-export function useAdminWithdrawals(page: number) {
-  return useQuery({ queryKey: ["admin", "withdrawals", page], queryFn: () => adminApi.adminWithdrawals({ page, pageSize: 20 }) });
+// Type aliases (not interfaces) so they carry an implicit index signature and
+// are assignable to Record<string, string | undefined> for `clean`.
+export type TradesFilters = {
+  status?: string;
+  from?: string;
+  to?: string;
+};
+export type WithdrawalsFilters = {
+  status?: string;
+  from?: string;
+  to?: string;
+};
+export type AuditFilters = {
+  actorType?: string;
+  action?: string;
+  from?: string;
+  to?: string;
+};
+/** Drop empty-string filter values so they aren't sent as blank query params. */
+function clean(f: Record<string, string | undefined>): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(f)) out[k] = v && v.length > 0 ? v : undefined;
+  return out;
+}
+
+export function useAdminWithdrawals(page: number, pageSize = 20, filters: WithdrawalsFilters = {}) {
+  return useQuery({
+    queryKey: ["admin", "withdrawals", page, pageSize, filters],
+    queryFn: () => adminApi.adminWithdrawals({ page, pageSize, ...clean(filters) }),
+  });
 }
 export function useAdminDisputes(page: number) {
   return useQuery({ queryKey: ["admin", "disputes", page], queryFn: () => adminApi.adminDisputes({ page, pageSize: 20 }) });
@@ -58,8 +86,11 @@ export function useAdminDisputes(page: number) {
 export function useAdminKycQueue(page: number) {
   return useQuery({ queryKey: ["admin", "kyc", page], queryFn: () => adminApi.adminKycQueue({ page, pageSize: 20 }) });
 }
-export function useAdminTrades(page: number) {
-  return useQuery({ queryKey: ["admin", "trades", page], queryFn: () => adminApi.adminTrades({ page, pageSize: 20 }) });
+export function useAdminTrades(page: number, pageSize = 20, filters: TradesFilters = {}) {
+  return useQuery({
+    queryKey: ["admin", "trades", page, pageSize, filters],
+    queryFn: () => adminApi.adminTrades({ page, pageSize, ...clean(filters) }),
+  });
 }
 export function useAdminKillSwitch() {
   return useQuery({ queryKey: ["admin", "kill-switch"], queryFn: () => adminApi.adminKillSwitch() });
@@ -70,6 +101,9 @@ export function useAdminRevenue() {
 export function useAdminTreasury() {
   return useQuery({ queryKey: ["admin", "treasury"], queryFn: () => adminApi.adminTreasury() });
 }
-export function useAdminAuditLogs(page: number) {
-  return useQuery({ queryKey: ["admin", "audit", page], queryFn: () => adminApi.adminAuditLogs({ page, pageSize: 30 }) });
+export function useAdminAuditLogs(page: number, pageSize = 30, filters: AuditFilters = {}) {
+  return useQuery({
+    queryKey: ["admin", "audit", page, pageSize, filters],
+    queryFn: () => adminApi.adminAuditLogs({ page, pageSize, ...clean(filters) }),
+  });
 }

@@ -3,9 +3,13 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Repeat } from "lucide-react";
-import { AdminTitle, ExportCsvButton, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
+import { TRADE_STATUSES } from "@quatatrade/shared";
+import { AdminTitle, ExportCsvButton, FilterBar, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Field } from "@/components/ui/field";
 import { Usdt } from "@/components/ui/amount";
 import { TradeStatusBadge } from "@/components/ui/status-badge";
 import { useAdminTrades } from "@/hooks/use-admin";
@@ -13,8 +17,20 @@ import { formatDateTime } from "@/lib/format";
 
 export default function AdminTradesPage(): React.JSX.Element {
   const tx = useTranslations("adminTrades");
+  const tu = useTranslations("adminUi");
   const [page, setPage] = useState(1);
-  const { data, isLoading, refetch, isFetching } = useAdminTrades(page);
+  const [pageSize, setPageSize] = useState(20);
+  const [status, setStatus] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const { data, isLoading, refetch, isFetching } = useAdminTrades(page, pageSize, { status, from, to });
+  const hasFilters = Boolean(status || from || to);
+  const reset = () => {
+    setStatus("");
+    setFrom("");
+    setTo("");
+    setPage(1);
+  };
 
   return (
     <div className="space-y-5">
@@ -40,6 +56,48 @@ export default function AdminTradesPage(): React.JSX.Element {
           </div>
         }
       />
+
+      <FilterBar onReset={reset} showReset={hasFilters}>
+        <Field label={tu("filterStatus")} className="w-44">
+          {() => (
+            <Select
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPage(1);
+              }}
+              options={[
+                { value: "", label: tu("filterAll") },
+                ...TRADE_STATUSES.map((s) => ({ value: s, label: s })),
+              ]}
+            />
+          )}
+        </Field>
+        <Field label={tu("dateFrom")} className="w-40">
+          {() => (
+            <Input
+              type="date"
+              value={from}
+              onChange={(e) => {
+                setFrom(e.target.value);
+                setPage(1);
+              }}
+            />
+          )}
+        </Field>
+        <Field label={tu("dateTo")} className="w-40">
+          {() => (
+            <Input
+              type="date"
+              value={to}
+              onChange={(e) => {
+                setTo(e.target.value);
+                setPage(1);
+              }}
+            />
+          )}
+        </Field>
+      </FilterBar>
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
@@ -72,7 +130,16 @@ export default function AdminTradesPage(): React.JSX.Element {
               </tr>
             ))}
           </TableFrame>
-          <Pagination page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} />
+          <Pagination
+            page={data.page}
+            pageSize={data.pageSize}
+            total={data.total}
+            onPage={setPage}
+            onPageSize={(n) => {
+              setPageSize(n);
+              setPage(1);
+            }}
+          />
         </>
       )}
     </div>

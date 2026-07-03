@@ -5,12 +5,15 @@ import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ShieldAlert, X } from "lucide-react";
 import type { z } from "zod";
-import { zAdminWithdrawalRow } from "@quatatrade/shared";
-import { AdminTitle, ExportCsvButton, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
+import { WITHDRAWAL_STATUSES, zAdminWithdrawalRow } from "@quatatrade/shared";
+import { AdminTitle, ExportCsvButton, FilterBar, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { TotpActionDialog } from "@/components/admin/totp-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Field } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { Usdt } from "@/components/ui/amount";
 import { WithdrawalStatusBadge } from "@/components/ui/status-badge";
@@ -24,11 +27,23 @@ type Row = z.infer<typeof zAdminWithdrawalRow>;
 
 export default function AdminWithdrawalsPage(): React.JSX.Element {
   const [page, setPage] = useState(1);
-  const { data, isLoading, refetch, isFetching } = useAdminWithdrawals(page);
+  const [pageSize, setPageSize] = useState(20);
+  const [status, setStatus] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const { data, isLoading, refetch, isFetching } = useAdminWithdrawals(page, pageSize, { status, from, to });
   const { data: me } = useAdminMe();
   const qc = useQueryClient();
   const toast = useToast();
   const tx = useTranslations("adminWithdrawals");
+  const tu = useTranslations("adminUi");
+  const hasFilters = Boolean(status || from || to);
+  const resetFilters = () => {
+    setStatus("");
+    setFrom("");
+    setTo("");
+    setPage(1);
+  };
 
   const [action, setAction] = useState<{ row: Row; kind: "approve" | "reject" } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -82,6 +97,48 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
           </div>
         }
       />
+
+      <FilterBar onReset={resetFilters} showReset={hasFilters}>
+        <Field label={tu("filterStatus")} className="w-52">
+          {() => (
+            <Select
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPage(1);
+              }}
+              options={[
+                { value: "", label: tu("filterAll") },
+                ...WITHDRAWAL_STATUSES.map((s) => ({ value: s, label: s })),
+              ]}
+            />
+          )}
+        </Field>
+        <Field label={tu("dateFrom")} className="w-40">
+          {() => (
+            <Input
+              type="date"
+              value={from}
+              onChange={(e) => {
+                setFrom(e.target.value);
+                setPage(1);
+              }}
+            />
+          )}
+        </Field>
+        <Field label={tu("dateTo")} className="w-40">
+          {() => (
+            <Input
+              type="date"
+              value={to}
+              onChange={(e) => {
+                setTo(e.target.value);
+                setPage(1);
+              }}
+            />
+          )}
+        </Field>
+      </FilterBar>
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
@@ -147,7 +204,16 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
               </tr>
             ))}
           </TableFrame>
-          <Pagination page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} />
+          <Pagination
+            page={data.page}
+            pageSize={data.pageSize}
+            total={data.total}
+            onPage={setPage}
+            onPageSize={(n) => {
+              setPageSize(n);
+              setPage(1);
+            }}
+          />
         </>
       )}
 

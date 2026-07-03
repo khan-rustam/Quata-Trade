@@ -29,19 +29,37 @@ export function Pagination({
   pageSize,
   total,
   onPage,
+  onPageSize,
+  pageSizeOptions = [20, 50, 100],
 }: {
   page: number;
   pageSize: number;
   total: number;
   onPage: (p: number) => void;
+  onPageSize?: (n: number) => void;
+  pageSizeOptions?: number[];
 }): React.JSX.Element | null {
   const tx = useTranslations("adminUi");
-  const pages = Math.ceil(total / pageSize);
-  if (pages <= 1) return null;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  if (pages <= 1 && !onPageSize) return null;
   return (
-    <div className="flex items-center justify-between pt-1 text-sm text-text-2">
+    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-sm text-text-2">
       <span>{tx("pageStatus", { page, pages, total })}</span>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
+        {onPageSize && (
+          <select
+            value={pageSize}
+            onChange={(e) => onPageSize(Number(e.target.value))}
+            aria-label={tx("perPageAria")}
+            className="cursor-pointer rounded-lg border border-border bg-surface-2 px-2 py-1.5 text-sm text-text-1 outline-none focus-visible:border-accent-400"
+          >
+            {pageSizeOptions.map((n) => (
+              <option key={n} value={n}>
+                {tx("perPage", { n })}
+              </option>
+            ))}
+          </select>
+        )}
         <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label={tx("previousPage")}>
           <ChevronLeft size={16} />
         </Button>
@@ -49,6 +67,29 @@ export function Pagination({
           <ChevronRight size={16} />
         </Button>
       </div>
+    </div>
+  );
+}
+
+/** Container for a page's filter controls, with an optional Clear button. */
+export function FilterBar({
+  children,
+  onReset,
+  showReset,
+}: {
+  children: ReactNode;
+  onReset?: () => void;
+  showReset?: boolean;
+}): React.JSX.Element {
+  const tx = useTranslations("adminUi");
+  return (
+    <div className="flex flex-wrap items-end gap-2 rounded-xl border border-border bg-surface-1 p-3">
+      {children}
+      {onReset && showReset && (
+        <Button size="sm" variant="ghost" onClick={onReset}>
+          {tx("clearFilters")}
+        </Button>
+      )}
     </div>
   );
 }

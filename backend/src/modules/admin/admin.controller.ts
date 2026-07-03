@@ -59,9 +59,15 @@ import { AdminAuthService } from "./admin-auth.service";
 import { AdminService, type AdjustmentResult, type UserModerationAction } from "./admin.service";
 import { RBAC } from "./admin.rbac";
 import {
+  zAdminAuditQuery,
+  zAdminTradesQuery,
   zAdminUsersQuery,
+  zAdminWithdrawalsQuery,
   zLedgerAdjustmentRequest,
+  type AdminAuditQuery,
+  type AdminTradesQuery,
   type AdminUsersQuery,
+  type AdminWithdrawalsQuery,
   type KycQueueRow,
   type LedgerAdjustmentRequest,
 } from "./admin.schemas";
@@ -177,14 +183,16 @@ export class AdminController {
 
   @Roles(...RBAC.viewDashboards)
   @Get("trades")
-  async trades(@Query(new ZodPipe(zPagination)) query: Pagination): Promise<Paged<unknown>> {
+  async trades(@Query(new ZodPipe(zAdminTradesQuery)) query: AdminTradesQuery): Promise<Paged<unknown>> {
     const { items, total } = await this.admin.listTrades(query);
     return { items, page: query.page, pageSize: query.pageSize, total };
   }
 
   @Roles(...RBAC.viewDashboards)
   @Get("withdrawals")
-  async withdrawalQueue(@Query(new ZodPipe(zPagination)) query: Pagination): Promise<Paged<unknown>> {
+  async withdrawalQueue(
+    @Query(new ZodPipe(zAdminWithdrawalsQuery)) query: AdminWithdrawalsQuery,
+  ): Promise<Paged<unknown>> {
     const { items, total } = await this.admin.listWithdrawals(query);
     return { items, page: query.page, pageSize: query.pageSize, total };
   }
@@ -426,7 +434,7 @@ export class AdminController {
 
   @Roles(...RBAC.viewAuditLogs)
   @Get("audit-logs")
-  async auditLogs(@Query(new ZodPipe(zPagination)) query: Pagination): Promise<Paged<unknown>> {
+  async auditLogs(@Query(new ZodPipe(zAdminAuditQuery)) query: AdminAuditQuery): Promise<Paged<unknown>> {
     const { items, total } = await this.admin.listAuditLogs(query);
     return { items, page: query.page, pageSize: query.pageSize, total };
   }

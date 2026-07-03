@@ -8,7 +8,6 @@ import type {
   AdminUserDetail,
   KillSwitchRequest,
   KillSwitchState,
-  Pagination,
   UserStatus,
 } from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
@@ -18,7 +17,22 @@ import { AuditService } from "../../common/audit/audit.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { SettingsService } from "../settings/settings.service";
 import { AdminAuthService } from "./admin-auth.service";
-import { SETTING_VALUE_SCHEMAS, type AdminUsersQuery, type LedgerAdjustmentRequest } from "./admin.schemas";
+import {
+  SETTING_VALUE_SCHEMAS,
+  type AdminAuditQuery,
+  type AdminTradesQuery,
+  type AdminUsersQuery,
+  type AdminWithdrawalsQuery,
+  type LedgerAdjustmentRequest,
+} from "./admin.schemas";
+
+/** YYYY-MM-DD → [fromInclusive, toExclusive] UTC day boundaries for created_at filters. */
+function dayRange(from?: string, to?: string): { fromDate?: Date; toDate?: Date } {
+  return {
+    fromDate: from ? new Date(`${from}T00:00:00.000Z`) : undefined,
+    toDate: to ? new Date(new Date(`${to}T00:00:00.000Z`).getTime() + 86_400_000) : undefined,
+  };
+}
 import {
   InvalidSettingValueError,
   SettingKeyNotAllowedError,
@@ -475,7 +489,7 @@ export class AdminService {
     };
   }
 
-  async listTrades(pagination: Pagination): Promise<{
+  async listTrades(query: AdminTradesQuery): Promise<{
     items: Array<{
       id: string;
       shortRef: string;
@@ -488,11 +502,27 @@ export class AdminService {
     }>;
     total: number;
   }> {
+    const { fromDate, toDate } = dayRange(query.from, query.to);
+    let rowsQuery = this.db
+      .selectFrom("trades as t")
+      .innerJoin("users as s", "s.id", "t.seller_id")
+      .innerJoin("users as b", "b.id", "t.buyer_id");
+    let countQuery = this.db.selectFrom("trades as t");
+    if (query.status) {
+      rowsQuery = rowsQuery.where("t.status", "=", query.status);
+      countQuery = countQuery.where("t.status", "=", query.status);
+    }
+    if (fromDate) {
+      rowsQuery = rowsQuery.where("t.created_at", ">=", fromDate);
+      countQuery = countQuery.where("t.created_at", ">=", fromDate);
+    }
+    if (toDate) {
+      rowsQuery = rowsQuery.where("t.created_at", "<", toDate);
+      countQuery = countQuery.where("t.created_at", "<", toDate);
+    }
+
     const [rows, count] = await Promise.all([
-      this.db
-        .selectFrom("trades as t")
-        .innerJoin("users as s", "s.id", "t.seller_id")
-        .innerJoin("users as b", "b.id", "t.buyer_id")
+      rowsQuery
         .select([
           "t.id",
           "t.short_ref",
@@ -504,10 +534,10 @@ export class AdminService {
           "t.created_at",
         ])
         .orderBy("t.created_at", "desc")
-        .limit(pagination.pageSize)
-        .offset((pagination.page - 1) * pagination.pageSize)
+        .limit(query.pageSize)
+        .offset((query.page - 1) * query.pageSize)
         .execute(),
-      this.db.selectFrom("trades").select((eb) => eb.fn.countAll<bigint>().as("n")).executeTakeFirstOrThrow(),
+      countQuery.select((eb) => eb.fn.countAll<bigint>().as("n")).executeTakeFirstOrThrow(),
     ]);
     return {
       items: rows.map((t) => ({
@@ -525,7 +555,7 @@ export class AdminService {
   }
 
   /** Withdrawal work queue: actionable rows (PENDING_APPROVAL / RISK_HOLD) first, oldest first. */
-  async listWithdrawals(pagination: Pagination): Promise<{
+  async listWithdrawals(query: AdminWithdrawalsQuery): Promise<{
     items: Array<{
       id: string;
       userId: string;
@@ -545,10 +575,24 @@ export class AdminService {
     total: number;
   }> {
     const caps = await this.settings.withdrawalCaps();
+    const { fromDate, toDate } = dayRange(query.from, query.to);
+    let rowsQuery = this.db.selectFrom("withdrawals as w").innerJoin("users as u", "u.id", "w.user_id");
+    let countQuery = this.db.selectFrom("withdrawals as w");
+    if (query.status) {
+      rowsQuery = rowsQuery.where("w.status", "=", query.status);
+      countQuery = countQuery.where("w.status", "=", query.status);
+    }
+    if (fromDate) {
+      rowsQuery = rowsQuery.where("w.created_at", ">=", fromDate);
+      countQuery = countQuery.where("w.created_at", ">=", fromDate);
+    }
+    if (toDate) {
+      rowsQuery = rowsQuery.where("w.created_at", "<", toDate);
+      countQuery = countQuery.where("w.created_at", "<", toDate);
+    }
+
     const [rows, count] = await Promise.all([
-      this.db
-        .selectFrom("withdrawals as w")
-        .innerJoin("users as u", "u.id", "w.user_id")
+      rowsQuery
         .select([
           "w.id",
           "w.user_id",
@@ -566,10 +610,10 @@ export class AdminService {
         ])
         .orderBy(sql`CASE WHEN w.status IN ('PENDING_APPROVAL', 'RISK_HOLD') THEN 0 ELSE 1 END`)
         .orderBy("w.created_at", "asc")
-        .limit(pagination.pageSize)
-        .offset((pagination.page - 1) * pagination.pageSize)
+        .limit(query.pageSize)
+        .offset((query.page - 1) * query.pageSize)
         .execute(),
-      this.db.selectFrom("withdrawals").select((eb) => eb.fn.countAll<bigint>().as("n")).executeTakeFirstOrThrow(),
+      countQuery.select((eb) => eb.fn.countAll<bigint>().as("n")).executeTakeFirstOrThrow(),
     ]);
     return {
       items: rows.map((w) => ({
@@ -756,7 +800,7 @@ export class AdminService {
 
   // ── audit logs ────────────────────────────────────────────────────────────
 
-  async listAuditLogs(pagination: Pagination): Promise<{
+  async listAuditLogs(query: AdminAuditQuery): Promise<{
     items: Array<{
       id: string;
       actorType: string;
@@ -770,16 +814,36 @@ export class AdminService {
     }>;
     total: number;
   }> {
+    const { fromDate, toDate } = dayRange(query.from, query.to);
+    let rowsQuery = this.db.selectFrom("audit_logs");
+    let countQuery = this.db.selectFrom("audit_logs");
+    if (query.actorType) {
+      rowsQuery = rowsQuery.where("actor_type", "=", query.actorType);
+      countQuery = countQuery.where("actor_type", "=", query.actorType);
+    }
+    if (query.action) {
+      const escaped = query.action.replace(/[\\%_]/g, (m) => `\\${m}`);
+      rowsQuery = rowsQuery.where("action", "ilike", `%${escaped}%`);
+      countQuery = countQuery.where("action", "ilike", `%${escaped}%`);
+    }
+    if (fromDate) {
+      rowsQuery = rowsQuery.where("created_at", ">=", fromDate);
+      countQuery = countQuery.where("created_at", ">=", fromDate);
+    }
+    if (toDate) {
+      rowsQuery = rowsQuery.where("created_at", "<", toDate);
+      countQuery = countQuery.where("created_at", "<", toDate);
+    }
+
     const [rows, count] = await Promise.all([
-      this.db
-        .selectFrom("audit_logs")
+      rowsQuery
         .select(["id", "actor_type", "actor_id", "action", "target_type", "target_id", "ip", "metadata", "created_at"])
         .orderBy("created_at", "desc")
         .orderBy("id", "desc")
-        .limit(pagination.pageSize)
-        .offset((pagination.page - 1) * pagination.pageSize)
+        .limit(query.pageSize)
+        .offset((query.page - 1) * query.pageSize)
         .execute(),
-      this.db.selectFrom("audit_logs").select((eb) => eb.fn.countAll<bigint>().as("n")).executeTakeFirstOrThrow(),
+      countQuery.select((eb) => eb.fn.countAll<bigint>().as("n")).executeTakeFirstOrThrow(),
     ]);
     return {
       items: rows.map((r) => ({

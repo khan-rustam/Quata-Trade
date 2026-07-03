@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { CheckCircle2, ScrollText, ShieldAlert } from "lucide-react";
-import { AdminTitle, ExportCsvButton, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
+import { AdminTitle, ExportCsvButton, FilterBar, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Field } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -18,8 +21,22 @@ import { formatDateTime, shortHash } from "@/lib/format";
 
 export default function AdminAuditPage(): React.JSX.Element {
   const tx = useTranslations("adminAudit");
+  const tu = useTranslations("adminUi");
   const [page, setPage] = useState(1);
-  const { data, isLoading, refetch, isFetching } = useAdminAuditLogs(page);
+  const [pageSize, setPageSize] = useState(30);
+  const [actorType, setActorType] = useState("");
+  const [action, setAction] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const { data, isLoading, refetch, isFetching } = useAdminAuditLogs(page, pageSize, { actorType, action, from, to });
+  const hasFilters = Boolean(actorType || action || from || to);
+  const resetFilters = () => {
+    setActorType("");
+    setAction("");
+    setFrom("");
+    setTo("");
+    setPage(1);
+  };
   const toast = useToast();
   const [verifying, setVerifying] = useState(false);
   const [verifyResult, setVerifyResult] = useState<{ broken: number } | null>(null);
@@ -66,6 +83,62 @@ export default function AdminAuditPage(): React.JSX.Element {
           </div>
         }
       />
+
+      <FilterBar onReset={resetFilters} showReset={hasFilters}>
+        <Field label={tx("filterActor")} className="w-40">
+          {() => (
+            <Select
+              value={actorType}
+              onChange={(e) => {
+                setActorType(e.target.value);
+                setPage(1);
+              }}
+              options={[
+                { value: "", label: tu("filterAll") },
+                { value: "admin", label: "admin" },
+                { value: "user", label: "user" },
+                { value: "system", label: "system" },
+              ]}
+            />
+          )}
+        </Field>
+        <Field label={tx("filterAction")} className="w-56">
+          {() => (
+            <Input
+              value={action}
+              placeholder={tx("actionPlaceholder")}
+              onChange={(e) => {
+                setAction(e.target.value);
+                setPage(1);
+              }}
+            />
+          )}
+        </Field>
+        <Field label={tu("dateFrom")} className="w-40">
+          {() => (
+            <Input
+              type="date"
+              value={from}
+              onChange={(e) => {
+                setFrom(e.target.value);
+                setPage(1);
+              }}
+            />
+          )}
+        </Field>
+        <Field label={tu("dateTo")} className="w-40">
+          {() => (
+            <Input
+              type="date"
+              value={to}
+              onChange={(e) => {
+                setTo(e.target.value);
+                setPage(1);
+              }}
+            />
+          )}
+        </Field>
+      </FilterBar>
 
       {verifyResult && (
         <Card className={verifyResult.broken === 0 ? "border-success/30 bg-success/5" : "border-danger/30 bg-danger/5"}>
@@ -117,7 +190,16 @@ export default function AdminAuditPage(): React.JSX.Element {
               </tr>
             ))}
           </TableFrame>
-          <Pagination page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} />
+          <Pagination
+            page={data.page}
+            pageSize={data.pageSize}
+            total={data.total}
+            onPage={setPage}
+            onPageSize={(n) => {
+              setPageSize(n);
+              setPage(1);
+            }}
+          />
         </>
       )}
     </div>

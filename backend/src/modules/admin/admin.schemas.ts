@@ -1,5 +1,13 @@
 import { z, type ZodTypeAny } from "zod";
-import { ASSET_CODES, zIdempotencyKey, zPagination, zTotpCode, zUuid } from "@quatatrade/shared";
+import {
+  ASSET_CODES,
+  TRADE_STATUSES,
+  WITHDRAWAL_STATUSES,
+  zIdempotencyKey,
+  zPagination,
+  zTotpCode,
+  zUuid,
+} from "@quatatrade/shared";
 
 /**
  * Local (backend-only) zod schemas for admin inputs that have no shared
@@ -12,6 +20,31 @@ export const zAdminUsersQuery = zPagination.extend({
   search: z.string().trim().min(1).max(320).optional(),
 });
 export type AdminUsersQuery = z.infer<typeof zAdminUsersQuery>;
+
+/** YYYY-MM-DD inclusive day range for created_at filtering. */
+const zDay = z.string().date();
+
+export const zAdminTradesQuery = zPagination.extend({
+  status: z.enum(TRADE_STATUSES).optional(),
+  from: zDay.optional(),
+  to: zDay.optional(),
+});
+export type AdminTradesQuery = z.infer<typeof zAdminTradesQuery>;
+
+export const zAdminWithdrawalsQuery = zPagination.extend({
+  status: z.enum(WITHDRAWAL_STATUSES).optional(),
+  from: zDay.optional(),
+  to: zDay.optional(),
+});
+export type AdminWithdrawalsQuery = z.infer<typeof zAdminWithdrawalsQuery>;
+
+export const zAdminAuditQuery = zPagination.extend({
+  actorType: z.string().trim().min(1).max(40).optional(),
+  action: z.string().trim().min(1).max(120).optional(),
+  from: zDay.optional(),
+  to: zDay.optional(),
+});
+export type AdminAuditQuery = z.infer<typeof zAdminAuditQuery>;
 
 /** Unsigned BIGINT smallest-units string. */
 const zAmountStr = z.string().regex(/^\d{1,30}$/, "must be an integer amount string");

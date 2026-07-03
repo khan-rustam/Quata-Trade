@@ -34,6 +34,13 @@ export interface TronGridClient {
    * by the remote withdrawal confirmation poller — NEVER by the signer (Host B).
    */
   getTransactionConfirmations(txHash: string): Promise<number | null>;
+  /**
+   * TRC20 (USDT) balance of an address in smallest units — read-only, via
+   * triggerconstantcontract balanceOf. Used by the on-chain reserve check
+   * (item 5b). Throws on a read failure so the caller skips rather than
+   * treating an unreadable balance as zero.
+   */
+  getTrc20Balance(address: string): Promise<bigint>;
 }
 
 export const TRONGRID_CLIENT = "TRONGRID_CLIENT";
@@ -65,6 +72,11 @@ const zTxInfo = z
 const zNowBlock = z
   .object({ block_header: z.object({ raw_data: z.object({ number: z.number().int() }).passthrough() }).passthrough() })
   .passthrough();
+
+// triggerconstantcontract (balanceOf): constant_result[0] is the 32-byte hex balance.
+// nonempty so a malformed/failed read THROWS (reserve check skips) rather than
+// silently reading a balance of zero (which would be a false shortfall alert).
+const zTriggerConstant = z.object({ constant_result: z.array(z.string()).nonempty() }).passthrough();
 
 function toHex(bytes: number[]): string {
   return bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -139,6 +151,22 @@ export class HttpTronGridClient implements TronGridClient {
     if (height < blockNumber) return 0; // node behind / reorg in progress
     const depth = height - blockNumber;
     return depth > 2_000_000_000n ? 2_000_000_000 : Number(depth);
+  }
+
+  async getTrc20Balance(address: string): Promise<bigint> {
+    const ownerHex = addressToEvmHex(address);
+    if (ownerHex === null) throw new Error(`invalid TRON address: ${address}`);
+    const parsed = zTriggerConstant.parse(
+      await this.postJson("/wallet/triggerconstantcontract", {
+        owner_address: address,
+        contract_address: this.cfg.usdtContract,
+        function_selector: "balanceOf(address)",
+        parameter: ownerHex.padStart(64, "0"),
+        visible: true,
+      }),
+    );
+    const hex = parsed.constant_result[0];
+    return hex.length === 0 ? 0n : BigInt(`0x${hex}`);
   }
 
   /**
