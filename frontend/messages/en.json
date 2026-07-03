@@ -92,6 +92,21 @@
       "careers": "Careers"
     }
   },
+  "trader": {
+    "verified": "Verified",
+    "memberSince": "Member since {date}",
+    "completedTrades": "Completed trades",
+    "completionRate": "Completion rate",
+    "activeOffers": "Active offers",
+    "kycTier": "KYC tier",
+    "noBio": "This trader hasn't added a bio yet.",
+    "viewOffers": "See how trading works",
+    "cta": "Trade with {name}",
+    "tierNEW": "New",
+    "tierBRONZE": "Bronze",
+    "tierSILVER": "Silver",
+    "tierGOLD": "Gold"
+  },
   "common": {
     "loading": "Loading…",
     "error": "Something went wrong",

@@ -39,7 +39,7 @@ export default function AccountPage(): React.JSX.Element {
 
       <Card className="flex items-center gap-4">
         {me ? (
-          <Avatar seed={me.id} name={me.firstName ?? me.email} size={56} />
+          <Avatar seed={me.avatarSeed ?? me.id} style={me.avatarStyle} name={me.firstName ?? me.email} size={56} />
         ) : (
           <Skeleton className="h-14 w-14 rounded-full" />
         )}

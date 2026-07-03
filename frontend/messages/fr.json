@@ -92,6 +92,21 @@
       "careers": "Carrières"
     }
   },
+  "trader": {
+    "verified": "Vérifié",
+    "memberSince": "Membre depuis {date}",
+    "completedTrades": "Échanges réalisés",
+    "completionRate": "Taux de réussite",
+    "activeOffers": "Offres actives",
+    "kycTier": "Niveau KYC",
+    "noBio": "Ce trader n'a pas encore ajouté de bio.",
+    "viewOffers": "Voir comment ça marche",
+    "cta": "Échanger avec {name}",
+    "tierNEW": "Nouveau",
+    "tierBRONZE": "Bronze",
+    "tierSILVER": "Argent",
+    "tierGOLD": "Or"
+  },
   "common": {
     "loading": "Chargement…",
     "error": "Une erreur est survenue",
