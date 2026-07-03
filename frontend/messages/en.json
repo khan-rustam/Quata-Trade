@@ -539,7 +539,13 @@
     "payTo": "Pay to",
     "copyNumber": "Copy number",
     "useReference": "Use this reference",
-    "noSellerAccount": "The seller hasn’t added a receiving number for this method yet — ask them in the chat below before paying."
+    "noSellerAccount": "The seller hasn’t added a receiving number for this method yet — ask them in the chat below before paying.",
+    "proofFiles": "Payment proof",
+    "proofOptional": "Optional — attach a screenshot of your payment receipt (JPG/PNG/WebP).",
+    "addProof": "Attach receipt",
+    "receipt": "Receipt",
+    "remove": "Remove",
+    "proofUploadError": "Could not upload the file"
   },
   "account": {
     "title": "Account",

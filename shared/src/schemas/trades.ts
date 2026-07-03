@@ -103,6 +103,11 @@ export const zTradeDetailResponse = z.object({
   events: z.array(zTradeEvent),
 });
 
+/** Payment-proof upload → the stored object key; include in submitPayment.proofFiles. */
+export const zUploadKeyResponse = z.object({ key: z.string() });
+/** Short-TTL presigned URLs for a trade's submitted proof files (party-scoped). */
+export const zTradeProofUrlsResponse = z.object({ urls: z.array(z.string()) });
+
 export const zTradesQuery = z.object({
   status: z.enum(TRADE_STATUSES).optional(),
   role: z.enum(["buyer", "seller"]).optional(),

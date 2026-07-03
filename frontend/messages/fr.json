@@ -539,7 +539,13 @@
     "payTo": "Payer à",
     "copyNumber": "Copier le numéro",
     "useReference": "Utilisez cette référence",
-    "noSellerAccount": "Le vendeur n’a pas encore ajouté de numéro de réception pour cette méthode — demandez-lui dans le chat ci-dessous avant de payer."
+    "noSellerAccount": "Le vendeur n’a pas encore ajouté de numéro de réception pour cette méthode — demandez-lui dans le chat ci-dessous avant de payer.",
+    "proofFiles": "Preuve de paiement",
+    "proofOptional": "Facultatif — joignez une capture de votre reçu de paiement (JPG/PNG/WebP).",
+    "addProof": "Joindre un reçu",
+    "receipt": "Reçu",
+    "remove": "Retirer",
+    "proofUploadError": "Échec du téléversement du fichier"
   },
   "account": {
     "title": "Compte",

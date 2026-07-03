@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { AlertTriangle, CheckCircle2, Send } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Paperclip, Send, X } from "lucide-react";
 import type { Trade } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
@@ -142,6 +142,7 @@ export default function TradeRoomPage(): React.JSX.Element {
               <Row label={tx("senderNumber")} value={trade.payment.senderNumber} />
             </div>
           )}
+          {trade.payment && trade.payment.proofFiles.length > 0 && <ProofGallery tradeId={trade.id} />}
           <Alert tone="warning">
             {tx("confirmReceivedPrefix")} <Xaf value={trade.fiatAmountXaf} /> {tx("confirmReceivedSuffix")}
           </Alert>
@@ -223,15 +224,40 @@ function BuyerPayPanel({ trade, onDone }: { trade: Trade; onDone: () => void }):
   const [reference, setReference] = useState(trade.shortRef);
   const [senderName, setSenderName] = useState("");
   const [senderNumber, setSenderNumber] = useState("");
+  const [proofFiles, setProofFiles] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const payTo = trade.sellerPayTo;
+
+  const onPickProof = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setError(null);
+    setUploading(true);
+    try {
+      for (const file of Array.from(files).slice(0, 5 - proofFiles.length)) {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const base64 = dataUrl.split(",")[1] ?? "";
+        const { key } = await api.uploadTradeProof(trade.id, base64);
+        setProofFiles((prev) => [...prev, key]);
+      }
+    } catch (err) {
+      setError(apiErrorMessage(err, tx("proofUploadError")));
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const submit = async () => {
     setBusy(true);
     setError(null);
     try {
-      await api.submitPayment(trade.id, { reference, senderName, senderNumber, proofFiles: [] });
+      await api.submitPayment(trade.id, { reference, senderName, senderNumber, proofFiles });
       toast.success(tx("paymentSentTitle"), tx("paymentSentBody"));
       onDone();
     } catch (err) {
@@ -293,11 +319,73 @@ function BuyerPayPanel({ trade, onDone }: { trade: Trade; onDone: () => void }):
           {(p) => <Input placeholder={tx("senderNumberPlaceholder")} value={senderNumber} onChange={(e) => setSenderNumber(e.target.value)} {...p} />}
         </Field>
       </div>
+
+      {/* payment proof (optional receipt upload) */}
+      <div>
+        <p className="text-sm font-medium">{tx("proofFiles")}</p>
+        <p className="mb-2 text-xs text-text-3">{tx("proofOptional")}</p>
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:bg-surface-2">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            className="hidden"
+            disabled={uploading || proofFiles.length >= 5}
+            onChange={(e) => void onPickProof(e.target.files)}
+          />
+          {uploading ? <Spinner /> : <Paperclip size={14} />} {tx("addProof")}
+        </label>
+        {proofFiles.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {proofFiles.map((key, i) => (
+              <span key={key} className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-xs">
+                {tx("receipt")} {i + 1}
+                <button
+                  type="button"
+                  aria-label={tx("remove")}
+                  onClick={() => setProofFiles((prev) => prev.filter((k) => k !== key))}
+                  className="text-text-3 hover:text-danger"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
       {error && <Alert tone="danger">{error}</Alert>}
       <Button className="w-full" onClick={submit} disabled={busy || !reference || senderName.length < 2 || senderNumber.length < 5}>
         {busy ? <Spinner /> : tx("paidNotifySeller")}
       </Button>
     </Card>
+  );
+}
+
+/** Seller/admin view of the buyer's uploaded receipts (short-TTL presigned image URLs). */
+function ProofGallery({ tradeId }: { tradeId: string }): React.JSX.Element | null {
+  const tx = useTranslations("tradeRoom");
+  const { data } = useQuery({
+    queryKey: ["trades", tradeId, "proof-urls"],
+    queryFn: () => api.tradeProofUrls(tradeId),
+  });
+  if (!data || data.urls.length === 0) return null;
+  return (
+    <div>
+      <p className="text-sm font-medium">{tx("proofFiles")}</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {data.urls.map((url, i) => (
+          <a key={i} href={url} target="_blank" rel="noreferrer noopener" className="block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={url}
+              alt={`${tx("receipt")} ${i + 1}`}
+              className="h-20 w-20 rounded-lg border border-border object-cover transition-opacity hover:opacity-80"
+            />
+          </a>
+        ))}
+      </div>
+    </div>
   );
 }
 

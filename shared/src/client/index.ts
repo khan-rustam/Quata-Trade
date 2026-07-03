@@ -46,7 +46,9 @@ import {
   zFeePreviewResponse,
   zTrade,
   zTradeDetailResponse,
+  zTradeProofUrlsResponse,
   zTradesResponse,
+  zUploadKeyResponse,
   type ConfirmTradeRequest,
   type OpenTradeRequest,
   type SubmitPaymentRequest,
@@ -238,6 +240,11 @@ export class QuataApiClient {
   trade = (id: string) => this.request("GET", `/api/v1/trades/${id}`, zTradeDetailResponse);
   submitPayment = (id: string, body: SubmitPaymentRequest) =>
     this.request("POST", `/api/v1/trades/${id}/pay`, zTrade, body);
+  /** Upload a payment receipt (raw base64, no data: prefix) → object key for submitPayment.proofFiles. */
+  uploadTradeProof = (id: string, file: string) =>
+    this.request("POST", `/api/v1/trades/${id}/proof`, zUploadKeyResponse, { file });
+  tradeProofUrls = (id: string) =>
+    this.request("GET", `/api/v1/trades/${id}/proof-urls`, zTradeProofUrlsResponse);
   confirmTrade = (id: string, body: ConfirmTradeRequest) =>
     this.request("POST", `/api/v1/trades/${id}/confirm`, zTrade, body);
   cancelTrade = (id: string, body: { idempotencyKey: string }) =>

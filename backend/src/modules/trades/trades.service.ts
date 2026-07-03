@@ -6,17 +6,22 @@ import { DB } from "../../db/database.module";
 import type { Database } from "../../db/types";
 import { newId, newShortRef } from "../../common/ids";
 import { parsePgEnumArray } from "../../common/pg";
+import { MinioService } from "../../common/storage/minio.service";
 import { fiatValueXaf, split } from "../fees/fees";
 import { LedgerService } from "../ledger/ledger.service";
 import { EscrowService, type TradeRow } from "../escrow/escrow.service";
 import {
   EscrowError,
   IllegalTransitionError,
+  InvalidProofError,
   OfferUnavailableError,
   TradeNotFoundError,
   TradesPausedError,
 } from "../escrow/escrow.errors";
+import { validateChatAttachment } from "../chat/chat.validators";
 import { SettingsService } from "../settings/settings.service";
+
+const PROOF_PRESIGN_TTL_SECONDS = 120;
 
 /**
  * trades — lifecycle orchestration (Documents/06-backend-modules.md).
@@ -31,6 +36,7 @@ export class TradesService {
     private readonly ledger: LedgerService,
     private readonly escrow: EscrowService,
     private readonly settings: SettingsService,
+    private readonly minio: MinioService,
   ) {}
 
   async openTrade(takerId: string, dto: OpenTradeRequest): Promise<TradeRow> {
@@ -133,6 +139,10 @@ export class TradesService {
 
   /** Buyer submits off-platform payment proof: ESCROW_LOCKED → PAYMENT_SUBMITTED. */
   async submitPayment(tradeId: string, buyerId: string, dto: SubmitPaymentRequest): Promise<TradeRow> {
+    // Proof keys are namespaced by trade id at upload — reject any that don't belong here (no cross-trade refs).
+    for (const key of dto.proofFiles) {
+      if (!key.startsWith(`${tradeId}/`)) throw new InvalidProofError("file does not belong to this trade");
+    }
     return this.ledger.withMoneyTransaction(async (trx) => {
       const trade = await this.escrow.lockTrade(trx, tradeId);
       if (trade.buyer_id !== buyerId) throw new TradeNotFoundError(tradeId); // scope to party — no IDOR leak
@@ -164,6 +174,48 @@ export class TradesService {
       });
       return { ...trade, status: "PAYMENT_SUBMITTED" as const };
     });
+  }
+
+  /**
+   * Buyer uploads a payment receipt while the trade is ESCROW_LOCKED. Reuses the
+   * chat attachment validator (base64 → 3MB cap → jpeg/png/webp magic bytes; no
+   * SVG/PDF) → private "proofs" bucket. Key is namespaced `<tradeId>/<uuid><ext>`
+   * so submitPayment can enforce trade scoping.
+   */
+  async uploadProof(tradeId: string, userId: string, base64: string): Promise<{ key: string }> {
+    const trade = await this.db
+      .selectFrom("trades")
+      .select(["buyer_id", "status"])
+      .where("id", "=", tradeId)
+      .executeTakeFirst();
+    if (!trade || trade.buyer_id !== userId) throw new TradeNotFoundError(tradeId); // only the buyer; 404 for non-party
+    if (trade.status !== "ESCROW_LOCKED") throw new IllegalTransitionError(trade.status, "PAYMENT_SUBMITTED");
+
+    const result = validateChatAttachment(base64);
+    if (!result.ok) throw new InvalidProofError(result.reason);
+    const key = `${tradeId}/${newId()}${result.file.ext}`;
+    await this.minio.putObject("proofs", key, result.file.buffer, result.file.mime);
+    return { key };
+  }
+
+  /** Short-TTL presigned URLs for a trade's submitted proof files — party-scoped (buyer or seller). */
+  async proofUrls(tradeId: string, userId: string): Promise<{ urls: string[] }> {
+    const trade = await this.db
+      .selectFrom("trades")
+      .select(["buyer_id", "seller_id"])
+      .where("id", "=", tradeId)
+      .executeTakeFirst();
+    if (!trade || (trade.buyer_id !== userId && trade.seller_id !== userId)) throw new TradeNotFoundError(tradeId);
+    const payment = await this.db
+      .selectFrom("trade_payments")
+      .select("proof_files")
+      .where("trade_id", "=", tradeId)
+      .executeTakeFirst();
+    const keys = payment?.proof_files ?? [];
+    const urls = await Promise.all(
+      keys.map((key) => this.minio.presignedGet("proofs", key, PROOF_PRESIGN_TTL_SECONDS)),
+    );
+    return { urls };
   }
 
   /**

@@ -34,3 +34,9 @@ export class OfferUnavailableError extends EscrowError {
     super(`offer unavailable: ${reason}`);
   }
 }
+
+export class InvalidProofError extends EscrowError {
+  constructor(reason: string) {
+    super(`invalid payment proof: ${reason}`);
+  }
+}

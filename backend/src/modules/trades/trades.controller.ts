@@ -46,6 +46,7 @@ import { InsufficientFundsError } from "../ledger/ledger.errors";
 import {
   EscrowError,
   IllegalTransitionError,
+  InvalidProofError,
   OfferUnavailableError,
   TradeNotFoundError,
   TradesPausedError,
@@ -105,9 +106,19 @@ function rethrowAsHttp(err: unknown): never {
   if (err instanceof IllegalTransitionError) throw new ConflictException("trade is not in a state that allows this action");
   if (err instanceof OfferUnavailableError) throw new ConflictException(err.message);
   if (err instanceof InsufficientFundsError) throw new UnprocessableEntityException("insufficient available balance");
+  if (err instanceof InvalidProofError) throw new BadRequestException(err.message);
   if (err instanceof EscrowError) throw new ConflictException(err.message);
   throw err;
 }
+
+/**
+ * Local upload schema — @quatatrade/shared ships no upload schema; strict +
+ * length-capped (3MB binary ≈ 4MB base64 chars), mirrors the chat attachment.
+ */
+const zProofUploadRequest = z
+  .object({ file: z.string().min(4).max(4_300_000) })
+  .strict();
+type ProofUploadRequest = z.infer<typeof zProofUploadRequest>;
 
 @Controller("trades")
 export class TradesController {
@@ -193,6 +204,26 @@ export class TradesController {
   ): Promise<Trade> {
     const trade = await this.trades.submitPayment(id, userId, dto).catch(rethrowAsHttp);
     return this.toWire(trade);
+  }
+
+  /** Buyer uploads a payment receipt (base64) → private proofs bucket; returns the object key. */
+  @Post(":id/proof")
+  @HttpCode(200)
+  async uploadProof(
+    @CurrentUserId() userId: string,
+    @Param("id", new ZodPipe(zUuid)) id: string,
+    @Body(new ZodPipe(zProofUploadRequest)) dto: ProofUploadRequest,
+  ): Promise<{ key: string }> {
+    return this.trades.uploadProof(id, userId, dto.file).catch(rethrowAsHttp);
+  }
+
+  /** Party-scoped short-TTL presigned URLs for the trade's submitted proof files. */
+  @Get(":id/proof-urls")
+  async proofUrls(
+    @CurrentUserId() userId: string,
+    @Param("id", new ZodPipe(zUuid)) id: string,
+  ): Promise<{ urls: string[] }> {
+    return this.trades.proofUrls(id, userId).catch(rethrowAsHttp);
   }
 
   /**

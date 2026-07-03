@@ -1,13 +1,28 @@
 import { sql } from "kysely";
+import { ConfigService } from "@nestjs/config";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { newId } from "../../common/ids";
 import { startTestDb, type TestDb } from "../../../test/helpers/pg";
 import { createUser } from "../../../test/helpers/fixtures";
+import type { Env } from "../../config/env";
 import { LedgerService } from "../ledger/ledger.service";
 import { SettingsService } from "../settings/settings.service";
+import { MinioService } from "../../common/storage/minio.service";
 import { EscrowService } from "./escrow.service";
 import { TradesService } from "../trades/trades.service";
 import { IllegalTransitionError, OfferUnavailableError, TradeNotFoundError } from "./escrow.errors";
+
+/** TradesService needs a MinioService for proof upload (unused in these escrow flows). */
+const testMinio = new MinioService(
+  new ConfigService<Env, true>({
+    MINIO_ENDPOINT: "localhost",
+    MINIO_PORT: 9000,
+    MINIO_USE_SSL: false,
+    MINIO_ACCESS_KEY: "test",
+    MINIO_SECRET_KEY: "test",
+    STORAGE_SSE_ENABLED: false,
+  }),
+);
 
 /**
  * AUDIT GATE 4 — escrow/trade state machine (Documents/05, 08 §B/§C, 09).
@@ -93,7 +108,7 @@ describe("Escrow state machine (Gate 4)", () => {
     t = await startTestDb();
     ledger = new LedgerService(t.db);
     escrow = new EscrowService(t.db, ledger);
-    trades = new TradesService(t.db, ledger, escrow, new SettingsService(t.db));
+    trades = new TradesService(t.db, ledger, escrow, new SettingsService(t.db), testMinio);
     externalId = await ledger.getOrCreateAccount(null, "external", "USDT_TRC20");
   });
 
@@ -415,7 +430,7 @@ describe("Escrow state machine (Gate 4)", () => {
       .where("key", "=", "kill_switches")
       .execute();
     // fresh service → no stale cache
-    const freshTrades = new TradesService(t.db, ledger, escrow, new SettingsService(t.db));
+    const freshTrades = new TradesService(t.db, ledger, escrow, new SettingsService(t.db), testMinio);
     await expect(freshTrades.openTrade(buyer, {
       offerId: offer.id,
       amount: (5n * USDT).toString(),
