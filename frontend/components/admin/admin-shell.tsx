@@ -24,6 +24,7 @@ import {
 import type { LucideProps } from "lucide-react";
 import type { AdminRole } from "@quatatrade/shared";
 import { BrandMark } from "@/components/brand/logo";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { adminLogout } from "@/hooks/use-admin";
@@ -145,6 +146,7 @@ export function AdminShell({
             <Avatar seed={email} size={30} />
           </Link>
         </header>
+        <Breadcrumbs />
         <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8">{children}</main>
       </div>
     </div>
