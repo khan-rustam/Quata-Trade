@@ -152,6 +152,11 @@ export interface DepositsTable {
   confirmations: Generated<number>;
   status: Generated<DepositStatus>;
   credited_journal_id: string | null;
+  /** On-chain sender (TRC20 `from`) — screened against the AML blocklist (item 4b). */
+  from_address: string | null;
+  /** Tainted-source hold: true → never auto-credited, awaits compliance review. */
+  aml_hold: Generated<boolean>;
+  aml_reason: string | null;
   created_at: Timestamp;
   updated_at: ColumnType<Date | null, never, Date | string>;
 }

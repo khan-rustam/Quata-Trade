@@ -100,6 +100,7 @@ export class DepositScannerService {
         amount: transfer.amount,
         token_contract: transfer.contract,
         block_number: transfer.blockNumber,
+        from_address: transfer.from, // on-chain sender — screened at credit time (item 4b)
         status,
       })
       .onConflict((oc) => oc.columns(["tx_hash", "log_index"]).doNothing())

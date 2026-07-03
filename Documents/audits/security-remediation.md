@@ -23,7 +23,8 @@ locally** — it runs in CI (`.github/workflows/ci.yml`). Money-path changes her
 - ✅ **Item 7** — `scripts/backup-db.sh` (encrypted) + `Documents/ops/` DR / BCP / incident-response runbooks.
 - ✅ **Item 3** — withdrawal address whitelist (`withdrawal_addresses`, cooldown) + `withdrawal_hold_until` set on password-reset / 2FA-enable; enforced in `withdrawals.request`. Integration coverage in CI.
 - ✅ **Item 4a** — AML / sanctions / wallet-blacklist screening: `blocked_addresses` + deterministic `ScreeningService`; **outbound** withdrawal destinations screened at whitelist AND at spend time (`aml.hit` alert, generic 403); compliance API (`/admin/screening/addresses`, SUPER+COMPLIANCE). Integration spec in CI.
-- ⏳ **Remaining (money-path → verify in CI):** 4b AML inbound (deposit-source screening) · 5 on-chain reconciliation · 6b at-rest KYC/PII encryption.
+- ✅ **Item 4b** — AML **inbound**: scanner captures the on-chain `from_address`; `DepositConfirmationService` screens the sender at the credit chokepoint and **holds** (`aml_hold`, never credits) tainted-source deposits + raises `aml.hit`. Held deposits are excluded from the pending scan (no re-credit / duplicate alert). Integration coverage in CI.
+- ⏳ **Remaining (money-path → verify in CI):** 5 on-chain reconciliation · 6b at-rest KYC/PII encryption.
 
 ## Fixes (in progress)
 
@@ -32,7 +33,7 @@ locally** — it runs in CI (`.github/workflows/ci.yml`). Money-path changes her
 | 1 | **Risk engine unwired** | Inject `RiskService` and call `scoreLogin` (auth.service, before session), `scoreTradeOpen` (trades.controller), `scoreWithdrawal` (withdrawals.controller) — fail-open; auto-freeze (score ≥ 90) then blocks money ops via the existing "not active" guards. Populates `risk_events`, `risk.flagged`/`user.frozen` outbox, and the admin risk counter. | **wired — CI-verify** |
 | 2 | **No alert delivery** | Deliver reconciliation-mismatch, `risk.flagged`, `user.frozen`, and privileged admin (`admin.kill_switch`, `ledger.adjustment`, freeze, withdrawal-approval) events to an ops/security channel (email + webhook) via the notify pipeline. | **done — CI-verify** |
 | 3 | **No address whitelist / no credential-change cooldown** | Saved-address allowlist (new table + endpoints), hold on newly-added addresses, and a `withdrawal_hold_until` set on password reset + 2FA change; enforced in `withdrawals.request`. | **done — CI-verify** |
-| 4 | **No AML/sanctions/blacklist screening** | Blacklist/sanctions table + deterministic screening of withdrawal destinations (4a — done) and deposit senders (4b — pending); compliance-managed. | **4a done — CI-verify; 4b pending** |
+| 4 | **No AML/sanctions/blacklist screening** | Blacklist/sanctions table + deterministic screening of withdrawal destinations (4a) and deposit senders (4b); compliance-managed. | **done — CI-verify** |
 | 5 | **Signer + on-chain↔ledger reconciliation** | Add on-chain hot-wallet↔ledger comparison to the reconciliation job + a remote-withdrawal confirmation poller. **Signer itself is human-written (Host B) — scaffold/contract only, never generated here.** | pending |
 | 6 | **At-rest encryption thin + no vault** | Encrypt KYC/PII at rest; add prod hard-stops in `env.ts` (reject dev `MASTER_ENCRYPTION_KEY`, require `WALLET_XPUB`, force `TRON_NETWORK=mainnet`). Vault = ops (document). | **6a done; 6b pending** |
 | 7 | **Backups / DR / BCP / pentest** | Encrypted `pg` backup script + restore drill; DR, BCP, and incident-response runbooks. HSM + external pentest = ops (document). | **done — CI-verify** |
@@ -50,9 +51,11 @@ locally** — it runs in CI (`.github/workflows/ci.yml`). Money-path changes her
 - **Compliance API** `/admin/screening/addresses` (GET/POST/DELETE), guarded by `RBAC.kycReview`
   (SUPER + COMPLIANCE). Typed in `shared` (`zBlockAddressRequest` etc.) + client methods. Frontend admin UI is a
   follow-up (owned by the admin-console work).
-- **4b (pending):** inbound deposit-source screening — capture the TRC20 `from` address and, at the deposit
-  **credit** chokepoint (`DepositConfirmationService`), hold + `aml.hit` instead of crediting when the sender is
-  blocked. `Trc20Transfer.from` is already available; needs `deposits.from_address` + an `aml_hold` flag.
+- **4b (done):** inbound deposit-source screening — the scanner records the TRC20 `from` address
+  (migration 0013: `deposits.from_address`, `aml_hold`, `aml_reason`) and, at the deposit **credit**
+  chokepoint (`DepositConfirmationService`), a blocked sender is **held** (`aml_hold=true`, no journal) with an
+  `aml.hit` event instead of being credited. Held rows are excluded from the pending scan, so there is no
+  re-credit and no repeated alert; compliance reviews and releases them.
 - Screening lives in `modules/screening/` (`@Global`), imported by both the API (`app.module`) and the worker
   (`worker.module`, for 4b). The compliance controller is inert under the worker's application context.
 

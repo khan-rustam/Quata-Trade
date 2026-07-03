@@ -5,6 +5,7 @@ import { DB } from "../../db/database.module";
 import type { Database } from "../../db/types";
 import { newId } from "../../common/ids";
 import { LedgerService } from "../ledger/ledger.service";
+import { ScreeningService } from "../screening/screening.service";
 import { DEPOSITS_CONFIG, type DepositsConfig } from "./deposits.config";
 import { TRONGRID_CLIENT, type TronGridClient } from "./trongrid.client";
 
@@ -31,6 +32,7 @@ export class DepositConfirmationService {
     @Inject(TRONGRID_CLIENT) private readonly client: TronGridClient,
     @Inject(DEPOSITS_CONFIG) private readonly cfg: DepositsConfig,
     private readonly ledger: LedgerService,
+    private readonly screening: ScreeningService,
   ) {}
 
   @Cron(CronExpression.EVERY_30_SECONDS)
@@ -59,6 +61,7 @@ export class DepositConfirmationService {
       .selectFrom("deposits")
       .select(["id", "block_number"])
       .where("status", "in", ["SEEN", "CONFIRMING"])
+      .where("aml_hold", "=", false) // held (tainted-source) deposits await compliance, not re-scanned
       .orderBy("created_at", "asc")
       .execute();
 
@@ -105,6 +108,37 @@ export class DepositConfirmationService {
       // Guard: only pending deposits are creditable — CREDITED (already done),
       // IGNORED_DUST and ORPHANED must never reach postJournal.
       if (deposit.status !== "SEEN" && deposit.status !== "CONFIRMING") return;
+
+      // AML inbound (item 4b): screen the on-chain sender before crediting. A
+      // blocked source is HELD for manual compliance review — tainted funds are
+      // never auto-credited. Deterministic lookup; no LLM in the AML path.
+      if (deposit.from_address) {
+        const res = await this.screening.check(deposit.asset, deposit.from_address);
+        if (res.blocked) {
+          await trx
+            .updateTable("deposits")
+            .set({ aml_hold: true, aml_reason: res.reason, updated_at: new Date() })
+            .where("id", "=", deposit.id)
+            .execute();
+          await trx
+            .insertInto("outbox")
+            .values({
+              id: newId(),
+              event_type: "aml.hit",
+              payload: JSON.stringify({
+                depositId: deposit.id,
+                userId: deposit.user_id,
+                asset: deposit.asset,
+                address: deposit.from_address,
+                category: res.category,
+                reason: res.reason,
+                stage: "deposit",
+              }),
+            })
+            .execute();
+          return; // do NOT credit tainted funds
+        }
+      }
 
       const external = await this.ledger.getOrCreateAccount(null, "external", deposit.asset, trx);
       const userAvailable = await this.ledger.getOrCreateAccount(deposit.user_id, "user_available", deposit.asset, trx);

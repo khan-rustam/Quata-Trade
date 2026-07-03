@@ -3,6 +3,7 @@ import { newId } from "../../common/ids";
 import { startTestDb, type TestDb } from "../../../test/helpers/pg";
 import { createUser } from "../../../test/helpers/fixtures";
 import { LedgerService } from "../ledger/ledger.service";
+import { ScreeningService } from "../screening/screening.service";
 import type { DepositsConfig } from "./deposits.config";
 import type { TronGridClient, Trc20Transfer } from "./trongrid.client";
 import { DepositScannerService } from "./deposit-scanner.service";
@@ -94,7 +95,7 @@ describe("deposits pipeline (Gate 3)", () => {
     ledger = new LedgerService(t.db);
     grid = new FakeTronGrid();
     scanner = new DepositScannerService(t.db, grid, CONFIG);
-    confirmer = new DepositConfirmationService(t.db, grid, CONFIG, ledger);
+    confirmer = new DepositConfirmationService(t.db, grid, CONFIG, ledger, new ScreeningService(t.db));
   });
 
   afterAll(async () => {
@@ -174,6 +175,39 @@ describe("deposits pipeline (Gate 3)", () => {
       .where("idempotency_key", "=", `deposit:${transfer.txHash}:${transfer.logIndex}`)
       .execute();
     expect(journals).toHaveLength(1);
+  });
+
+  it("HOLDS (never credits) a deposit from a blacklisted sender and raises aml.hit exactly once", async () => {
+    const BAD_SENDER = "TBadSenderAMLzzzzzzzzzzzzzzzzzzzzzz";
+    await new ScreeningService(t.db).block(
+      { asset: "USDT_TRC20", address: BAD_SENDER, category: "sanctions", reason: "tainted source" },
+      "admin-aml",
+    );
+    const { userId, address } = await watchedAddress();
+    const transfer = makeTransfer(address, { from: BAD_SENDER, amount: 4_000_000n, blockNumber: 400_000n });
+    grid.transfersByAddress.set(address, [transfer]);
+
+    await scanner.scanOnce();
+    grid.height = 400_000n + 25n;
+    await confirmer.confirmOnce();
+
+    const rows = await depositRows(address);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.aml_hold).toBe(true);
+    expect(rows[0]?.status).not.toBe("CREDITED");
+    expect(rows[0]?.credited_journal_id).toBeNull();
+    expect(await availableBalance(userId)).toBe(0n); // tainted funds never credited
+
+    const amlCount = async () =>
+      (await t.db.selectFrom("outbox").selectAll().where("event_type", "=", "aml.hit").execute()).filter((e) =>
+        JSON.stringify(e.payload).includes(BAD_SENDER),
+      ).length;
+    expect(await amlCount()).toBe(1);
+
+    // A held deposit is excluded from the pending scan — no re-credit, no duplicate alert.
+    await confirmer.confirmOnce();
+    expect(await amlCount()).toBe(1);
+    expect(await availableBalance(userId)).toBe(0n);
   });
 
   it("replay of the same (tx_hash, log_index) never duplicates the row or the credit", async () => {
