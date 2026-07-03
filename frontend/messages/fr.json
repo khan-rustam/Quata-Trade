@@ -676,7 +676,10 @@
     "pending": "En attente",
     "disputes": "Litiges",
     "kycQueue": "File KYC",
-    "riskFlags24h": "signalements de risque au cours des dernières 24 h."
+    "riskFlags24h": "signalements de risque au cours des dernières 24 h.",
+    "chartSignups": "Nouveaux utilisateurs (30 j)",
+    "chartTrades": "Transactions terminées (30 j)",
+    "viewReport": "Rapport complet"
   },
   "adminUsers": {
     "title": "Utilisateurs",
@@ -1027,7 +1030,8 @@
     "logout": "Se déconnecter",
     "profileAria": "Profil administrateur",
     "navContent": "Contenu",
-    "navEnquiries": "Demandes"
+    "navEnquiries": "Demandes",
+    "navReports": "Rapports"
   },
   "adminUi": {
     "pageStatus": "Page {page} sur {pages} · {total} au total",
@@ -1244,5 +1248,21 @@
     "confirm": "Confirmer",
     "moderated": "Utilisateur mis à jour",
     "actionFailed": "Échec de l'action"
+  },
+  "adminReports": {
+    "title": "Rapports et analyses",
+    "subtitle": "Tendances de la plateforme dans le temps.",
+    "periodAria": "Période du rapport",
+    "period7": "7 jours",
+    "period30": "30 jours",
+    "period90": "90 jours",
+    "sumSignups": "Nouveaux utilisateurs",
+    "sumTrades": "Transactions terminées",
+    "sumVolume": "Volume",
+    "sumFees": "Frais perçus",
+    "chartSignups": "Nouveaux utilisateurs par jour",
+    "chartTrades": "Transactions terminées par jour",
+    "chartVolume": "Volume par jour",
+    "chartFees": "Frais par jour"
   }
 }

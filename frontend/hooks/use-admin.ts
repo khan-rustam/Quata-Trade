@@ -33,6 +33,9 @@ export function adminLogout(qcClear: () => void): void {
 export function useAdminKpis() {
   return useQuery({ queryKey: ["admin", "kpis"], queryFn: () => adminApi.adminKpis(), refetchInterval: 30_000 });
 }
+export function useAdminMetrics(days: number) {
+  return useQuery({ queryKey: ["admin", "metrics", days], queryFn: () => adminApi.adminMetrics({ days }) });
+}
 export function useAdminUsers(page: number, search?: string) {
   return useQuery({
     queryKey: ["admin", "users", page, search ?? ""],

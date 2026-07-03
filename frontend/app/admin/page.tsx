@@ -2,15 +2,19 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { AlertTriangle, ArrowUpFromLine, BadgeCheck, Coins, ShieldAlert, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, ArrowRight, ArrowUpFromLine, BadgeCheck, Coins, ShieldAlert, TrendingUp, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Usdt } from "@/components/ui/amount";
-import { useAdminKpis } from "@/hooks/use-admin";
+import { TrendChart, type ChartPoint } from "@/components/admin/metric-chart";
+import { useAdminKpis, useAdminMetrics } from "@/hooks/use-admin";
 
 export default function AdminDashboard(): React.JSX.Element {
   const tx = useTranslations("adminDash");
   const { data, isLoading } = useAdminKpis();
+  const { data: metrics } = useAdminMetrics(30);
+  const signups: ChartPoint[] = (metrics?.points ?? []).map((p) => ({ label: p.date.slice(5), value: p.signups }));
+  const trades: ChartPoint[] = (metrics?.points ?? []).map((p) => ({ label: p.date.slice(5), value: p.trades }));
 
   return (
     <div className="space-y-5">
@@ -49,6 +53,23 @@ export default function AdminDashboard(): React.JSX.Element {
           <ActionTile href="/admin/disputes" label={tx("disputes")} value={data?.openDisputes} loading={isLoading} icon={<ShieldAlert size={16} />} tone="danger" />
           <ActionTile href="/admin/kyc" label={tx("kycQueue")} value={data?.pendingKyc} loading={isLoading} icon={<BadgeCheck size={16} />} tone="info" />
         </div>
+      </div>
+
+      {/* 30-day trends (full analytics on the report page) */}
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Card>
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-medium text-text-2">{tx("chartSignups")}</p>
+            <Link href="/admin/reports" className="flex items-center gap-1 text-xs text-accent-400 hover:underline">
+              {tx("viewReport")} <ArrowRight size={12} />
+            </Link>
+          </div>
+          {metrics ? <TrendChart data={signups} type="area" height={180} /> : <Skeleton className="h-44 w-full rounded-lg" />}
+        </Card>
+        <Card>
+          <p className="mb-3 text-sm font-medium text-text-2">{tx("chartTrades")}</p>
+          {metrics ? <TrendChart data={trades} type="bar" height={180} /> : <Skeleton className="h-44 w-full rounded-lg" />}
+        </Card>
       </div>
 
       {data && data.riskFlagsLast24h > 0 && (

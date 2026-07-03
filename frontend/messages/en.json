@@ -676,7 +676,10 @@
     "pending": "Pending",
     "disputes": "Disputes",
     "kycQueue": "KYC queue",
-    "riskFlags24h": "risk flags in the last 24h."
+    "riskFlags24h": "risk flags in the last 24h.",
+    "chartSignups": "New users (30d)",
+    "chartTrades": "Completed trades (30d)",
+    "viewReport": "Full report"
   },
   "adminUsers": {
     "title": "Users",
@@ -1027,7 +1030,8 @@
     "logout": "Log out",
     "profileAria": "Admin profile",
     "navContent": "Content",
-    "navEnquiries": "Enquiries"
+    "navEnquiries": "Enquiries",
+    "navReports": "Reports"
   },
   "adminUi": {
     "pageStatus": "Page {page} of {pages} · {total} total",
@@ -1244,5 +1248,21 @@
     "confirm": "Confirm",
     "moderated": "User updated",
     "actionFailed": "Action failed"
+  },
+  "adminReports": {
+    "title": "Reports & analytics",
+    "subtitle": "Platform trends over time.",
+    "periodAria": "Reporting period",
+    "period7": "7 days",
+    "period30": "30 days",
+    "period90": "90 days",
+    "sumSignups": "New users",
+    "sumTrades": "Completed trades",
+    "sumVolume": "Volume",
+    "sumFees": "Fees earned",
+    "chartSignups": "New users per day",
+    "chartTrades": "Completed trades per day",
+    "chartVolume": "Volume per day",
+    "chartFees": "Fees per day"
   }
 }

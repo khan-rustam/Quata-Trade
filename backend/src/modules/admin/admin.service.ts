@@ -3,6 +3,8 @@ import { sql, type Kysely } from "kysely";
 import { z } from "zod";
 import type {
   AdminKpisResponse,
+  AdminMetricsQuery,
+  AdminMetricsResponse,
   AdminUserDetail,
   KillSwitchRequest,
   KillSwitchState,
@@ -126,6 +128,73 @@ export class AdminService {
       pendingKyc: Number(pendingKyc.n),
       pendingWithdrawals: Number(pendingWithdrawals.n),
       riskFlagsLast24h: Number(riskFlags24h.n),
+    };
+  }
+
+  /**
+   * Daily timeseries for the dashboard charts + report page: signups, completed
+   * trades, USDT volume, and fees earned, one row per day for the last N days.
+   * A generated date spine left-joins the per-day aggregates so empty days are 0.
+   */
+  async metrics(query: AdminMetricsQuery): Promise<AdminMetricsResponse> {
+    const days = query.days;
+    const result = await sql<{
+      date: string;
+      signups: number;
+      trades: number;
+      volume_usdt: bigint;
+      fee_usdt: bigint;
+    }>`
+      with spine as (
+        select generate_series(
+          (current_date - (${days - 1})::int * interval '1 day')::date,
+          current_date,
+          interval '1 day'
+        )::date as day
+      )
+      select
+        to_char(s.day, 'YYYY-MM-DD') as date,
+        coalesce(u.signups, 0)::int as signups,
+        coalesce(t.trades, 0)::int as trades,
+        coalesce(t.volume, 0)::int8 as volume_usdt,
+        coalesce(t.fees, 0)::int8 as fee_usdt
+      from spine s
+      left join (
+        select created_at::date as day, count(*) as signups
+        from users group by 1
+      ) u on u.day = s.day
+      left join (
+        select created_at::date as day, count(*) as trades, sum(amount) as volume, sum(fee_amount) as fees
+        from trades where status in ('COMPLETED', 'RESOLVED_RELEASE') group by 1
+      ) t on t.day = s.day
+      order by s.day asc
+    `.execute(this.db);
+
+    const points = result.rows.map((r) => ({
+      date: r.date,
+      signups: Number(r.signups),
+      trades: Number(r.trades),
+      volumeUsdt: r.volume_usdt.toString(),
+      feeUsdt: r.fee_usdt.toString(),
+    }));
+    const totals = points.reduce(
+      (acc, p) => ({
+        signups: acc.signups + p.signups,
+        trades: acc.trades + p.trades,
+        volumeUsdt: acc.volumeUsdt + BigInt(p.volumeUsdt),
+        feeUsdt: acc.feeUsdt + BigInt(p.feeUsdt),
+      }),
+      { signups: 0, trades: 0, volumeUsdt: 0n, feeUsdt: 0n },
+    );
+    return {
+      days,
+      points,
+      totals: {
+        signups: totals.signups,
+        trades: totals.trades,
+        volumeUsdt: totals.volumeUsdt.toString(),
+        feeUsdt: totals.feeUsdt.toString(),
+      },
     };
   }
 

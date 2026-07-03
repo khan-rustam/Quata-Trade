@@ -70,6 +70,7 @@ import {
 import {
   zAdminDisputesResponse,
   zAdminKpisResponse,
+  zAdminMetricsResponse,
   zAdminKycQueueResponse,
   zAdminProfile,
   zAdminRevenueResponse,
@@ -287,6 +288,9 @@ export class QuataApiClient {
   adminTotpEnable = (body: { code: string }): Promise<Ok> =>
     this.request("POST", "/api/v1/admin/2fa/enable", zOk, body);
   adminKpis = () => this.request("GET", "/api/v1/admin/kpis", zAdminKpisResponse);
+  /** Daily timeseries (signups / trades / volume / fees) for the dashboard charts + report page. */
+  adminMetrics = (query?: Query) =>
+    this.request("GET", "/api/v1/admin/metrics", zAdminMetricsResponse, undefined, query);
   adminUsers = (query?: Query) =>
     this.request("GET", "/api/v1/admin/users", zAdminUsersResponse, undefined, query);
   /** Full user profile + balances + trades/withdrawals/deposits/kyc/sessions/risk for the detail page. */

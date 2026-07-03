@@ -176,6 +176,34 @@ export const zAdminTreasuryResponse = z.object({
 });
 export type AdminTreasuryResponse = z.infer<typeof zAdminTreasuryResponse>;
 
+// ---- metrics timeseries (dashboard charts + report page) ----
+export const zAdminMetricsQuery = z.object({
+  days: z.coerce.number().int().min(1).max(365).default(30),
+});
+export type AdminMetricsQuery = z.infer<typeof zAdminMetricsQuery>;
+
+export const zAdminMetricsPoint = z.object({
+  /** YYYY-MM-DD (UTC day bucket) */
+  date: z.string(),
+  signups: z.number().int(),
+  trades: z.number().int(),
+  /** completed-trade USDT volume, smallest units (string) */
+  volumeUsdt: zAmount,
+  /** fees earned that day, USDT smallest units (string) */
+  feeUsdt: zAmount,
+});
+export const zAdminMetricsResponse = z.object({
+  days: z.number().int(),
+  points: z.array(zAdminMetricsPoint),
+  totals: z.object({
+    signups: z.number().int(),
+    trades: z.number().int(),
+    volumeUsdt: zAmount,
+    feeUsdt: zAmount,
+  }),
+});
+export type AdminMetricsResponse = z.infer<typeof zAdminMetricsResponse>;
+
 export const zAuditVerifyResponse = z.object({ broken: z.array(z.string()) });
 
 export const zModerationResult = z.object({ ok: z.literal(true), status: z.string() });

@@ -26,8 +26,11 @@ import {
   zRejectWithdrawalRequest,
   zResolveDisputeRequest,
   zUpdateSettingRequest,
+  zAdminMetricsQuery,
   zUuid,
   type AdminKpisResponse,
+  type AdminMetricsQuery,
+  type AdminMetricsResponse,
   type AdminProfile,
   type AdminUserDetail,
   type KillSwitchRequest,
@@ -147,6 +150,12 @@ export class AdminController {
   @Get("kpis")
   async kpis(): Promise<AdminKpisResponse> {
     return this.admin.kpis();
+  }
+
+  @Roles(...RBAC.viewDashboards)
+  @Get("metrics")
+  async metrics(@Query(new ZodPipe(zAdminMetricsQuery)) query: AdminMetricsQuery): Promise<AdminMetricsResponse> {
+    return this.admin.metrics(query);
   }
 
   @Roles(...RBAC.viewDashboards)
