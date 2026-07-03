@@ -25,3 +25,22 @@ export class UserNotActiveError extends UsersError {
     super(`user is ${status}`);
   }
 }
+
+export class WrongPasswordError extends UsersError {
+  constructor() {
+    super("wrong password");
+  }
+}
+
+/** New email is the current one, or already registered to someone. */
+export class EmailUnavailableError extends UsersError {
+  constructor() {
+    super("email unavailable");
+  }
+}
+
+export class InvalidEmailCodeError extends UsersError {
+  constructor() {
+    super("invalid or expired code");
+  }
+}

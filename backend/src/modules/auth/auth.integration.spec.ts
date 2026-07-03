@@ -89,7 +89,7 @@ describe("Auth (Gate 2)", () => {
     totp = new TotpService(t.db, config, audit);
     auth = new AuthService(t.db, jwt, config, audit, totp);
     pin = new PinService(t.db, audit);
-    users = new UsersService(t.db, audit);
+    users = new UsersService(t.db, audit, { send: async () => {} });
   });
 
   afterAll(async () => {

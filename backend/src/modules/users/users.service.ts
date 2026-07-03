@@ -1,13 +1,23 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { createHash, randomInt, timingSafeEqual } from "node:crypto";
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import * as argon2 from "argon2";
 import type { Kysely, Selectable } from "kysely";
 import { reputationTier } from "@quatatrade/shared";
 import type { AvatarStyle, PublicTrader, Session, UpdateProfileRequest, UserProfile } from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
 import type { Database, UsersTable } from "../../db/types";
 import { AuditService } from "../../common/audit/audit.service";
+import { MAILER, type Mailer } from "../notify/notify.mailer";
 import { fetchTraders, type TraderStats } from "../offers/offers.mapper";
 import { displayNameOf } from "../trades/trades.mapper";
-import { SessionNotFoundError, UserNotActiveError, UserNotFoundError } from "./users.errors";
+import {
+  EmailUnavailableError,
+  InvalidEmailCodeError,
+  SessionNotFoundError,
+  UserNotActiveError,
+  UserNotFoundError,
+  WrongPasswordError,
+} from "./users.errors";
 
 type UserRow = Selectable<UsersTable>;
 
@@ -42,6 +52,19 @@ function toProfile(row: UserRow, stats: TraderStats): UserProfile {
 }
 
 const EMPTY_STATS: TraderStats = { completed: 0, cancelled: 0, expired: 0 };
+const EMAIL_CHANGE_TTL_MS = 15 * 60_000;
+
+function sha256Hex(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+function tokenMatches(storedHex: string, candidate: string): boolean {
+  const stored = Buffer.from(storedHex, "hex");
+  const actual = createHash("sha256").update(candidate).digest();
+  return stored.length === actual.length && timingSafeEqual(stored, actual);
+}
+function isUniqueViolation(err: unknown): boolean {
+  return typeof err === "object" && err !== null && "code" in err && (err as { code?: unknown }).code === "23505";
+}
 
 /**
  * users — profile + session self-management (Documents/06 "users").
@@ -50,9 +73,12 @@ const EMPTY_STATS: TraderStats = { completed: 0, cancelled: 0, expired: 0 };
  */
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @Inject(DB) private readonly db: Kysely<Database>,
     private readonly audit: AuditService,
+    @Inject(MAILER) private readonly mailer: Mailer,
   ) {}
 
   async getProfile(userId: string): Promise<UserProfile> {
@@ -137,6 +163,94 @@ export class UsersService {
       memberSince: row.created_at.toISOString(),
       activeOffers: Number(offersCount?.n ?? 0),
     };
+  }
+
+  /**
+   * Start an email change: verify the password, ensure the new address is free,
+   * then send a 6-digit confirmation code to the NEW address (stored hashed).
+   * Delivery is direct (the queued-email job would target the CURRENT address).
+   */
+  async requestEmailChange(userId: string, newEmail: string, password: string): Promise<UserProfile> {
+    const user = await this.db
+      .selectFrom("users")
+      .select(["email", "password_hash"])
+      .where("id", "=", userId)
+      .executeTakeFirst();
+    if (!user) throw new UserNotFoundError();
+    if (!(await argon2.verify(user.password_hash, password))) throw new WrongPasswordError();
+    if (newEmail === user.email) throw new EmailUnavailableError();
+    const taken = await this.db.selectFrom("users").select(["id"]).where("email", "=", newEmail).executeTakeFirst();
+    if (taken) throw new EmailUnavailableError();
+
+    const otp = String(randomInt(0, 1_000_000)).padStart(6, "0");
+    await this.db
+      .updateTable("users")
+      .set({
+        pending_email: newEmail,
+        pending_email_token_hash: sha256Hex(otp),
+        pending_email_expires_at: new Date(Date.now() + EMAIL_CHANGE_TTL_MS),
+        updated_at: new Date(),
+      })
+      .where("id", "=", userId)
+      .execute();
+    await this.audit.log({
+      actorType: "user",
+      actorId: userId,
+      action: "user.email_change_requested",
+      targetType: "user",
+      targetId: userId,
+    });
+    try {
+      await this.mailer.send(
+        newEmail,
+        "Confirm your new QuataTrade email",
+        `Your email change confirmation code is:\n\n    ${otp}\n\nEnter it in the app within 15 minutes to finish changing your email. If you didn't request this, you can ignore this message.`,
+      );
+    } catch (err) {
+      this.logger.warn(`email-change code send failed: ${err instanceof Error ? err.message : "unknown error"}`);
+    }
+    return this.getProfile(userId);
+  }
+
+  /** Confirm the pending email with the code, swapping it in atomically. */
+  async verifyEmailChange(userId: string, code: string): Promise<UserProfile> {
+    const now = new Date();
+    let outcome: "ok" | "invalid";
+    try {
+      outcome = await this.db.transaction().execute(async (trx) => {
+        const u = await trx
+          .selectFrom("users")
+          .select(["pending_email", "pending_email_token_hash", "pending_email_expires_at"])
+          .where("id", "=", userId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!u || !u.pending_email || !u.pending_email_token_hash || !u.pending_email_expires_at) return "invalid";
+        if (u.pending_email_expires_at < now) return "invalid";
+        if (!tokenMatches(u.pending_email_token_hash, code)) return "invalid";
+        await trx
+          .updateTable("users")
+          .set({
+            email: u.pending_email,
+            email_verified_at: now,
+            pending_email: null,
+            pending_email_token_hash: null,
+            pending_email_expires_at: null,
+            updated_at: now,
+          })
+          .where("id", "=", userId)
+          .execute();
+        await this.audit.log(
+          { actorType: "user", actorId: userId, action: "user.email_changed", targetType: "user", targetId: userId },
+          trx,
+        );
+        return "ok";
+      });
+    } catch (err) {
+      if (isUniqueViolation(err)) throw new EmailUnavailableError(); // taken between request and verify
+      throw err;
+    }
+    if (outcome === "invalid") throw new InvalidEmailCodeError();
+    return this.getProfile(userId);
   }
 
   /** Active (unrevoked, unexpired) sessions; `current` marks the caller's own. */

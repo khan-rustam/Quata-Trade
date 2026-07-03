@@ -1,5 +1,7 @@
 import {
+  BadRequestException,
   Body,
+  ConflictException,
   Controller,
   Delete,
   Get,
@@ -8,21 +10,33 @@ import {
   NotFoundException,
   Param,
   Patch,
+  Post,
+  UnauthorizedException,
 } from "@nestjs/common";
 import { z } from "zod";
 import {
+  zChangeEmailRequest,
   zSessionsResponse,
   zUpdateProfileRequest,
   zUuid,
+  zVerifyEmailChangeRequest,
+  type ChangeEmailRequest,
   type Ok,
   type UpdateProfileRequest,
   type UserProfile,
+  type VerifyEmailChangeRequest,
 } from "@quatatrade/shared";
 import { ZodPipe } from "../../common/zod.pipe";
 import { CurrentAuth, CurrentUserId } from "../../common/auth/decorators";
 import type { AccessTokenPayload } from "../../common/auth/jwt.types";
 import { UsersService } from "./users.service";
-import { SessionNotFoundError, UserNotFoundError } from "./users.errors";
+import {
+  EmailUnavailableError,
+  InvalidEmailCodeError,
+  SessionNotFoundError,
+  UserNotFoundError,
+  WrongPasswordError,
+} from "./users.errors";
 
 type SessionsResponse = z.infer<typeof zSessionsResponse>;
 
@@ -54,6 +68,36 @@ export class UsersController {
     try {
       return await this.users.updateProfile(userId, dto);
     } catch (err) {
+      rethrowUsers(err);
+    }
+  }
+
+  @Post("me/email")
+  @HttpCode(HttpStatus.OK)
+  async changeEmail(
+    @CurrentUserId() userId: string,
+    @Body(new ZodPipe(zChangeEmailRequest)) dto: ChangeEmailRequest,
+  ): Promise<UserProfile> {
+    try {
+      return await this.users.requestEmailChange(userId, dto.newEmail, dto.password);
+    } catch (err) {
+      if (err instanceof WrongPasswordError) throw new UnauthorizedException("Incorrect password");
+      if (err instanceof EmailUnavailableError) throw new ConflictException("That email is not available");
+      rethrowUsers(err);
+    }
+  }
+
+  @Post("me/email/verify")
+  @HttpCode(HttpStatus.OK)
+  async verifyEmailChange(
+    @CurrentUserId() userId: string,
+    @Body(new ZodPipe(zVerifyEmailChangeRequest)) dto: VerifyEmailChangeRequest,
+  ): Promise<UserProfile> {
+    try {
+      return await this.users.verifyEmailChange(userId, dto.code);
+    } catch (err) {
+      if (err instanceof EmailUnavailableError) throw new ConflictException("That email is not available");
+      if (err instanceof InvalidEmailCodeError) throw new BadRequestException("Invalid or expired code");
       rethrowUsers(err);
     }
   }

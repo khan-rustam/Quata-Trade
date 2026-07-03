@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { AvatarPicker } from "@/components/account/avatar-picker";
+import { EmailChange } from "@/components/account/email-change";
 import { useMe } from "@/hooks/use-auth";
 import { api } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
@@ -127,9 +128,8 @@ export default function ProfilePage(): React.JSX.Element {
         </Card>
 
         <Card className="space-y-4">
-          <Field label="Email">{(p) => <Input {...p} value={me?.email ?? ""} disabled />}</Field>
+          {me && <EmailChange currentEmail={me.email} pendingEmail={me.pendingEmail} />}
           <Field label="Phone">{(p) => <Input {...p} value={me?.phone ?? "—"} disabled />}</Field>
-          <p className="-mt-2 text-xs text-text-3">Changing your email is coming soon — it requires re-verification.</p>
         </Card>
 
         <Button type="submit" disabled={saving || !me}>
