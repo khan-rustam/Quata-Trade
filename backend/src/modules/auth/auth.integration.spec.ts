@@ -13,6 +13,7 @@ import { UsersService } from "../users/users.service";
 import { SessionNotFoundError } from "../users/users.errors";
 import { AuthService, type IssuedTokens, type LoginOutcome, type RequestMeta } from "./auth.service";
 import { TotpService } from "./totp.service";
+import { RiskService } from "../risk/risk.service";
 import { PinService } from "./pin.service";
 import {
   InvalidCodeError,
@@ -87,7 +88,10 @@ describe("Auth (Gate 2)", () => {
     });
     jwt = new JwtService({ secret: "integration-test-secret-with-32-chars!", signOptions: { expiresIn: 600 } });
     totp = new TotpService(t.db, config, audit);
-    auth = new AuthService(t.db, jwt, config, audit, totp);
+    // Risk scoring is a fail-open monitoring side-effect of login; stub it here so
+    // auth assertions are isolated from risk_events writes / Redis.
+    const risk = { scoreLogin: async () => ({ score: 0, flags: {} }) } as unknown as RiskService;
+    auth = new AuthService(t.db, jwt, config, audit, totp, risk);
     pin = new PinService(t.db, audit);
     users = new UsersService(t.db, audit, { send: async () => {} });
   });

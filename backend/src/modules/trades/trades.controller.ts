@@ -37,6 +37,7 @@ import {
   type TradesQuery,
 } from "@quatatrade/shared";
 import { CurrentUserId } from "../../common/auth/decorators";
+import { RiskService } from "../risk/risk.service";
 import { ZodPipe } from "../../common/zod.pipe";
 import { DB } from "../../db/database.module";
 import type { Database } from "../../db/types";
@@ -115,6 +116,7 @@ export class TradesController {
     private readonly trades: TradesService,
     private readonly settings: SettingsService,
     private readonly config: ConfigService<Env, true>,
+    private readonly risk: RiskService,
   ) {}
 
   /** Pure computation — no DB writes. Auth required (kept non-public on purpose). */
@@ -139,6 +141,10 @@ export class TradesController {
     @CurrentUserId() userId: string,
     @Body(new ZodPipe(zOpenTradeRequest)) dto: OpenTradeRequest,
   ): Promise<Trade> {
+    // Deterministic risk scoring (monitoring + auto-freeze on egregious patterns).
+    // Fail-open: a scoring outage must never block a legitimate trade; a committed
+    // auto-freeze is enforced by openTrade's "party is not active" guard.
+    await this.risk.scoreTradeOpen(userId, BigInt(dto.amount)).catch(() => undefined);
     const trade = await this.trades.openTrade(userId, dto).catch(rethrowAsHttp);
     return this.toWire(trade);
   }

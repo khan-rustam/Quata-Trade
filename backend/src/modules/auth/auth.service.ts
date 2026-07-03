@@ -12,6 +12,7 @@ import { newId } from "../../common/ids";
 import { AuditService } from "../../common/audit/audit.service";
 import type { AccessTokenPayload } from "../../common/auth/jwt.types";
 import { TotpService } from "./totp.service";
+import { RiskService } from "../risk/risk.service";
 import { InvalidCodeError, InvalidCredentialsError, InvalidTokenError } from "./auth.errors";
 
 const EMAIL_OTP_TTL_MS = 15 * 60_000;
@@ -72,6 +73,7 @@ export class AuthService {
     private readonly config: ConfigService<Env, true>,
     private readonly audit: AuditService,
     private readonly totp: TotpService,
+    private readonly risk: RiskService,
   ) {}
 
   // ── register ────────────────────────────────────────────────────────────
@@ -256,6 +258,14 @@ export class AuthService {
         throw new InvalidCredentialsError();
       }
     }
+
+    // Deterministic risk scoring on a successful auth: monitoring + new-device
+    // detection + auto-freeze on egregious patterns. Scored BEFORE the session row
+    // exists so isNewDevice can fire. Fail-open — never block a valid login on a
+    // scoring hiccup; a committed auto-freeze still blocks money ops downstream.
+    await this.risk
+      .scoreLogin(user.id, { ip: meta.ip, deviceFingerprint: dto.deviceFingerprint ?? null })
+      .catch(() => undefined);
 
     const loginMeta: RequestMeta = { ...meta, deviceFingerprint: dto.deviceFingerprint ?? null };
     return this.db.transaction().execute(async (trx) => {

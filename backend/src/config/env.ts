@@ -83,15 +83,26 @@ export function validateEnv(config: Record<string, unknown>): Env {
     throw new Error(`Environment validation failed:\n${issues}`);
   }
   if (parsed.data.NODE_ENV === "production") {
-    // Production hard-stops: dev defaults and mock signer are forbidden.
+    // Production hard-stops: dev defaults, mock signer, and testnet are forbidden.
     if (parsed.data.SIGNER_MODE === "mock") {
       throw new Error("SIGNER_MODE=mock is forbidden in production");
     }
     if (parsed.data.JWT_ACCESS_SECRET.startsWith("dev_only")) {
       throw new Error("Dev JWT secret detected in production");
     }
+    // The dev MASTER_ENCRYPTION_KEY (.env.example) base64-decodes to "dev_only_…";
+    // a real random 32-byte key never does. Prevents shipping the published key.
+    if (Buffer.from(parsed.data.MASTER_ENCRYPTION_KEY, "base64").toString("utf8").startsWith("dev_only")) {
+      throw new Error("Dev MASTER_ENCRYPTION_KEY detected in production");
+    }
     if (parsed.data.SWAGGER_ENABLED) {
       throw new Error("Swagger must be disabled in production");
+    }
+    if (parsed.data.WALLET_XPUB.trim() === "") {
+      throw new Error("WALLET_XPUB is required in production (watch-only deposit derivation)");
+    }
+    if (parsed.data.TRON_NETWORK !== "mainnet") {
+      throw new Error(`TRON_NETWORK must be 'mainnet' in production (got '${parsed.data.TRON_NETWORK}')`);
     }
   }
   return parsed.data;

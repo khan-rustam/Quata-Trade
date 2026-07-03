@@ -23,6 +23,7 @@ import {
 } from "@quatatrade/shared";
 import { ZodPipe } from "../../common/zod.pipe";
 import { CurrentUserId } from "../../common/auth/decorators";
+import { RiskService } from "../risk/risk.service";
 import { InsufficientFundsError, SerializationRetryExhaustedError } from "../ledger/ledger.errors";
 import { WithdrawalsService, type WithdrawalRow } from "./withdrawals.service";
 import {
@@ -62,13 +63,20 @@ function toWire(row: WithdrawalRow): Withdrawal {
  */
 @Controller("withdrawals")
 export class WithdrawalsController {
-  constructor(private readonly withdrawals: WithdrawalsService) {}
+  constructor(
+    private readonly withdrawals: WithdrawalsService,
+    private readonly risk: RiskService,
+  ) {}
 
   @Post()
   async request(
     @CurrentUserId() userId: string,
     @Body(new ZodPipe(zWithdrawalRequest)) dto: WithdrawalRequest,
   ): Promise<Withdrawal> {
+    // Deterministic risk scoring (monitoring + auto-freeze on egregious velocity/
+    // near-limit patterns). Fail-open; a committed auto-freeze is enforced by
+    // WithdrawalsService.request's "account is not active" guard.
+    await this.risk.scoreWithdrawal(userId, BigInt(dto.amount)).catch(() => undefined);
     try {
       return toWire(await this.withdrawals.request(userId, dto));
     } catch (err) {
