@@ -16,6 +16,13 @@ This dev sandbox has **no Docker**, so the **integration / audit-gate test suite
 locally** — it runs in CI (`.github/workflows/ci.yml`). Money-path changes here are verified by `tsc` + ESLint
 + unit tests locally and **must be green in CI before shipping to real money** (CLAUDE.md money-path rule).
 
+## Done so far (committed + pushed)
+- ✅ **Item 1** — risk engine wired (login / trade-open / withdrawal); `risk_events` + alerts + admin counter now live. tsc/lint/unit green.
+- ✅ **Item 2** — ops/security alert delivery (`AlertsService` → webhook; reconciliation emits an event; risk/kill-switch/ledger-adjustment paged).
+- ✅ **Item 6a** — env production hard-stops (dev master key / testnet / missing xpub rejected) + unit tests.
+- ✅ **Item 7** — `scripts/backup-db.sh` (encrypted) + `Documents/ops/` DR / BCP / incident-response runbooks.
+- ⏳ **Remaining (money-path → verify in CI):** 3 address whitelist + cooldowns · 4 AML / blacklist · 5 on-chain reconciliation · 6b at-rest KYC/PII encryption.
+
 ## Fixes (in progress)
 
 | # | Gap | Approach | Status |
