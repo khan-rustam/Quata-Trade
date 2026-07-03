@@ -127,15 +127,16 @@ export default function ProfilePage(): React.JSX.Element {
           </p>
         </Card>
 
-        <Card className="space-y-4">
-          {me && <EmailChange currentEmail={me.email} pendingEmail={me.pendingEmail} />}
-          <Field label="Phone">{(p) => <Input {...p} value={me?.phone ?? "—"} disabled />}</Field>
-        </Card>
-
         <Button type="submit" disabled={saving || !me}>
           {saving ? <Spinner /> : "Save changes"}
         </Button>
       </form>
+
+      {/* Email change manages its own forms — must NOT nest inside the save form */}
+      <Card className="space-y-4">
+        {me && <EmailChange currentEmail={me.email} pendingEmail={me.pendingEmail} />}
+        <Field label="Phone">{(p) => <Input {...p} value={me?.phone ?? "—"} disabled />}</Field>
+      </Card>
     </div>
   );
 }

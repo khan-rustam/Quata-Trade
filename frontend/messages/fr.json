@@ -16,7 +16,11 @@
     "security": "Sécurité",
     "help": "Aide",
     "openMenu": "Ouvrir le menu",
-    "closeMenu": "Fermer le menu"
+    "closeMenu": "Fermer le menu",
+    "profile": "Profil",
+    "verification": "Vérification",
+    "signOut": "Se déconnecter",
+    "signedOut": "Déconnecté"
   },
   "landing": {
     "badge": "P2P protégé par séquestre",
@@ -26,6 +30,10 @@
     "ctaHow": "Comment ça marche",
     "payWith": "Payer avec",
     "escrowChip": "Fonds bloqués sous séquestre",
+    "chip1": "Séquestre",
+    "chip2": "2FA",
+    "chip3": "Litiges",
+    "protectedDemo": "protégés sous séquestre",
     "steps": {
       "eyebrow": "Protégé par séquestre",
       "title": "Comment un échange reste sûr",

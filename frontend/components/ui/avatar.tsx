@@ -1,11 +1,11 @@
-import Image from "next/image";
 import type { AvatarStyle } from "@quatatrade/shared";
 import { cn } from "@/lib/utils";
 
 /**
  * User/trader avatar via DiceBear (SVG). Deterministic from `seed` so a user
  * looks consistent everywhere; `style` lets the user pick a look (AVATAR_STYLES).
- * Rendered `unoptimized` — the host is allow-listed in next.config remotePatterns.
+ * A plain <img> (not next/image): the source is a tiny remote SVG that needs no
+ * optimization, which also avoids next/image's fixed-dimension warnings.
  */
 const DEFAULT_STYLE: AvatarStyle = "notionists";
 // Brand-cool pastels; DiceBear picks one per seed so the disc always has contrast on dark + light.
@@ -33,13 +33,13 @@ export function Avatar({
   className?: string;
 }): React.JSX.Element {
   return (
-    <Image
+    // eslint-disable-next-line @next/next/no-img-element -- remote DiceBear SVG; no optimization needed
+    <img
       src={avatarUrl(seed, style)}
       alt={name ?? ""}
       width={size}
       height={size}
-      unoptimized
-      className={cn("shrink-0 rounded-full bg-surface-2 ring-1 ring-border/60", className)}
+      className={cn("shrink-0 rounded-full bg-surface-2 object-cover ring-1 ring-border/60", className)}
       style={{ width: size, height: size }}
     />
   );

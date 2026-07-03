@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useState, type ComponentType, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { Bell, Home, LineChart, LogOut, Repeat, User, Wallet } from "lucide-react";
+import { BadgeCheck, Bell, Home, LineChart, LogOut, Repeat, Settings, ShieldCheck, User, Wallet } from "lucide-react";
 import type { LucideProps } from "lucide-react";
-import type { ComponentType } from "react";
 import { Logo } from "@/components/brand/logo";
 import { Keyhole } from "@/components/brand/keyhole";
 import { Avatar } from "@/components/ui/avatar";
+import { useToast } from "@/components/ui/toast";
 import { ThemeToggle } from "./theme-toggle";
 import { LanguageToggle } from "./language-toggle";
 import { useLogout, useMe } from "@/hooks/use-auth";
@@ -29,6 +29,13 @@ const NAV: NavItem[] = [
   { href: "/account", labelKey: "account", icon: User },
 ];
 
+const MENU: { href: string; icon: ComponentType<LucideProps>; key: "profile" | "security" | "verification" | "account" }[] = [
+  { href: "/account/profile", icon: User, key: "profile" },
+  { href: "/account/security", icon: ShieldCheck, key: "security" },
+  { href: "/account/kyc", icon: BadgeCheck, key: "verification" },
+  { href: "/account", icon: Settings, key: "account" },
+];
+
 function isActive(href: string, pathname: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -39,10 +46,20 @@ export function AppShell({ children }: { children: ReactNode }): React.JSX.Eleme
   const router = useRouter();
   const logout = useLogout();
   const { data: me } = useMe();
+  const toast = useToast();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const onLogout = () => {
-    logout.mutate(undefined, { onSettled: () => router.replace("/login") });
+  const displayLabel =
+    me?.displayName || (me?.firstName ? `${me.firstName} ${me.lastName ?? ""}`.trim() : me?.email) || "";
+
+  const onLogout = (): void => {
+    setMenuOpen(false);
+    logout.mutate(undefined, {
+      onSettled: () => {
+        toast.success(t("signedOut"));
+        router.replace("/login");
+      },
+    });
   };
 
   return (
@@ -69,33 +86,63 @@ export function AppShell({ children }: { children: ReactNode }): React.JSX.Eleme
               aria-haspopup="menu"
               aria-expanded={menuOpen}
               aria-label="Account menu"
-              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-surface-2 text-accent-400 transition-colors hover:ring-2 hover:ring-accent-400/40"
+              className={cn(
+                "flex h-9 items-center gap-2 rounded-full py-0.5 pl-0.5 pr-2 transition-colors hover:bg-surface-2",
+                menuOpen && "bg-surface-2",
+              )}
             >
-              {me ? <Avatar seed={me.id} size={36} className="ring-0" /> : <User size={18} />}
+              {me ? (
+                <Avatar seed={me.avatarSeed ?? me.id} style={me.avatarStyle} size={32} className="ring-0" />
+              ) : (
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-text-2">
+                  <User size={16} />
+                </span>
+              )}
+              {displayLabel && (
+                <span className="hidden max-w-[9rem] truncate text-sm font-medium text-text-1 sm:block">
+                  {displayLabel}
+                </span>
+              )}
             </button>
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} aria-hidden />
                 <div
                   role="menu"
-                  className="qt-animate-dialog absolute right-0 top-11 z-20 w-44 rounded-xl border border-border bg-surface-1 p-1 shadow-lg"
+                  className="qt-animate-dialog absolute right-0 top-12 z-20 w-60 overflow-hidden rounded-xl border border-border bg-surface-1 shadow-lg shadow-black/30"
                 >
-                  <Link
-                    href="/account"
-                    role="menuitem"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text-1 hover:bg-surface-2"
-                  >
-                    <User size={16} /> {t("account")}
-                  </Link>
-                  <button
-                    role="menuitem"
-                    type="button"
-                    onClick={onLogout}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-danger hover:bg-surface-2"
-                  >
-                    <LogOut size={16} /> Log out
-                  </button>
+                  {me && (
+                    <div className="flex items-center gap-3 border-b border-border px-3.5 py-3">
+                      <Avatar seed={me.avatarSeed ?? me.id} style={me.avatarStyle} size={40} />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-text-1">{displayLabel}</p>
+                        <p className="truncate text-xs text-text-3">{me.email}</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="p-1">
+                    {MENU.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        role="menuitem"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-1 transition-colors hover:bg-surface-2"
+                      >
+                        <item.icon size={16} className="text-text-3" /> {t(item.key)}
+                      </Link>
+                    ))}
+                  </div>
+                  <div className="border-t border-border p-1">
+                    <button
+                      role="menuitem"
+                      type="button"
+                      onClick={onLogout}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
+                    >
+                      <LogOut size={16} /> {t("signOut")}
+                    </button>
+                  </div>
                 </div>
               </>
             )}
@@ -119,9 +166,7 @@ export function AppShell({ children }: { children: ReactNode }): React.JSX.Eleme
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                      active
-                        ? "bg-surface-2 text-text-1"
-                        : "text-text-2 hover:bg-surface-2/60 hover:text-text-1",
+                      active ? "bg-surface-2 text-text-1" : "text-text-2 hover:bg-surface-2/60 hover:text-text-1",
                     )}
                   >
                     <item.icon size={18} aria-hidden className={active ? "text-accent-400" : ""} />

@@ -16,7 +16,11 @@
     "security": "Security",
     "help": "Help",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "profile": "Profile details",
+    "verification": "Verification",
+    "signOut": "Sign out",
+    "signedOut": "Signed out"
   },
   "landing": {
     "badge": "Escrow-protected P2P",
@@ -26,6 +30,10 @@
     "ctaHow": "How it works",
     "payWith": "Pay with",
     "escrowChip": "Funds locked in escrow",
+    "chip1": "Escrow",
+    "chip2": "2FA",
+    "chip3": "Dispute review",
+    "protectedDemo": "protected in escrow",
     "steps": {
       "eyebrow": "Protected by escrow",
       "title": "How a trade stays safe",
