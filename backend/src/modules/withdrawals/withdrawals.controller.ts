@@ -3,8 +3,10 @@ import {
   Body,
   ConflictException,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
+  HttpCode,
   NotFoundException,
   Param,
   Post,
@@ -14,11 +16,15 @@ import {
 } from "@nestjs/common";
 import {
   serializeAmount,
+  zAddWithdrawalAddressRequest,
   zPagination,
   zUuid,
   zWithdrawalRequest,
+  type AddWithdrawalAddressRequest,
+  type Ok,
   type Pagination,
   type Withdrawal,
+  type WithdrawalAddress,
   type WithdrawalRequest,
 } from "@quatatrade/shared";
 import { ZodPipe } from "../../common/zod.pipe";
@@ -29,6 +35,7 @@ import { WithdrawalsService, type WithdrawalRow } from "./withdrawals.service";
 import {
   IdempotencyConflictError,
   InvalidWithdrawalAddressError,
+  WithdrawalAddressExistsError,
   WithdrawalCapExceededError,
   WithdrawalNotEligibleError,
   WithdrawalsPausedError,
@@ -93,6 +100,35 @@ export class WithdrawalsController {
     return { items: items.map(toWire), page: query.page, pageSize: query.pageSize, total };
   }
 
+  // ---- address whitelist (declared before :id so /addresses isn't captured as an id) ----
+
+  @Get("addresses")
+  async listAddresses(@CurrentUserId() userId: string): Promise<{ addresses: WithdrawalAddress[] }> {
+    return { addresses: await this.withdrawals.listAddresses(userId) };
+  }
+
+  @Post("addresses")
+  async addAddress(
+    @CurrentUserId() userId: string,
+    @Body(new ZodPipe(zAddWithdrawalAddressRequest)) dto: AddWithdrawalAddressRequest,
+  ): Promise<WithdrawalAddress> {
+    try {
+      return await this.withdrawals.addAddress(userId, dto);
+    } catch (err) {
+      throw this.mapError(err);
+    }
+  }
+
+  @Delete("addresses/:id")
+  @HttpCode(200)
+  async removeAddress(
+    @CurrentUserId() userId: string,
+    @Param("id", new ZodPipe(zUuid)) id: string,
+  ): Promise<Ok> {
+    await this.withdrawals.removeAddress(userId, id);
+    return { ok: true };
+  }
+
   @Get(":id")
   async get(
     @CurrentUserId() userId: string,
@@ -111,6 +147,7 @@ export class WithdrawalsController {
     if (err instanceof InvalidWithdrawalAddressError) return new BadRequestException(err.message);
     if (err instanceof WithdrawalCapExceededError) return new UnprocessableEntityException(err.message);
     if (err instanceof IdempotencyConflictError) return new ConflictException(err.message);
+    if (err instanceof WithdrawalAddressExistsError) return new ConflictException(err.message);
     if (err instanceof InsufficientFundsError) return new UnprocessableEntityException("insufficient balance");
     if (err instanceof SerializationRetryExhaustedError) {
       return new ConflictException("temporary contention — please retry");

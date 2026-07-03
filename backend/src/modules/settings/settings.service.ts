@@ -95,4 +95,12 @@ export class SettingsService {
     const v = zDepositPolicy.parse(await this.raw("deposit_policy"));
     return { minAmount: BigInt(v.min_amount), confirmations: v.confirmations };
   }
+
+  /** Security hold windows (settings key "security_holds"): new-address cooldown in minutes. */
+  async securityHolds(): Promise<{ newAddressMinutes: number }> {
+    const v = z
+      .object({ new_address_minutes: z.coerce.number().int().min(0) })
+      .parse(await this.raw("security_holds"));
+    return { newAddressMinutes: v.new_address_minutes };
+  }
 }

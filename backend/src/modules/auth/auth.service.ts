@@ -20,6 +20,8 @@ const RESET_TOKEN_TTL_MS = 30 * 60_000;
 const MAX_OTP_ATTEMPTS = 5;
 const MAX_LOGIN_FAILURES = 5;
 const LOGIN_LOCK_MS = 15 * 60_000;
+/** Withdrawals are held for 24h after a credential change (password reset) — takeover defense. */
+const WITHDRAWAL_HOLD_AFTER_CREDENTIAL_CHANGE_MS = 24 * 60 * 60 * 1000;
 const REFRESH_TOKEN_BYTES = 48;
 const UNIQUE_VIOLATION = "23505";
 
@@ -537,7 +539,13 @@ export class AuthService {
 
       await trx
         .updateTable("users")
-        .set({ password_hash: newHash, failed_login_attempts: 0, locked_until: null, updated_at: now })
+        .set({
+          password_hash: newHash,
+          failed_login_attempts: 0,
+          locked_until: null,
+          withdrawal_hold_until: new Date(now.getTime() + WITHDRAWAL_HOLD_AFTER_CREDENTIAL_CHANGE_MS),
+          updated_at: now,
+        })
         .where("id", "=", token.user_id)
         .execute();
       await trx

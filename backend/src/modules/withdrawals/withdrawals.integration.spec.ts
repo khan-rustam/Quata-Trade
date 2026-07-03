@@ -96,6 +96,18 @@ describe("Withdrawals (Phase 3)", () => {
       })
       .where("id", "=", userId)
       .execute();
+    // Whitelist the shared test destination, already past its cooldown, so withdrawals proceed.
+    await t.db
+      .insertInto("withdrawal_addresses")
+      .values({
+        id: newId(),
+        user_id: userId,
+        asset: "USDT_TRC20",
+        address: DEST,
+        label: null,
+        usable_at: new Date(Date.now() - 60_000),
+      })
+      .execute();
     if (amount > 0n) {
       const acc = await ledger.getOrCreateAccount(userId, "user_available", "USDT_TRC20");
       await ledger.postJournal({

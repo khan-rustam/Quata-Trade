@@ -4,9 +4,15 @@ import { sql, type Kysely, type Selectable, type Transaction } from "kysely";
 import * as argon2 from "argon2";
 import { authenticator } from "otplib";
 import { TronWeb } from "tronweb";
-import type { AdminRole, WithdrawalRequest, WithdrawalStatus } from "@quatatrade/shared";
+import type {
+  AddWithdrawalAddressRequest,
+  AdminRole,
+  WithdrawalAddress,
+  WithdrawalRequest,
+  WithdrawalStatus,
+} from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
-import type { Database, UsersTable, WithdrawalsTable } from "../../db/types";
+import type { Database, UsersTable, WithdrawalsTable, WithdrawalAddressesTable } from "../../db/types";
 import type { Env } from "../../config/env";
 import { newId } from "../../common/ids";
 import { AuditService } from "../../common/audit/audit.service";
@@ -20,6 +26,7 @@ import {
   IdempotencyConflictError,
   IllegalWithdrawalStateError,
   InvalidWithdrawalAddressError,
+  WithdrawalAddressExistsError,
   WithdrawalCapExceededError,
   WithdrawalNotEligibleError,
   WithdrawalNotFoundError,
@@ -29,6 +36,19 @@ import {
 
 export type WithdrawalRow = Selectable<WithdrawalsTable>;
 type UserRow = Selectable<UsersTable>;
+type WithdrawalAddressRow = Selectable<WithdrawalAddressesTable>;
+
+function toAddressWire(r: WithdrawalAddressRow): WithdrawalAddress {
+  return {
+    id: r.id,
+    asset: r.asset,
+    address: r.address,
+    label: r.label,
+    usableAt: r.usable_at.toISOString(),
+    active: r.active,
+    createdAt: r.created_at.toISOString(),
+  };
+}
 
 const PIN_MAX_ATTEMPTS = 5;
 const PIN_LOCK_MINUTES = 15;
@@ -57,6 +77,67 @@ export class WithdrawalsService {
     private readonly audit: AuditService,
     private readonly config: ConfigService<Env, true>,
   ) {}
+
+  // ------------------------------------------------------------------ request
+
+  // ------------------------------------------------------- address whitelist
+
+  /** The user's saved withdrawal addresses (most recent first). */
+  async listAddresses(userId: string): Promise<WithdrawalAddress[]> {
+    const rows = await this.db
+      .selectFrom("withdrawal_addresses")
+      .selectAll()
+      .where("user_id", "=", userId)
+      .orderBy("created_at", "desc")
+      .execute();
+    return rows.map(toAddressWire);
+  }
+
+  /** Whitelist a destination; it enters a cooldown before it can be withdrawn to. */
+  async addAddress(userId: string, dto: AddWithdrawalAddressRequest): Promise<WithdrawalAddress> {
+    if (!TronWeb.isAddress(dto.address)) {
+      throw new InvalidWithdrawalAddressError("destination is not a valid TRON address");
+    }
+    const own = await this.db
+      .selectFrom("deposit_addresses")
+      .select("id")
+      .where("address", "=", dto.address)
+      .executeTakeFirst();
+    if (own) throw new InvalidWithdrawalAddressError("cannot whitelist a platform deposit address");
+
+    const existing = await this.db
+      .selectFrom("withdrawal_addresses")
+      .select("id")
+      .where("user_id", "=", userId)
+      .where("asset", "=", dto.asset)
+      .where("address", "=", dto.address)
+      .executeTakeFirst();
+    if (existing) throw new WithdrawalAddressExistsError();
+
+    const { newAddressMinutes } = await this.settings.securityHolds();
+    const row = await this.db
+      .insertInto("withdrawal_addresses")
+      .values({
+        id: newId(),
+        user_id: userId,
+        asset: dto.asset,
+        address: dto.address,
+        label: dto.label ?? null,
+        usable_at: new Date(Date.now() + newAddressMinutes * 60_000),
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return toAddressWire(row);
+  }
+
+  /** Remove a whitelisted address (idempotent, owner-scoped). */
+  async removeAddress(userId: string, id: string): Promise<void> {
+    await this.db
+      .deleteFrom("withdrawal_addresses")
+      .where("id", "=", id)
+      .where("user_id", "=", userId)
+      .execute();
+  }
 
   // ------------------------------------------------------------------ request
 
@@ -99,6 +180,25 @@ export class WithdrawalsService {
       .executeTakeFirst();
     if (ownAddress) {
       throw new InvalidWithdrawalAddressError("destination may not be a platform deposit address");
+    }
+
+    // Credential-change cooldown: no withdrawals during a post-reset / post-2FA hold.
+    if (user.withdrawal_hold_until && user.withdrawal_hold_until.getTime() > Date.now()) {
+      throw new WithdrawalNotEligibleError("withdrawals are on hold after a recent security change");
+    }
+    // Whitelist: destination MUST be a saved, active address past its cooldown.
+    const approved = await this.db
+      .selectFrom("withdrawal_addresses")
+      .select(["active", "usable_at"])
+      .where("user_id", "=", userId)
+      .where("asset", "=", dto.asset)
+      .where("address", "=", dto.toAddress)
+      .executeTakeFirst();
+    if (!approved || !approved.active) {
+      throw new InvalidWithdrawalAddressError("destination is not an approved withdrawal address");
+    }
+    if (approved.usable_at.getTime() > Date.now()) {
+      throw new InvalidWithdrawalAddressError("this address is still in its security cooldown");
     }
 
     const fee = await this.settings.withdrawalFee(dto.asset);

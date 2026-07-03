@@ -79,7 +79,12 @@ export class TotpService {
 
     await this.db
       .updateTable("users")
-      .set({ totp_enabled: true, updated_at: new Date() })
+      .set({
+        totp_enabled: true,
+        // Hold withdrawals for 24h after a 2FA change — defends against attacker-enrolled 2FA.
+        withdrawal_hold_until: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        updated_at: new Date(),
+      })
       .where("id", "=", userId)
       .execute();
     await this.audit.log({

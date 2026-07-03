@@ -54,6 +54,7 @@ export interface UsersTable {
   pending_email: string | null;
   pending_email_token_hash: string | null;
   pending_email_expires_at: ColumnType<Date | null, Date | null | undefined, Date | null>;
+  withdrawal_hold_until: ColumnType<Date | null, Date | null | undefined, Date | null>;
   created_at: Timestamp;
   updated_at: ColumnType<Date | null, never, Date | string>;
 }
@@ -373,6 +374,17 @@ export interface EnquiriesTable {
   created_at: Timestamp;
 }
 
+export interface WithdrawalAddressesTable {
+  id: string;
+  user_id: string;
+  asset: AssetCode;
+  address: string;
+  label: string | null;
+  usable_at: ColumnType<Date, Date | string, Date | string>;
+  active: Generated<boolean>;
+  created_at: Timestamp;
+}
+
 export interface Database {
   users: UsersTable;
   sessions: SessionsTable;
@@ -385,6 +397,7 @@ export interface Database {
   deposit_addresses: DepositAddressesTable;
   deposits: DepositsTable;
   withdrawals: WithdrawalsTable;
+  withdrawal_addresses: WithdrawalAddressesTable;
   offers: OffersTable;
   trades: TradesTable;
   trade_events: TradeEventsTable;

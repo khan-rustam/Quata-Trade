@@ -53,3 +53,10 @@ export class IdempotencyConflictError extends WithdrawalError {
     super("idempotency key already used");
   }
 }
+
+/** The user+asset+address is already whitelisted — controller maps to 409. */
+export class WithdrawalAddressExistsError extends WithdrawalError {
+  constructor() {
+    super("this address is already in your withdrawal list");
+  }
+}
