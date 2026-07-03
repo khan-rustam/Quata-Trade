@@ -17,6 +17,7 @@ import { KycModule } from "./modules/kyc/kyc.module";
 import { TradeTimeoutJob } from "./jobs/trade-timeout.job";
 import { ReconciliationJob } from "./jobs/reconciliation.job";
 import { OutboxRelayJob } from "./jobs/outbox-relay.job";
+import { EmailSendJob } from "./jobs/email-send.job";
 
 /**
  * Worker: ALL scheduled money/ops jobs live in this process (the API has no
@@ -45,6 +46,6 @@ import { OutboxRelayJob } from "./jobs/outbox-relay.job";
     NotifyModule,
     KycModule,
   ],
-  providers: [TradeTimeoutJob, ReconciliationJob, OutboxRelayJob],
+  providers: [TradeTimeoutJob, ReconciliationJob, OutboxRelayJob, EmailSendJob],
 })
 export class WorkerModule {}

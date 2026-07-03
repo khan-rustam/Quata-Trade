@@ -6,6 +6,7 @@ import type {
   NewNotification,
   NotificationListItem,
   NotifyStore,
+  QueuedEmail,
   TradeParties,
 } from "./notify.store";
 import { renderTemplate, TEMPLATE_NAMES } from "./notify.templates";
@@ -56,7 +57,6 @@ describe("planDispatch mapping", () => {
   const tradePayload = { tradeId: "t-1" };
 
   it.each([
-    ["user.registered", "email_verify"],
     ["deposit.credited", "deposit_credited"],
     ["withdrawal.requested", "withdrawal_requested"],
     ["withdrawal.confirmed", "withdrawal_confirmed"],
@@ -146,6 +146,12 @@ class MemoryStore implements NotifyStore {
   }
   async userEmails(userIds: string[]): Promise<Map<string, string>> {
     return new Map(userIds.flatMap((id) => (this.emails.has(id) ? [[id, this.emails.get(id) ?? ""] as [string, string]] : [])));
+  }
+  async dueEmails(limit: number, maxAttempts: number): Promise<QueuedEmail[]> {
+    return this.rows
+      .filter((r) => r.channel === "email" && r.status === "queued" && r.attempts < maxAttempts)
+      .slice(0, limit)
+      .map((r) => ({ id: r.id, userId: r.userId, template: r.template, payload: r.payload, attempts: r.attempts }));
   }
   async listForUser(
     userId: string,
@@ -247,7 +253,7 @@ describe("NotifyService.dispatch", () => {
 
   it("never persists or emails secrets from the event payload", async () => {
     const { service, store, mailer } = makeService();
-    await service.dispatch("user.registered", { userId: "user-1", otpCode: "123456" });
+    await service.dispatch("deposit.credited", { userId: "user-1", otpCode: "123456" });
 
     for (const row of store.rows) {
       expect(JSON.stringify(row.payload)).not.toContain("123456");

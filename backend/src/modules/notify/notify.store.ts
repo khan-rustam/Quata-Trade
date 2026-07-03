@@ -21,6 +21,14 @@ export interface NewNotification {
   deliveredAt: Date | null;
 }
 
+export interface QueuedEmail {
+  id: string;
+  userId: string;
+  template: string;
+  payload: Record<string, unknown>;
+  attempts: number;
+}
+
 export interface NotificationListItem {
   id: string;
   channel: string;
@@ -46,6 +54,8 @@ export interface NotifyStore {
   tradeParties(tradeId: string): Promise<TradeParties | null>;
   /** id → email for the given users (missing users simply absent) */
   userEmails(userIds: string[]): Promise<Map<string, string>>;
+  /** queued email rows to (re)send: never-sent + retryable failures under maxAttempts */
+  dueEmails(limit: number, maxAttempts: number): Promise<QueuedEmail[]>;
   listForUser(
     userId: string,
     page: number,
@@ -108,6 +118,25 @@ export class KyselyNotifyStore implements NotifyStore {
       .where("id", "in", userIds)
       .execute();
     return new Map(rows.map((r) => [r.id, r.email]));
+  }
+
+  async dueEmails(limit: number, maxAttempts: number): Promise<QueuedEmail[]> {
+    const rows = await this.db
+      .selectFrom("notifications")
+      .select(["id", "user_id", "template", "payload", "attempts"])
+      .where("channel", "=", "email")
+      .where("status", "=", "queued")
+      .where("attempts", "<", maxAttempts)
+      .orderBy("created_at", "asc")
+      .limit(limit)
+      .execute();
+    return rows.map((r) => ({
+      id: r.id,
+      userId: r.user_id,
+      template: r.template,
+      payload: r.payload,
+      attempts: r.attempts,
+    }));
   }
 
   async listForUser(

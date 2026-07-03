@@ -9,6 +9,7 @@ import Handlebars from "handlebars";
 
 export const TEMPLATE_NAMES = [
   "email_verify",
+  "password_reset",
   "deposit_credited",
   "withdrawal_requested",
   "withdrawal_confirmed",
@@ -32,8 +33,12 @@ interface TemplateSource {
 
 const TEMPLATE_SOURCES: Record<TemplateName, TemplateSource> = {
   email_verify: {
-    subject: "Welcome to QuataTrade — verify your email",
-    body: "Welcome to QuataTrade! Please verify your email address using the verification code shown in the app to activate your account. If you did not create this account, you can ignore this message.",
+    subject: "Verify your QuataTrade email",
+    body: "Welcome to QuataTrade! Your email verification code is:\n\n    {{code}}\n\nEnter it in the app to activate your account. The code expires in 15 minutes. If you did not create this account, you can ignore this message.",
+  },
+  password_reset: {
+    subject: "Reset your QuataTrade password",
+    body: "We received a request to reset your QuataTrade password. Use this link to choose a new one:\n\n{{resetUrl}}\n\nThe link expires in 30 minutes. If you did not request this, you can safely ignore this email — your password will not change.",
   },
   deposit_credited: {
     subject: "Deposit credited",

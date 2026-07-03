@@ -16,7 +16,9 @@ export interface DispatchPlan {
 
 /** Events addressed to a single user via payload.userId. */
 const DIRECT_EVENTS: Readonly<Record<string, TemplateName>> = {
-  "user.registered": "email_verify",
+  // NOTE: verification + reset emails are sent from their queued rows by
+  // EmailSendJob (they carry the code/token in the payload); they are NOT
+  // dispatched here (safeContext would strip the code, and it would double-send).
   "deposit.credited": "deposit_credited",
   "withdrawal.requested": "withdrawal_requested",
   "withdrawal.confirmed": "withdrawal_confirmed",

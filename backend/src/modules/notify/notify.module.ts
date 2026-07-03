@@ -29,6 +29,6 @@ import { KyselyNotifyStore, NOTIFY_STORE } from "./notify.store";
         }),
     },
   ],
-  exports: [NotifyService],
+  exports: [NotifyService, NOTIFY_STORE, MAILER],
 })
 export class NotifyModule {}
