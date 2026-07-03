@@ -49,6 +49,13 @@ export const zTradeParty = z.object({
   reputationScore: z.number().int(),
 });
 
+/** Where the buyer sends fiat off-platform — the seller's receiving account for this trade's method. */
+export const zSellerPayTo = z.object({
+  method: z.enum(PAYMENT_METHODS),
+  number: z.string(),
+  name: z.string(),
+});
+
 export const zTradePayment = z.object({
   reference: z.string(),
   senderName: z.string(),
@@ -75,6 +82,8 @@ export const zTrade = z.object({
   status: z.enum(TRADE_STATUSES),
   paymentDeadline: z.string().nullable(),
   payment: zTradePayment.nullable(),
+  /** null when the seller hasn't set a receiving account for this payment method */
+  sellerPayTo: zSellerPayTo.nullable(),
   completedAt: z.string().nullable(),
   createdAt: z.string(),
 });

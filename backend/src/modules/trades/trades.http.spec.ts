@@ -54,8 +54,8 @@ function tradeRow(overrides: Partial<Selectable<TradesTable>> = {}): Selectable<
 
 function parties(): Map<string, PartyRow> {
   return new Map<string, PartyRow>([
-    [SELLER_ID, { id: SELLER_ID, first_name: "Alice", email: "alice.seller@example.com", reputation_score: 42 }],
-    [BUYER_ID, { id: BUYER_ID, first_name: null, email: "john.buyer@example.com", reputation_score: 7 }],
+    [SELLER_ID, { id: SELLER_ID, first_name: "Alice", email: "alice.seller@example.com", reputation_score: 42, payment_accounts: {} }],
+    [BUYER_ID, { id: BUYER_ID, first_name: null, email: "john.buyer@example.com", reputation_score: 7, payment_accounts: {} }],
   ]);
 }
 
@@ -135,7 +135,7 @@ describe("mapTrade — row → zTrade", () => {
 
   it("throws when a party row is missing (no silent partial responses)", () => {
     const onlySeller = new Map<string, PartyRow>([
-      [SELLER_ID, { id: SELLER_ID, first_name: "Alice", email: "alice@example.com", reputation_score: 1 }],
+      [SELLER_ID, { id: SELLER_ID, first_name: "Alice", email: "alice@example.com", reputation_score: 1, payment_accounts: {} }],
     ]);
     expect(() => mapTrade(tradeRow(), onlySeller, null)).toThrow(/party rows missing/);
   });

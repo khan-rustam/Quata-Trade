@@ -4,6 +4,7 @@ import {
   zTrade,
   zTradeDetailResponse,
   zTradeEvent,
+  type PaymentMethod,
   type Trade,
   type TradeEvent,
   type TradeStatus,
@@ -26,6 +27,7 @@ export interface PartyRow {
   first_name: string | null;
   email: string;
   reputation_score: number;
+  payment_accounts: Partial<Record<PaymentMethod, { number: string; name: string }>>;
 }
 
 export interface PaymentRow {
@@ -93,6 +95,7 @@ export function mapTrade(
   if (!seller || !buyer) {
     throw new Error(`party rows missing for trade ${row.id}`);
   }
+  const sellerAccount = (seller.payment_accounts ?? {})[row.payment_method];
   const trade: Trade = {
     id: row.id,
     shortRef: row.short_ref,
@@ -110,6 +113,10 @@ export function mapTrade(
     status: row.status,
     paymentDeadline: row.payment_deadline ? row.payment_deadline.toISOString() : null,
     payment: payment ? toPayment(payment) : null,
+    // where the buyer sends fiat — the seller's receiving account for this method (null if unset)
+    sellerPayTo: sellerAccount
+      ? { method: row.payment_method, number: sellerAccount.number, name: sellerAccount.name }
+      : null,
     completedAt: row.completed_at ? row.completed_at.toISOString() : null,
     createdAt: row.created_at.toISOString(),
   };
@@ -149,7 +156,7 @@ export async function fetchParties(
   if (unique.length === 0) return new Map();
   const rows = await db
     .selectFrom("users")
-    .select(["id", "first_name", "email", "reputation_score"])
+    .select(["id", "first_name", "email", "reputation_score", "payment_accounts"])
     .where("id", "in", unique)
     .execute();
   return new Map(rows.map((r) => [r.id, r]));

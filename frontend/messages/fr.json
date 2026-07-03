@@ -534,7 +534,12 @@
     "noMessages": "Aucun message pour l'instant. Dites bonjour 👋",
     "messagePlaceholder": "Écrivez un message…",
     "messageAriaLabel": "Message",
-    "sendAriaLabel": "Envoyer"
+    "sendAriaLabel": "Envoyer",
+    "amountToSend": "Montant à envoyer",
+    "payTo": "Payer à",
+    "copyNumber": "Copier le numéro",
+    "useReference": "Utilisez cette référence",
+    "noSellerAccount": "Le vendeur n’a pas encore ajouté de numéro de réception pour cette méthode — demandez-lui dans le chat ci-dessous avant de payer."
   },
   "account": {
     "title": "Compte",
@@ -550,7 +555,8 @@
     "profile": "Détails du profil",
     "terms": "Conditions et politiques",
     "logout": "Se déconnecter",
-    "myOffers": "Mes offres"
+    "myOffers": "Mes offres",
+    "paymentMethods": "Moyens de paiement"
   },
   "accountProfile": {
     "title": "Détails du profil",
@@ -1316,7 +1322,8 @@
     "account": "Compte",
     "offers": "Mes offres",
     "newOffer": "Nouvelle offre",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "paymentMethods": "Moyens de paiement"
   },
   "errorPage": {
     "notFoundTitle": "Page introuvable",
@@ -1326,5 +1333,18 @@
     "errorTitle": "Une erreur s’est produite",
     "errorBody": "Une erreur inattendue s’est produite. Réessayez ou revenez à l’accueil.",
     "tryAgain": "Réessayer"
+  },
+  "paymentMethods": {
+    "title": "Moyens de paiement",
+    "subtitle": "Où les acheteurs vous envoient les fonds hors plateforme.",
+    "hint": "Indiquez le numéro et le nom du compte auxquels les acheteurs doivent envoyer l’argent pour chaque méthode que vous acceptez. Affiché à votre contrepartie dans la salle de transaction.",
+    "numberLabel": "Numéro de réception",
+    "numberPlaceholder": "ex. 650 00 00 00",
+    "nameLabel": "Nom du compte",
+    "namePlaceholder": "Nom sur le compte",
+    "save": "Enregistrer",
+    "savedTitle": "Enregistré",
+    "savedBody": "Vos coordonnées de réception sont à jour.",
+    "errorTitle": "Échec de l’enregistrement"
   }
 }

@@ -5,11 +5,13 @@ import { useParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { AlertTriangle, CheckCircle2, Send } from "lucide-react";
+import type { Trade } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import { Alert } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Usdt, Xaf } from "@/components/ui/amount";
@@ -116,7 +118,7 @@ export default function TradeRoomPage(): React.JSX.Element {
       </Card>
 
       {/* ACTIONS by role + status */}
-      {isBuyer && trade.status === "ESCROW_LOCKED" && <BuyerPayPanel tradeId={id} onDone={refresh} />}
+      {isBuyer && trade.status === "ESCROW_LOCKED" && <BuyerPayPanel trade={trade} onDone={refresh} />}
 
       {isBuyer && trade.status === "PAYMENT_SUBMITTED" && (
         <Alert tone="warning" title={tx("waitingSellerTitle")}>
@@ -214,20 +216,22 @@ export default function TradeRoomPage(): React.JSX.Element {
   );
 }
 
-function BuyerPayPanel({ tradeId, onDone }: { tradeId: string; onDone: () => void }): React.JSX.Element {
+function BuyerPayPanel({ trade, onDone }: { trade: Trade; onDone: () => void }): React.JSX.Element {
   const tx = useTranslations("tradeRoom");
   const toast = useToast();
-  const [reference, setReference] = useState("");
+  // Prefill the reference with the trade's short ref — the buyer should quote it so the seller can match.
+  const [reference, setReference] = useState(trade.shortRef);
   const [senderName, setSenderName] = useState("");
   const [senderNumber, setSenderNumber] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const payTo = trade.sellerPayTo;
 
   const submit = async () => {
     setBusy(true);
     setError(null);
     try {
-      await api.submitPayment(tradeId, { reference, senderName, senderNumber, proofFiles: [] });
+      await api.submitPayment(trade.id, { reference, senderName, senderNumber, proofFiles: [] });
       toast.success(tx("paymentSentTitle"), tx("paymentSentBody"));
       onDone();
     } catch (err) {
@@ -243,6 +247,41 @@ function BuyerPayPanel({ tradeId, onDone }: { tradeId: string; onDone: () => voi
         <p className="font-medium">{tx("payOffPlatform")}</p>
         <p className="text-sm text-text-2">{tx("payOffPlatformBody")}</p>
       </div>
+
+      {/* WHERE + HOW MUCH to pay */}
+      <div className="space-y-3 rounded-xl border border-accent-400/30 bg-accent-400/5 p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-text-2">{tx("amountToSend")}</span>
+          <span className="font-money text-xl font-semibold">
+            <Xaf value={trade.fiatAmountXaf} />
+          </span>
+        </div>
+        {payTo ? (
+          <>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm text-text-2">{tx("payTo")}</span>
+              <PaymentMethodChip method={payTo.method} />
+            </div>
+            <div className="flex items-center justify-between gap-2 rounded-lg bg-surface-2 px-3 py-2">
+              <div className="min-w-0">
+                <p className="font-money text-base font-semibold text-text-1">{payTo.number}</p>
+                <p className="truncate text-xs text-text-3">{payTo.name}</p>
+              </div>
+              <CopyButton value={payTo.number} label={tx("copyNumber")} />
+            </div>
+            <div className="flex items-center justify-between gap-2 rounded-lg bg-surface-2 px-3 py-2">
+              <div className="min-w-0">
+                <p className="text-xs text-text-3">{tx("useReference")}</p>
+                <p className="font-money text-sm font-medium text-text-1">{trade.shortRef}</p>
+              </div>
+              <CopyButton value={trade.shortRef} />
+            </div>
+          </>
+        ) : (
+          <Alert tone="warning">{tx("noSellerAccount")}</Alert>
+        )}
+      </div>
+
       <Field label={tx("paymentReference")} required>
         {(p) => <Input placeholder={tx("paymentReferencePlaceholder")} value={reference} onChange={(e) => setReference(e.target.value)} {...p} />}
       </Field>

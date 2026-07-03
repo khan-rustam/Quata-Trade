@@ -534,7 +534,12 @@
     "noMessages": "No messages yet. Say hello 👋",
     "messagePlaceholder": "Type a message…",
     "messageAriaLabel": "Message",
-    "sendAriaLabel": "Send"
+    "sendAriaLabel": "Send",
+    "amountToSend": "Amount to send",
+    "payTo": "Pay to",
+    "copyNumber": "Copy number",
+    "useReference": "Use this reference",
+    "noSellerAccount": "The seller hasn’t added a receiving number for this method yet — ask them in the chat below before paying."
   },
   "account": {
     "title": "Account",
@@ -550,7 +555,8 @@
     "profile": "Profile details",
     "terms": "Terms & policies",
     "logout": "Log out",
-    "myOffers": "My offers"
+    "myOffers": "My offers",
+    "paymentMethods": "Payment methods"
   },
   "accountProfile": {
     "title": "Profile details",
@@ -1316,7 +1322,8 @@
     "account": "Account",
     "offers": "My offers",
     "newOffer": "New offer",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "paymentMethods": "Payment methods"
   },
   "errorPage": {
     "notFoundTitle": "Page not found",
@@ -1326,5 +1333,18 @@
     "errorTitle": "Something went wrong",
     "errorBody": "An unexpected error occurred. You can try again or head back home.",
     "tryAgain": "Try again"
+  },
+  "paymentMethods": {
+    "title": "Payment methods",
+    "subtitle": "Where buyers send you fiat off-platform.",
+    "hint": "Set the number and account name buyers should send money to for each method you accept. Shown to your counterparty in the trade room.",
+    "numberLabel": "Receiving number",
+    "numberPlaceholder": "e.g. 650 00 00 00",
+    "nameLabel": "Account name",
+    "namePlaceholder": "Name on the account",
+    "save": "Save payment methods",
+    "savedTitle": "Saved",
+    "savedBody": "Your receiving details are updated.",
+    "errorTitle": "Could not save"
   }
 }

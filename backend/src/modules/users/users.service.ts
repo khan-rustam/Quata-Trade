@@ -3,7 +3,15 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import * as argon2 from "argon2";
 import type { Kysely, Selectable } from "kysely";
 import { reputationTier } from "@quatatrade/shared";
-import type { AvatarStyle, PublicTrader, Session, UpdateProfileRequest, UserProfile } from "@quatatrade/shared";
+import type {
+  AvatarStyle,
+  PaymentAccounts,
+  PublicTrader,
+  Session,
+  UpdatePaymentAccountsRequest,
+  UpdateProfileRequest,
+  UserProfile,
+} from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
 import type { Database, UsersTable } from "../../db/types";
 import { AuditService } from "../../common/audit/audit.service";
@@ -47,6 +55,7 @@ function toProfile(row: UserRow, stats: TraderStats): UserProfile {
     reputationTier: reputationTier(stats.completed, completionRate),
     completedTrades: stats.completed,
     completionRate,
+    paymentAccounts: row.payment_accounts ?? {},
     createdAt: row.created_at.toISOString(),
   };
 }
@@ -111,6 +120,28 @@ export class UsersService {
         .where("id", "=", userId)
         .execute();
     }
+    return this.getProfile(userId);
+  }
+
+  /** Merge in receiving accounts; a null value clears that method. Own-scoped by userId. */
+  async updatePaymentAccounts(userId: string, dto: UpdatePaymentAccountsRequest): Promise<UserProfile> {
+    const row = await this.db
+      .selectFrom("users")
+      .select("payment_accounts")
+      .where("id", "=", userId)
+      .executeTakeFirst();
+    if (!row) throw new UserNotFoundError();
+    const next: PaymentAccounts = { ...(row.payment_accounts ?? {}) };
+    for (const [method, account] of Object.entries(dto.accounts)) {
+      const key = method as keyof PaymentAccounts;
+      if (account === null) delete next[key];
+      else next[key] = account;
+    }
+    await this.db
+      .updateTable("users")
+      .set({ payment_accounts: JSON.stringify(next), updated_at: new Date() })
+      .where("id", "=", userId)
+      .execute();
     return this.getProfile(userId);
   }
 

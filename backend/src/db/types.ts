@@ -55,6 +55,12 @@ export interface UsersTable {
   pending_email_token_hash: string | null;
   pending_email_expires_at: ColumnType<Date | null, Date | null | undefined, Date | null>;
   withdrawal_hold_until: ColumnType<Date | null, Date | null | undefined, Date | null>;
+  /** off-platform receiving accounts, keyed by payment method (jsonb; read → object, write → JSON string) */
+  payment_accounts: ColumnType<
+    Partial<Record<PaymentMethod, { number: string; name: string }>>,
+    string | undefined,
+    string
+  >;
   created_at: Timestamp;
   updated_at: ColumnType<Date | null, never, Date | string>;
 }

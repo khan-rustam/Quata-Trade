@@ -17,11 +17,13 @@ import { z } from "zod";
 import {
   zChangeEmailRequest,
   zSessionsResponse,
+  zUpdatePaymentAccountsRequest,
   zUpdateProfileRequest,
   zUuid,
   zVerifyEmailChangeRequest,
   type ChangeEmailRequest,
   type Ok,
+  type UpdatePaymentAccountsRequest,
   type UpdateProfileRequest,
   type UserProfile,
   type VerifyEmailChangeRequest,
@@ -67,6 +69,18 @@ export class UsersController {
   ): Promise<UserProfile> {
     try {
       return await this.users.updateProfile(userId, dto);
+    } catch (err) {
+      rethrowUsers(err);
+    }
+  }
+
+  @Patch("me/payment-accounts")
+  async updatePaymentAccounts(
+    @CurrentUserId() userId: string,
+    @Body(new ZodPipe(zUpdatePaymentAccountsRequest)) dto: UpdatePaymentAccountsRequest,
+  ): Promise<UserProfile> {
+    try {
+      return await this.users.updatePaymentAccounts(userId, dto);
     } catch (err) {
       rethrowUsers(err);
     }

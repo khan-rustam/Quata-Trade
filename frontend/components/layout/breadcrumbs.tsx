@@ -44,6 +44,7 @@ const LABELS: Record<string, string> = {
   wallet: "wallet",
   account: "account",
   offers: "offers",
+  "payment-methods": "paymentMethods",
   new: "newOffer",
   notifications: "notifications",
 };

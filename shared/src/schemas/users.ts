@@ -1,6 +1,31 @@
 import { z } from "zod";
-import { AVATAR_STYLES, KYC_STATUSES, REPUTATION_TIERS, USER_STATUSES } from "../constants.js";
+import { AVATAR_STYLES, KYC_STATUSES, PAYMENT_METHODS, REPUTATION_TIERS, USER_STATUSES } from "../constants.js";
 import { zEmail, zUuid } from "./common.js";
+
+/** Off-platform receiving account for one payment method (where a buyer sends fiat). */
+export const zPaymentAccount = z.object({
+  number: z.string(),
+  name: z.string(),
+});
+/** A user's receiving accounts, keyed by payment method (partial — only set methods). */
+export const zPaymentAccounts = z.record(z.enum(PAYMENT_METHODS), zPaymentAccount);
+export type PaymentAccounts = z.infer<typeof zPaymentAccounts>;
+
+/** Upsert/clear receiving accounts. A null value clears that method's account. */
+export const zUpdatePaymentAccountsRequest = z
+  .object({
+    accounts: z.record(
+      z.enum(PAYMENT_METHODS),
+      z
+        .object({
+          number: z.string().trim().min(4).max(30),
+          name: z.string().trim().min(2).max(80),
+        })
+        .nullable(),
+    ),
+  })
+  .strict();
+export type UpdatePaymentAccountsRequest = z.infer<typeof zUpdatePaymentAccountsRequest>;
 
 export const zUserProfile = z.object({
   id: zUuid,
@@ -25,6 +50,7 @@ export const zUserProfile = z.object({
   reputationTier: z.enum(REPUTATION_TIERS), // derived, display only
   completedTrades: z.number().int(),
   completionRate: z.number(), // 0..100, display only — not money
+  paymentAccounts: zPaymentAccounts, // own off-platform receiving accounts
   createdAt: z.string(),
 });
 export type UserProfile = z.infer<typeof zUserProfile>;

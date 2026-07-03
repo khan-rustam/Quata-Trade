@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
+  Banknote,
   Bell,
   ChevronRight,
   FileText,
@@ -69,6 +70,7 @@ export default function AccountPage(): React.JSX.Element {
 
       <div className="overflow-hidden rounded-xl border border-border">
         <MenuLink href="/account/offers" icon={Tags} label={tx("myOffers")} />
+        <MenuLink href="/account/payment-methods" icon={Banknote} label={tx("paymentMethods")} />
         <MenuLink href="/account/kyc" icon={BadgeCheck} label={tx("kyc")} />
         <MenuLink href="/account/security" icon={ShieldCheck} label={tx("security")} />
         <MenuLink href="/account/notifications" icon={Bell} label={tx("notifications")} />

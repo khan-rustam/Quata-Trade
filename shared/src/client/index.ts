@@ -11,6 +11,7 @@ import {
   zSessionsResponse,
   zUserProfile,
   type ChangeEmailRequest,
+  type UpdatePaymentAccountsRequest,
   type UpdateProfileRequest,
   type VerifyEmailChangeRequest,
 } from "../schemas/users.js";
@@ -182,6 +183,9 @@ export class QuataApiClient {
   // ---- users ----
   me = () => this.request("GET", "/api/v1/users/me", zUserProfile);
   updateProfile = (body: UpdateProfileRequest) => this.request("PATCH", "/api/v1/users/me", zUserProfile, body);
+  /** Set/clear the caller's off-platform receiving accounts (MoMo/Orange/QuataPay number per method). */
+  updatePaymentAccounts = (body: UpdatePaymentAccountsRequest) =>
+    this.request("PATCH", "/api/v1/users/me/payment-accounts", zUserProfile, body);
   sessions = () => this.request("GET", "/api/v1/users/me/sessions", zSessionsResponse);
   revokeSession = (id: string): Promise<Ok> => this.request("DELETE", `/api/v1/users/me/sessions/${id}`, zOk);
   changeEmail = (body: ChangeEmailRequest) => this.request("POST", "/api/v1/users/me/email", zUserProfile, body);
