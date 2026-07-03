@@ -4,6 +4,7 @@ import type { Kysely } from "kysely";
 import { DB } from "../db/database.module";
 import type { Database } from "../db/types";
 import { LedgerService } from "../modules/ledger/ledger.service";
+import { newId } from "../common/ids";
 
 /**
  * Reconciliation (Documents/09): cached balances vs recomputed SUM(entries).
@@ -44,6 +45,15 @@ export class ReconciliationJob {
       .set({ value: JSON.stringify(switches), updated_at: new Date() })
       .where("key", "=", "kill_switches")
       .execute();
-    // TODO(alerting): page via monitoring channel once notify module lands.
+    // Emit a security event; the outbox relay routes it to AlertsService so a
+    // human is paged (webhook + error log), not just a silent kill-switch flip.
+    await this.db
+      .insertInto("outbox")
+      .values({
+        id: newId(),
+        event_type: "reconciliation.mismatch",
+        payload: JSON.stringify({ mismatchCount: mismatches.length, detail: detail.slice(0, 1000) }),
+      })
+      .execute();
   }
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Mailer } from "./notify.mailer";
 import { planDispatch, safeContext } from "./notify.plan";
 import { NotifyService } from "./notify.service";
+import { AlertsService } from "../../common/alerts/alerts.service";
 import type {
   NewNotification,
   NotificationListItem,
@@ -196,7 +197,8 @@ function makeService(): { service: NotifyService; store: MemoryStore; mailer: Mo
     shortRef: "QT-8F3K2",
     amount: 12_500_000n,
   });
-  return { service: new NotifyService(store, mailer), store, mailer };
+  const alerts = { fromEvent: async () => undefined } as unknown as AlertsService;
+  return { service: new NotifyService(store, mailer, alerts), store, mailer };
 }
 
 describe("NotifyService.dispatch", () => {

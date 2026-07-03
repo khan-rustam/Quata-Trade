@@ -65,6 +65,9 @@ export const envSchema = z.object({
   CLAMAV_HOST: z.string().default("localhost"),
   CLAMAV_PORT: z.coerce.number().int().default(3310),
 
+  // Ops/security alert webhook (Slack/Discord/generic "text" payload). Empty = disabled (log-only).
+  ALERT_WEBHOOK_URL: z.string().default(""),
+
   SWAGGER_ENABLED: z
     .string()
     .default("false")

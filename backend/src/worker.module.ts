@@ -5,6 +5,7 @@ import { LoggerModule } from "nestjs-pino";
 import { validateEnv } from "./config/env";
 import { DatabaseModule } from "./db/database.module";
 import { AuditModule } from "./common/audit/audit.module";
+import { AlertsModule } from "./common/alerts/alerts.module";
 import { RedisModule } from "./common/redis/redis.module";
 import { StorageModule } from "./common/storage/storage.module";
 import { SettingsModule } from "./modules/settings/settings.module";
@@ -36,6 +37,7 @@ import { EmailSendJob } from "./jobs/email-send.job";
     ScheduleModule.forRoot(),
     DatabaseModule,
     AuditModule,
+    AlertsModule,
     RedisModule,
     StorageModule,
     SettingsModule,

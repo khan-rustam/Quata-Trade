@@ -9,6 +9,7 @@ import { DatabaseModule } from "./db/database.module";
 import { JwtAuthGuard } from "./common/auth/jwt-auth.guard";
 import { RolesGuard } from "./common/auth/roles.guard";
 import { AuditModule } from "./common/audit/audit.module";
+import { AlertsModule } from "./common/alerts/alerts.module";
 import { RedisModule } from "./common/redis/redis.module";
 import { StorageModule } from "./common/storage/storage.module";
 import { SettingsModule } from "./modules/settings/settings.module";
@@ -75,6 +76,7 @@ import { ContentModule } from "./modules/content/content.module";
     DatabaseModule,
     SettingsModule,
     AuditModule,
+    AlertsModule,
     RedisModule,
     StorageModule,
     HealthModule,

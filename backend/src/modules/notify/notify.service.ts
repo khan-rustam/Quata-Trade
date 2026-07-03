@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { toDisplay } from "@quatatrade/shared";
 import { newId } from "../../common/ids";
+import { AlertsService } from "../../common/alerts/alerts.service";
 import { MAILER, type Mailer } from "./notify.mailer";
 import { planDispatch, safeContext } from "./notify.plan";
 import { NOTIFY_STORE, type NotificationListItem, type NotifyStore } from "./notify.store";
@@ -21,6 +22,7 @@ export class NotifyService {
   constructor(
     @Inject(NOTIFY_STORE) private readonly store: NotifyStore,
     @Inject(MAILER) private readonly mailer: Mailer,
+    private readonly alerts: AlertsService,
   ) {}
 
   /**
@@ -29,6 +31,9 @@ export class NotifyService {
    * throw — they only leave the email row queued for a later retry sweep.
    */
   async dispatch(eventType: string, payload: Record<string, unknown>): Promise<void> {
+    // Out-of-band ops/security alert for high-signal events (no-op for the rest).
+    await this.alerts.fromEvent(eventType, payload);
+
     const plan = planDispatch(eventType, payload);
     if (!plan) return;
 
