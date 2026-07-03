@@ -42,6 +42,12 @@ class FakeTronGrid implements TronGridClient {
     if (this.failing) throw new Error("simulated RPC outage");
     return this.height;
   }
+
+  txConfirmations = new Map<string, number | null>();
+  async getTransactionConfirmations(txHash: string): Promise<number | null> {
+    if (this.failing) throw new Error("simulated RPC outage");
+    return this.txConfirmations.get(txHash) ?? null;
+  }
 }
 
 describe("deposits pipeline (Gate 3)", () => {

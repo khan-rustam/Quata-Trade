@@ -9,9 +9,12 @@ import { LedgerModule } from "../ledger/ledger.module";
 import { SettingsModule } from "../settings/settings.module";
 import { SettingsService } from "../settings/settings.service";
 import { WithdrawalsModule } from "../withdrawals/withdrawals.module";
+import { DEPOSITS_CONFIG, depositsConfigFromEnv } from "../deposits/deposits.config";
+import { HttpTronGridClient, TRONGRID_CLIENT } from "../deposits/trongrid.client";
 import { MockSignerService } from "./mock-signer.service";
 import { RemoteSignerService } from "./remote-signer.service";
 import { WithdrawalPipelineService } from "./withdrawal-pipeline.service";
+import { WithdrawalConfirmationService } from "./withdrawal-confirmation.service";
 import { SIGNER_CLIENT, type SignerClient } from "./signer.types";
 
 @Module({
@@ -29,8 +32,13 @@ import { SIGNER_CLIENT, type SignerClient } from "./signer.types";
           ? new MockSignerService(config, db, settings)
           : new RemoteSignerService(config),
     },
+    // Read-only chain client for the confirmation poller (item 5). Provided
+    // locally so SignerModule stays decoupled from the deposit cron pipeline.
+    { provide: DEPOSITS_CONFIG, inject: [ConfigService], useFactory: depositsConfigFromEnv },
+    { provide: TRONGRID_CLIENT, useClass: HttpTronGridClient },
     WithdrawalPipelineService,
+    WithdrawalConfirmationService,
   ],
-  exports: [SIGNER_CLIENT, WithdrawalPipelineService],
+  exports: [SIGNER_CLIENT, WithdrawalPipelineService, WithdrawalConfirmationService],
 })
 export class SignerModule {}

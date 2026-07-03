@@ -483,6 +483,29 @@ export class WithdrawalsService {
     return rows.map((r) => r.id);
   }
 
+  /**
+   * BROADCAST withdrawals awaiting on-chain confirmation, oldest first — polled
+   * by the remote confirmation service (item 5). tx_hash is always set on
+   * BROADCAST (markBroadcast sets it in the same guarded update).
+   */
+  async listBroadcast(limit: number): Promise<{ id: string; txHash: string; broadcastAt: Date }[]> {
+    const rows = await this.db
+      .selectFrom("withdrawals")
+      .select(["id", "tx_hash", "updated_at"])
+      .where("status", "=", "BROADCAST")
+      .where("tx_hash", "is not", null)
+      .orderBy("created_at", "asc")
+      .limit(limit)
+      .execute();
+    const out: { id: string; txHash: string; broadcastAt: Date }[] = [];
+    for (const r of rows) {
+      if (r.tx_hash !== null && r.updated_at !== null) {
+        out.push({ id: r.id, txHash: r.tx_hash, broadcastAt: r.updated_at });
+      }
+    }
+    return out;
+  }
+
   /** APPROVED → SIGNING. Guarded: false when another worker already claimed it. */
   async claimForSigning(withdrawalId: string): Promise<boolean> {
     const result = await this.db

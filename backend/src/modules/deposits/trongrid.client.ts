@@ -28,6 +28,12 @@ export interface TronGridClient {
   /** Incoming TRC20 transfers for one of our deposit addresses. */
   getTrc20TransfersTo(address: string): Promise<Trc20Transfer[]>;
   getCurrentBlockNumber(): Promise<bigint>;
+  /**
+   * Confirmation depth of a broadcast tx (currentBlock − txBlock; 0 if not yet
+   * deep, null when the tx is not in a known block). Read-only chain query used
+   * by the remote withdrawal confirmation poller — NEVER by the signer (Host B).
+   */
+  getTransactionConfirmations(txHash: string): Promise<number | null>;
 }
 
 export const TRONGRID_CLIENT = "TRONGRID_CLIENT";
@@ -116,6 +122,23 @@ export class HttpTronGridClient implements TronGridClient {
   async getCurrentBlockNumber(): Promise<bigint> {
     const parsed = zNowBlock.parse(await this.postJson("/wallet/getnowblock", {}));
     return BigInt(parsed.block_header.raw_data.number);
+  }
+
+  async getTransactionConfirmations(txHash: string): Promise<number | null> {
+    let blockNumber: bigint | null;
+    try {
+      const info = zTxInfo.parse(await this.postJson("/wallet/gettransactioninfobyid", { value: txHash }));
+      blockNumber = info.blockNumber !== undefined ? BigInt(info.blockNumber) : null;
+    } catch (err) {
+      // Soft failure: treat as "cannot prove depth yet" — the poller retries.
+      this.logger.warn(`tx confirmations lookup failed for ${txHash}: ${err instanceof Error ? err.message : "unknown"}`);
+      return null;
+    }
+    if (blockNumber === null) return null;
+    const height = await this.getCurrentBlockNumber();
+    if (height < blockNumber) return 0; // node behind / reorg in progress
+    const depth = height - blockNumber;
+    return depth > 2_000_000_000n ? 2_000_000_000 : Number(depth);
   }
 
   /**

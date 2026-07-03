@@ -12,6 +12,7 @@ const SECURITY_EVENTS: Record<string, { severity: Severity; title: string }> = {
   "admin.kill_switch": { severity: "critical", title: "Kill switch toggled" },
   "risk.flagged": { severity: "warning", title: "Risk score escalated" },
   "aml.hit": { severity: "critical", title: "AML / sanctions blocklist hit" },
+  "withdrawal.broadcast_stale": { severity: "critical", title: "Withdrawal stuck in BROADCAST" },
 };
 
 const ICON: Record<Severity, string> = { info: "info", warning: "warn", critical: "CRITICAL" };
