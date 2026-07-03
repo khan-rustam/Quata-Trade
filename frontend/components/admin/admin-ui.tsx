@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { toCsv, downloadCsv, type CsvColumn } from "@/lib/csv";
 
 export function AdminTitle({
   title,
@@ -50,6 +51,44 @@ export function Pagination({
       </div>
     </div>
   );
+}
+
+/** Refresh the current query. Spins while fetching. */
+export function RefreshButton({ onClick, busy }: { onClick: () => void; busy?: boolean }): React.JSX.Element {
+  const tx = useTranslations("adminUi");
+  return (
+    <Button size="sm" variant="secondary" onClick={onClick} disabled={busy} aria-label={tx("refresh")}>
+      <RefreshCw size={14} className={busy ? "animate-spin" : ""} /> {tx("refresh")}
+    </Button>
+  );
+}
+
+/** Export the currently-loaded rows to a CSV file (client-side). */
+export function ExportCsvButton<T>({
+  rows,
+  columns,
+  filename,
+}: {
+  rows: readonly T[];
+  columns: readonly CsvColumn<T>[];
+  filename: string;
+}): React.JSX.Element {
+  const tx = useTranslations("adminUi");
+  return (
+    <Button
+      size="sm"
+      variant="secondary"
+      disabled={rows.length === 0}
+      onClick={() => downloadCsv(filename, toCsv(rows, columns))}
+    >
+      <Download size={14} /> {tx("export")}
+    </Button>
+  );
+}
+
+/** Responsive row of stat tiles. */
+export function StatCards({ children }: { children: ReactNode }): React.JSX.Element {
+  return <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{children}</div>;
 }
 
 /** Standard table frame for admin lists. */

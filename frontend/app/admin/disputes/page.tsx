@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
 import type { z } from "zod";
 import { zAdminDisputeRow, type DisputeResolution } from "@quatatrade/shared";
-import { AdminTitle, Pagination, TableFrame } from "@/components/admin/admin-ui";
+import { AdminTitle, ExportCsvButton, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { Dialog } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -29,13 +29,33 @@ type Row = z.infer<typeof zAdminDisputeRow>;
 export default function AdminDisputesPage(): React.JSX.Element {
   const tx = useTranslations("adminDisputes");
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useAdminDisputes(page);
+  const { data, isLoading, refetch, isFetching } = useAdminDisputes(page);
   const { data: me } = useAdminMe();
   const [active, setActive] = useState<Row | null>(null);
 
   return (
     <div className="space-y-5">
-      <AdminTitle title={tx("title")} subtitle={tx("subtitle")} />
+      <AdminTitle
+        title={tx("title")}
+        subtitle={tx("subtitle")}
+        action={
+          <div className="flex gap-2">
+            <RefreshButton onClick={() => void refetch()} busy={isFetching} />
+            <ExportCsvButton
+              rows={data?.items ?? []}
+              filename="quatatrade-disputes"
+              columns={[
+                { header: "Trade", value: (d) => d.tradeShortRef },
+                { header: "Amount", value: (d) => d.amount },
+                { header: "Reason", value: (d) => d.reason },
+                { header: "Status", value: (d) => d.status },
+                { header: "Opened by", value: (d) => d.openedBy },
+                { header: "Opened", value: (d) => d.createdAt },
+              ]}
+            />
+          </div>
+        }
+      />
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />

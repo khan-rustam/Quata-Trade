@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Repeat } from "lucide-react";
-import { AdminTitle, Pagination, TableFrame } from "@/components/admin/admin-ui";
+import { AdminTitle, ExportCsvButton, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Usdt } from "@/components/ui/amount";
@@ -14,11 +14,32 @@ import { formatDateTime } from "@/lib/format";
 export default function AdminTradesPage(): React.JSX.Element {
   const tx = useTranslations("adminTrades");
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useAdminTrades(page);
+  const { data, isLoading, refetch, isFetching } = useAdminTrades(page);
 
   return (
     <div className="space-y-5">
-      <AdminTitle title={tx("title")} subtitle={tx("subtitle")} />
+      <AdminTitle
+        title={tx("title")}
+        subtitle={tx("subtitle")}
+        action={
+          <div className="flex gap-2">
+            <RefreshButton onClick={() => void refetch()} busy={isFetching} />
+            <ExportCsvButton
+              rows={data?.items ?? []}
+              filename="quatatrade-trades"
+              columns={[
+                { header: "Ref", value: (t) => t.shortRef },
+                { header: "Seller", value: (t) => t.sellerEmail },
+                { header: "Buyer", value: (t) => t.buyerEmail },
+                { header: "Amount", value: (t) => t.amount },
+                { header: "Fee", value: (t) => t.feeAmount },
+                { header: "Status", value: (t) => t.status },
+                { header: "Created", value: (t) => t.createdAt },
+              ]}
+            />
+          </div>
+        }
+      />
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />

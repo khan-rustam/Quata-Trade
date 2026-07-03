@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { CheckCircle2, ScrollText, ShieldAlert } from "lucide-react";
-import { AdminTitle, Pagination, TableFrame } from "@/components/admin/admin-ui";
+import { AdminTitle, ExportCsvButton, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,7 @@ import { formatDateTime, shortHash } from "@/lib/format";
 export default function AdminAuditPage(): React.JSX.Element {
   const tx = useTranslations("adminAudit");
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useAdminAuditLogs(page);
+  const { data, isLoading, refetch, isFetching } = useAdminAuditLogs(page);
   const toast = useToast();
   const [verifying, setVerifying] = useState(false);
   const [verifyResult, setVerifyResult] = useState<{ broken: number } | null>(null);
@@ -44,9 +44,26 @@ export default function AdminAuditPage(): React.JSX.Element {
         title={tx("title")}
         subtitle={tx("subtitle")}
         action={
-          <Button size="sm" variant="secondary" onClick={verify} disabled={verifying}>
-            {verifying ? <Spinner /> : <ShieldAlert size={14} />} {tx("verifyChain")}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <RefreshButton onClick={() => void refetch()} busy={isFetching} />
+            <ExportCsvButton
+              rows={data?.items ?? []}
+              filename="quatatrade-audit-logs"
+              columns={[
+                { header: "When", value: (r) => r.createdAt },
+                { header: "Actor type", value: (r) => r.actorType },
+                { header: "Actor id", value: (r) => r.actorId ?? "" },
+                { header: "Action", value: (r) => r.action },
+                { header: "Target type", value: (r) => r.targetType ?? "" },
+                { header: "Target id", value: (r) => r.targetId ?? "" },
+                { header: "IP", value: (r) => r.ip ?? "" },
+                { header: "Metadata", value: (r) => (r.metadata ? JSON.stringify(r.metadata) : "") },
+              ]}
+            />
+            <Button size="sm" variant="secondary" onClick={verify} disabled={verifying}>
+              {verifying ? <Spinner /> : <ShieldAlert size={14} />} {tx("verifyChain")}
+            </Button>
+          </div>
         }
       />
 

@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Check, ShieldAlert, X } from "lucide-react";
 import type { z } from "zod";
 import { zAdminWithdrawalRow } from "@quatatrade/shared";
-import { AdminTitle, Pagination, TableFrame } from "@/components/admin/admin-ui";
+import { AdminTitle, ExportCsvButton, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { TotpActionDialog } from "@/components/admin/totp-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -24,7 +24,7 @@ type Row = z.infer<typeof zAdminWithdrawalRow>;
 
 export default function AdminWithdrawalsPage(): React.JSX.Element {
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useAdminWithdrawals(page);
+  const { data, isLoading, refetch, isFetching } = useAdminWithdrawals(page);
   const { data: me } = useAdminMe();
   const qc = useQueryClient();
   const toast = useToast();
@@ -59,7 +59,29 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
 
   return (
     <div className="space-y-5">
-      <AdminTitle title={tx("title")} subtitle={tx("subtitle")} />
+      <AdminTitle
+        title={tx("title")}
+        subtitle={tx("subtitle")}
+        action={
+          <div className="flex gap-2">
+            <RefreshButton onClick={() => void refetch()} busy={isFetching} />
+            <ExportCsvButton
+              rows={data?.items ?? []}
+              filename="quatatrade-withdrawals"
+              columns={[
+                { header: "User", value: (w) => w.userEmail },
+                { header: "Asset", value: (w) => w.asset },
+                { header: "Amount", value: (w) => w.amount },
+                { header: "Fee", value: (w) => w.fee },
+                { header: "Destination", value: (w) => w.toAddress },
+                { header: "Risk", value: (w) => w.riskScore ?? "" },
+                { header: "Status", value: (w) => w.status },
+                { header: "Created", value: (w) => w.createdAt },
+              ]}
+            />
+          </div>
+        }
+      />
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />

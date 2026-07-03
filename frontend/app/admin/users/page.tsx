@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { ChevronRight, Search, Users } from "lucide-react";
 import type { z } from "zod";
 import { zAdminUserRow } from "@quatatrade/shared";
-import { AdminTitle, Pagination, TableFrame } from "@/components/admin/admin-ui";
+import { AdminTitle, ExportCsvButton, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { Dialog } from "@/components/ui/dialog";
 import { Input, Textarea } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,12 +36,33 @@ export default function AdminUsersPage(): React.JSX.Element {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
-  const { data, isLoading } = useAdminUsers(page, debounced || undefined);
+  const { data, isLoading, refetch, isFetching } = useAdminUsers(page, debounced || undefined);
   const [active, setActive] = useState<Row | null>(null);
 
   return (
     <div className="space-y-5">
-      <AdminTitle title={tx("title")} subtitle={tx("subtitle")} />
+      <AdminTitle
+        title={tx("title")}
+        subtitle={tx("subtitle")}
+        action={
+          <div className="flex gap-2">
+            <RefreshButton onClick={() => void refetch()} busy={isFetching} />
+            <ExportCsvButton
+              rows={data?.items ?? []}
+              filename="quatatrade-users"
+              columns={[
+                { header: "Email", value: (u) => u.email },
+                { header: "Phone", value: (u) => u.phone ?? "" },
+                { header: "KYC tier", value: (u) => u.kycTier },
+                { header: "KYC status", value: (u) => u.kycStatus },
+                { header: "Status", value: (u) => u.status },
+                { header: "Reputation", value: (u) => u.reputationScore },
+                { header: "Joined", value: (u) => u.createdAt },
+              ]}
+            />
+          </div>
+        }
+      />
 
       <form
         onSubmit={(e) => {

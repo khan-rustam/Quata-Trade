@@ -6,7 +6,7 @@ import { BadgeCheck, FileText } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { z } from "zod";
 import { zAdminKycQueueRow } from "@quatatrade/shared";
-import { AdminTitle, Pagination, TableFrame } from "@/components/admin/admin-ui";
+import { AdminTitle, ExportCsvButton, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { Dialog } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -29,12 +29,31 @@ type Decision = "approve" | "reject" | "resubmit";
 export default function AdminKycPage(): React.JSX.Element {
   const tx = useTranslations("adminKyc");
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useAdminKycQueue(page);
+  const { data, isLoading, refetch, isFetching } = useAdminKycQueue(page);
   const [active, setActive] = useState<Row | null>(null);
 
   return (
     <div className="space-y-5">
-      <AdminTitle title={tx("title")} subtitle={tx("subtitle")} />
+      <AdminTitle
+        title={tx("title")}
+        subtitle={tx("subtitle")}
+        action={
+          <div className="flex gap-2">
+            <RefreshButton onClick={() => void refetch()} busy={isFetching} />
+            <ExportCsvButton
+              rows={data?.items ?? []}
+              filename="quatatrade-kyc-queue"
+              columns={[
+                { header: "User", value: (k) => k.userEmail },
+                { header: "Tier", value: (k) => k.tier },
+                { header: "Document", value: (k) => k.docType },
+                { header: "Files", value: (k) => k.files.length },
+                { header: "Submitted", value: (k) => k.submittedAt },
+              ]}
+            />
+          </div>
+        }
+      />
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />

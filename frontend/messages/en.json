@@ -1032,7 +1032,9 @@
   "adminUi": {
     "pageStatus": "Page {page} of {pages} · {total} total",
     "previousPage": "Previous page",
-    "nextPage": "Next page"
+    "nextPage": "Next page",
+    "export": "Export CSV",
+    "refresh": "Refresh"
   },
   "totpDialog": {
     "reasonPlaceholder": "Reason (min 5 characters)…",
