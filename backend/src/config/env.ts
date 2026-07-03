@@ -30,6 +30,11 @@ export const envSchema = z.object({
     .transform((v) => v === "true"),
   MINIO_ACCESS_KEY: z.string().default(""),
   MINIO_SECRET_KEY: z.string().default(""),
+  /** SSE-S3 at-rest encryption for uploaded objects (KYC/PII). Required in prod. */
+  STORAGE_SSE_ENABLED: z
+    .string()
+    .default("false")
+    .transform((v) => v === "true"),
 
   SMTP_HOST: z.string().default("localhost"),
   SMTP_PORT: z.coerce.number().int().default(1025),
@@ -108,6 +113,9 @@ export function validateEnv(config: Record<string, unknown>): Env {
     }
     if (parsed.data.TRON_NETWORK !== "mainnet") {
       throw new Error(`TRON_NETWORK must be 'mainnet' in production (got '${parsed.data.TRON_NETWORK}')`);
+    }
+    if (!parsed.data.STORAGE_SSE_ENABLED) {
+      throw new Error("STORAGE_SSE_ENABLED must be true in production (at-rest encryption of KYC/PII objects)");
     }
   }
   return parsed.data;

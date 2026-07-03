@@ -26,7 +26,8 @@ locally** — it runs in CI (`.github/workflows/ci.yml`). Money-path changes her
 - ✅ **Item 4b** — AML **inbound**: scanner captures the on-chain `from_address`; `DepositConfirmationService` screens the sender at the credit chokepoint and **holds** (`aml_hold`, never credits) tainted-source deposits + raises `aml.hit`. Held deposits are excluded from the pending scan (no re-credit / duplicate alert). Integration coverage in CI.
 - ✅ **Item 5a** — remote withdrawal confirmation: worker-side poller reads the chain (`getTransactionConfirmations`) and settles BROADCAST→CONFIRMED at deposit finality depth; the reconciliation job flags withdrawals stuck in BROADCAST (`withdrawal.broadcast_stale`). Signer stays on Host B (poller never signs). Unit-tested (poller) + CI.
 - ✅ **Item 5b** — on-chain reserve check: reconciliation job reads the signer hot-wallet USDT balance (`getTrc20Balance`) and compares it against ledger obligations (pending withdrawals + treasury); a shortfall raises `reconciliation.reserve_shortfall`. **Alert-only, opt-in** (`WALLET_HOT_ADDRESS`); the obligations formula is a conservative lower bound **flagged for human review** against the Host B sweep design. Pure check unit-tested.
-- ⏳ **Remaining (money-path → verify in CI):** 6b at-rest KYC/PII encryption.
+- ✅ **Item 6b** — at-rest encryption of KYC/PII: uploaded objects (KYC docs, proofs, disputes, chat) encrypted at rest via **MinIO SSE-S3** (`STORAGE_SSE_ENABLED`, transparent to presigned GET); prod hard-stop requires it on. DB secrets stay app-encrypted (AES-256-GCM `common/crypto`, now unit-tested). DB profile-PII/volume at-rest = infra (encrypted volumes / managed TDE) — ops; HSM/vault deferred (ops).
+- 🎉 **All listed remediation items complete** (2FA + escrow step-up deferred per client; see above).
 
 ## Fixes (in progress)
 
@@ -37,7 +38,7 @@ locally** — it runs in CI (`.github/workflows/ci.yml`). Money-path changes her
 | 3 | **No address whitelist / no credential-change cooldown** | Saved-address allowlist (new table + endpoints), hold on newly-added addresses, and a `withdrawal_hold_until` set on password reset + 2FA change; enforced in `withdrawals.request`. | **done — CI-verify** |
 | 4 | **No AML/sanctions/blacklist screening** | Blacklist/sanctions table + deterministic screening of withdrawal destinations (4a) and deposit senders (4b); compliance-managed. | **done — CI-verify** |
 | 5 | **Signer + on-chain↔ledger reconciliation** | Remote-withdrawal confirmation poller (5a) + on-chain hot-wallet↔ledger reserve comparison in the reconciliation job (5b). **Signer itself is human-written (Host B) — the poller/reconciler only READ the chain, never sign.** | **done — CI-verify (5b reserve formula flagged for review)** |
-| 6 | **At-rest encryption thin + no vault** | Encrypt KYC/PII at rest; add prod hard-stops in `env.ts` (reject dev `MASTER_ENCRYPTION_KEY`, require `WALLET_XPUB`, force `TRON_NETWORK=mainnet`). Vault = ops (document). | **6a done; 6b pending** |
+| 6 | **At-rest encryption thin + no vault** | Prod env hard-stops (6a) + at-rest encryption of KYC/PII objects via MinIO SSE-S3 (6b). Vault/HSM + DB volume/TDE encryption = ops (document). | **done — CI-verify** |
 | 7 | **Backups / DR / BCP / pentest** | Encrypted `pg` backup script + restore drill; DR, BCP, and incident-response runbooks. HSM + external pentest = ops (document). | **done — CI-verify** |
 
 ## Item 4 — detail (4a done, pending CI)

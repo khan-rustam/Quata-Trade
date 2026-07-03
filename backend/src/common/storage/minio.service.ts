@@ -12,6 +12,8 @@ export type Bucket = "kyc" | "proofs" | "disputes" | "chat";
 @Injectable()
 export class MinioService {
   private readonly client: Client;
+  /** SSE-S3 at-rest encryption (item 6b): MinIO encrypts objects with its KMS; presigned GET is transparent. */
+  private readonly sseEnabled: boolean;
 
   constructor(config: ConfigService<Env, true>) {
     this.client = new Client({
@@ -21,11 +23,19 @@ export class MinioService {
       accessKey: config.get("MINIO_ACCESS_KEY", { infer: true }),
       secretKey: config.get("MINIO_SECRET_KEY", { infer: true }),
     });
+    this.sseEnabled = config.get("STORAGE_SSE_ENABLED", { infer: true });
   }
 
-  /** Server-side upload after validation pipeline. Never trust client uploads directly. */
+  /**
+   * Server-side upload after validation pipeline. Never trust client uploads
+   * directly. When STORAGE_SSE_ENABLED, requests SSE-S3 so the object is
+   * encrypted at rest (KYC/PII) — MinIO must have KMS configured (ops). Presigned
+   * GET stays transparent (unlike app-level encryption, which would break it).
+   */
   async putObject(bucket: Bucket, key: string, data: Buffer, contentType: string): Promise<void> {
-    await this.client.putObject(bucket, key, data, data.length, { "Content-Type": contentType });
+    const metaData: Record<string, string> = { "Content-Type": contentType };
+    if (this.sseEnabled) metaData["X-Amz-Server-Side-Encryption"] = "AES256";
+    await this.client.putObject(bucket, key, data, data.length, metaData);
   }
 
   /** Short-TTL presigned GET (default 5 minutes). */

@@ -21,6 +21,7 @@ const prod = (overrides: Record<string, unknown> = {}): Record<string, unknown> 
     SWAGGER_ENABLED: "false",
     WALLET_XPUB: "xpub-mainnet-watch-only-key-derived-offline",
     TRON_NETWORK: "mainnet",
+    STORAGE_SSE_ENABLED: "true",
     ...overrides,
   });
 
@@ -47,6 +48,10 @@ describe("validateEnv", () => {
   it("forbids testnet (non-mainnet) in production", () => {
     expect(() => validateEnv(prod({ TRON_NETWORK: "shasta" }))).toThrow(/TRON_NETWORK/);
     expect(() => validateEnv(prod({ TRON_NETWORK: "nile" }))).toThrow(/TRON_NETWORK/);
+  });
+
+  it("requires STORAGE_SSE_ENABLED (at-rest KYC/PII encryption) in production", () => {
+    expect(() => validateEnv(prod({ STORAGE_SSE_ENABLED: "false" }))).toThrow(/STORAGE_SSE_ENABLED/);
   });
 
   it("keeps the existing production hard-stops (mock signer, dev JWT, swagger)", () => {
