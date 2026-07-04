@@ -28,14 +28,21 @@ typecheck + **150/150 backend unit tests** + frontend lint + build all green):
   withdrawal hold + audit) + "Disable 2FA" UI on the security page.
 - **P6b — De-magicked the indicative XAF rate** into `frontend/lib/market.ts` (display-only; real pricing
   uses the seller's `priceXafPerUnit`).
+- **P5 — Money-path coverage is now 100%** (branch/function/line/statement on `ledger/escrow/fees`),
+  enforced in `backend/vitest.config.ts`. Added the fault-injection tests Gate 1 was missing:
+  serialization (40001) / deadlock (40P01) retry-then-succeed, retry exhaustion, non-retryable rethrow,
+  the unique-violation race, and the escrow FSM guard/terminal edges. **This caught a real ledger bug:**
+  the concurrent same-key recovery re-`SELECT`ed inside a transaction the 23505 had already poisoned
+  ("current transaction is aborted") — it could never recover, so a genuinely concurrent duplicate request
+  errored instead of replaying. Fixed with a `SAVEPOINT` (ON CONFLICT is unavailable — `journal_entries`
+  has append-only RULEs). A few provably-unreachable defensive guards carry `/* v8 ignore */` with the
+  stated invariant. Needs Docker/Testcontainers to run (`pnpm test:integration`). 257/257 backend green.
 - **Ops:** Hostinger SMTP host/port template in `.env.example` (fill `SMTP_USER`/`SMTP_PASS` on the box —
   `smtp.hostinger.com:465`, `SMTP_SECURE=true`); removed the stale root `HANDOFF.md` (this folder is the source).
 
 ### Remaining code items
 - **P4 — French legal pages:** the locale *seam* is not built, and the final French text is a **lawyer
-  dependency** (do not invent legal French).
-- **P5 — 100% money-path branch coverage** (`ledger/escrow/fees`, ~84%): needs **Docker / Testcontainers**
-  to run the gate suite — do it on a machine with Docker, tests-first.
+  dependency** (do not invent legal French). **This is the only substantial code item left.**
 - Minor: KYC OCR prefill (stubbed), a real rate feed, a logged-in EN/FR visual pass.
 
 **Non-code launch blockers are unchanged** (see [`README.md`](./README.md)): legal entity + crypto licence
@@ -123,10 +130,15 @@ escrow-release step-up. *(2FA was made optional on purpose for the test phase �
 the legal route serves French. ⚠️ **Do not invent legal French** — add the seam + a "pending lawyer French"
 placeholder; the finalised text must come from the Cameroon lawyer (see `README.md §3.1`).
 
-### P5 — 100% branch coverage on money paths
-`ledger/escrow/fees` require **100% branch coverage** (CLAUDE.md); actual floor ≈ **84%**. **Do (tests
-first):** add fault-injection tests for the serialization-retry (`40001`) and unique-violation race-recovery
-branches in `ledger.service.ts`. Runs under Testcontainers (`pnpm test:integration`, needs Docker).
+### P5 — 100% branch coverage on money paths ✅ DONE (2026-07-04)
+`ledger/escrow/fees` now have **100% branch/function/line/statement** coverage, enforced by
+`backend/vitest.config.ts` thresholds. Fault-injection tests were added for the serialization-retry
+(`40001`), deadlock (`40P01`), retry-exhaustion, non-retryable rethrow, and unique-violation race-recovery
+paths in `ledger.service.ts`, plus the escrow FSM guard/terminal edges. **The race test caught a real bug:**
+the same-key recovery re-`SELECT`ed inside a transaction the `23505` had already aborted, so it could never
+recover — now fixed with a `SAVEPOINT` (`ON CONFLICT` is unavailable: `journal_entries` has append-only
+RULEs). Runs under Testcontainers (`pnpm test:integration`, needs Docker). Gate 1 formal re-sign is a human
+audit task, not code.
 
 ### P6 — Minor / nice-to-have
 - Live XAF rate feed (kills the hard-coded `≈ 650` on home/markets — cosmetic; real trades price off the

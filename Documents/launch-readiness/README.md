@@ -10,9 +10,14 @@
 
 > **Update 2026-07-04:** the four code-fixable gaps in §4 are now **DONE** — withdrawal-whitelist UI,
 > admin KYC document viewer, enforceable admin step-up 2FA (`ADMIN_2FA_REQUIRED`), and the user 2FA-disable
-> flow (verified: 150/150 backend unit tests + frontend build). Remaining *code* work is P4 (French legal
-> **seam** — final text is a lawyer dependency) and P5 (money-path 100% coverage — needs Docker). The
-> **hard launch blockers (legal, signer, pen-test, ops) in §3 are unchanged.** Details in `claude-handoff.md`.
+> flow (verified: 150/150 backend unit tests + frontend build). **P5 is now DONE too:** money-path branch
+> coverage is at **100%** (branch/function/line/statement) on `ledger/escrow/fees`, enforced in
+> `vitest.config.ts`, with the missing fault-injection tests written (retry/deadlock/exhaustion + the
+> unique-violation race). Writing the race test **exposed and fixed a real ledger bug** — the concurrent
+> same-key recovery was poisoning its own transaction and could never recover (now uses a SAVEPOINT). 257/257
+> backend tests green. Remaining *code* work is just P4 (French legal **seam** — final text is a lawyer
+> dependency). The **hard launch blockers (legal, signer, pen-test, ops) in §3 are unchanged.** Details in
+> `claude-handoff.md`.
 
 ---
 
@@ -87,8 +92,11 @@ beta** could run much sooner.
 - **Gates 2, 3, 5, 6, 7 are unsigned** (only `Documents/audits/gate-1.md` and `gate-4.md` exist, both with
   caveats). The crypto-critical **Gate 3** (withdrawals/reconciliation/"no key anywhere") and the launch
   **Gate 7** are not signed.
-- **Money-path branch coverage ~84%**, below the mandated **100%** on `ledger/escrow/fees`; fault-injection
-  tests for the serialization-retry and unique-violation race branches are missing.
+- ~~**Money-path branch coverage ~84%**, below the mandated **100%**; fault-injection tests missing.~~
+  **DONE (2026-07-04):** 100% branch/function/line/statement on `ledger/escrow/fees`, enforced in CI. The
+  serialization/deadlock-retry and unique-violation race branches now have fault-injection tests — which
+  surfaced and fixed a real ledger recovery bug (the same-key race poisoned its own tx). Gate 1's remaining
+  caveat (fault-injection) is cleared; formal re-sign still pending human audit.
 - **No independent professional pen-test.**
 - **Admin 2FA + escrow-release step-up are optional**, not enforced (`admin-auth.service.ts:135` no-ops when
   disabled) — explicitly recorded as real-money blockers.
@@ -111,7 +119,8 @@ beta** could run much sooner.
 2. Add the **admin KYC document viewer** (presigned image URLs) — reviewers currently see only a file count.
 3. **Enforce admin 2FA + escrow step-up** (flip the optional guards + a prod hard-stop).
 4. **French legal pages** (add a locale seam to `frontend/lib/legal-content.ts`).
-5. Close **ledger/escrow/fees branch coverage to 100%** + fault-injection tests.
+5. ~~Close **ledger/escrow/fees branch coverage to 100%** + fault-injection tests.~~ **DONE** — 100%,
+   enforced; the race fault-injection test caught + fixed a real ledger recovery bug (SAVEPOINT).
 6. Minor: live rate feed (kills the hardcoded `≈ 650`), 2FA-disable endpoint, KYC OCR prefill.
 
 **Human / client only (the real gatekeepers):** register the legal entity; obtain the crypto licence or a
