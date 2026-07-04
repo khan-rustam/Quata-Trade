@@ -52,6 +52,8 @@ export const zTotpSetupResponse = z.object({
 });
 export const zTotpEnableRequest = z.object({ code: zTotpCode }).strict();
 export const zTotpVerifyRequest = z.object({ code: zTotpCode }).strict();
+export const zTotpDisableRequest = z.object({ code: zTotpCode }).strict();
+export type TotpDisableRequest = z.infer<typeof zTotpDisableRequest>;
 
 export const zSetPinRequest = z
   .object({ pin: zPin, currentPassword: z.string().min(1).max(128) })

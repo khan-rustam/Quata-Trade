@@ -19,6 +19,7 @@ import {
   zRegisterRequest,
   zResetPasswordRequest,
   zSetPinRequest,
+  zTotpDisableRequest,
   zTotpEnableRequest,
   zTotpSetupResponse,
   zTotpVerifyRequest,
@@ -49,6 +50,7 @@ type ForgotPasswordRequest = z.infer<typeof zForgotPasswordRequest>;
 type ResetPasswordRequest = z.infer<typeof zResetPasswordRequest>;
 type TotpEnableRequest = z.infer<typeof zTotpEnableRequest>;
 type TotpVerifyRequest = z.infer<typeof zTotpVerifyRequest>;
+type TotpDisableRequest = z.infer<typeof zTotpDisableRequest>;
 type SetPinRequest = z.infer<typeof zSetPinRequest>;
 type TotpSetupResponse = z.infer<typeof zTotpSetupResponse>;
 
@@ -253,6 +255,21 @@ export class AuthController {
   ): Promise<Ok> {
     try {
       await this.totp.enable(userId, dto.code);
+      return { ok: true };
+    } catch (err) {
+      rethrowAuth(err);
+    }
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post("2fa/disable")
+  @HttpCode(HttpStatus.OK)
+  async totpDisable(
+    @CurrentUserId() userId: string,
+    @Body(new ZodPipe(zTotpDisableRequest)) dto: TotpDisableRequest,
+  ): Promise<Ok> {
+    try {
+      await this.totp.disable(userId, dto.code);
       return { ok: true };
     } catch (err) {
       rethrowAuth(err);

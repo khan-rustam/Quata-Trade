@@ -130,9 +130,23 @@ export class AdminAuthService {
   async verifyTotp(adminId: string, code: string | undefined, action: string, ip?: string): Promise<void> {
     const admin = await this.db.selectFrom("admins").selectAll().where("id", "=", adminId).executeTakeFirst();
     if (!admin || !admin.active) throw new AdminVerificationError();
-    // Step-up only applies to admins who have 2FA enabled. When disabled (test
-    // phase), the action proceeds — RBAC still gates it. Production re-enables 2FA.
-    if (!admin.totp_enabled) return;
+    const required = this.config.get("ADMIN_2FA_REQUIRED", { infer: true });
+    if (!admin.totp_enabled) {
+      // Test phase (flag off): step-up is optional — RBAC still gates the action.
+      if (!required) return;
+      // Enforced (prod): fail closed. The admin must enroll 2FA before any
+      // sensitive action. Audit the block; never reveal enrollment state.
+      await this.audit.log({
+        actorType: "admin",
+        actorId: adminId,
+        action: "admin.totp_required",
+        targetType: "admin",
+        targetId: adminId,
+        ip,
+        metadata: { action },
+      });
+      throw new AdminVerificationError();
+    }
     if (!code || !this.totpMatches(admin, code)) {
       await this.audit.log({
         actorType: "admin",

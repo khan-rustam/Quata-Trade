@@ -75,6 +75,7 @@ import {
   zAdminKpisResponse,
   zAdminMetricsResponse,
   zAdminKycQueueResponse,
+  zAdminKycDocumentsResponse,
   zAdminProfile,
   zAdminRevenueResponse,
   zAdminTradesResponse,
@@ -179,6 +180,8 @@ export class QuataApiClient {
   totpSetup = () => this.request("POST", "/api/v1/auth/2fa/setup", zTotpSetupResponse);
   totpEnable = (body: { code: string }): Promise<Ok> =>
     this.request("POST", "/api/v1/auth/2fa/enable", zOk, body);
+  totpDisable = (body: { code: string }): Promise<Ok> =>
+    this.request("POST", "/api/v1/auth/2fa/disable", zOk, body);
   setPin = (body: { pin: string; currentPassword: string }): Promise<Ok> =>
     this.request("POST", "/api/v1/auth/pin/set", zOk, body);
 
@@ -326,6 +329,8 @@ export class QuataApiClient {
     this.request("POST", `/api/v1/admin/withdrawals/${id}/reject`, zAnyRecord, body);
   adminKycQueue = (query?: Query) =>
     this.request("GET", "/api/v1/admin/kyc/queue", zAdminKycQueueResponse, undefined, query);
+  adminKycDocuments = (id: string) =>
+    this.request("GET", `/api/v1/admin/kyc/${id}/documents`, zAdminKycDocumentsResponse);
   adminReviewKyc = (id: string, decision: "approve" | "reject" | "resubmit", body: KycReviewRequest): Promise<unknown> =>
     this.request("POST", `/api/v1/admin/kyc/${id}/${decision}`, zAnyRecord, body);
   adminDisputes = (query?: Query) =>

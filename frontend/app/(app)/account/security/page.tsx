@@ -49,6 +49,7 @@ export default function SecurityPage(): React.JSX.Element {
           )}
         </div>
         {me && !me.totpEnabled && <TwoFactorSetup onEnabled={() => void refetch()} />}
+        {me?.totpEnabled && <TwoFactorDisable onDisabled={() => void refetch()} />}
       </Card>
 
       {/* PIN */}
@@ -140,6 +141,58 @@ function TwoFactorSetup({ onEnabled }: { onEnabled: () => void }): React.JSX.Ele
           <OtpInput value={code} onChange={setCode} aria-label={tx("authenticatorCodeLabel")} invalid={Boolean(error)} />
           <Button className="w-full" onClick={enable} disabled={busy || code.length < 6}>
             {busy ? <Spinner /> : tx("verifyEnable")}
+          </Button>
+        </div>
+      </Dialog>
+    </div>
+  );
+}
+
+function TwoFactorDisable({ onDisabled }: { onDisabled: () => void }): React.JSX.Element {
+  const tx = useTranslations("accountSecurity");
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const disable = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.totpDisable({ code });
+      toast.success(tx("twoFactorDisabledToastTitle"), tx("twoFactorDisabledToastBody"));
+      setOpen(false);
+      setCode("");
+      onDisabled();
+    } catch (err) {
+      setError(apiErrorMessage(err, tx("invalidCode")));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-3">
+      <Button
+        size="sm"
+        variant="secondary"
+        className="text-danger"
+        onClick={() => {
+          setError(null);
+          setCode("");
+          setOpen(true);
+        }}
+      >
+        {tx("disable2fa")}
+      </Button>
+      <Dialog open={open} onClose={() => setOpen(false)} title={tx("disableTwoFactorTitle")} description={tx("disableTwoFactorDesc")}>
+        <div className="space-y-4">
+          {error && <Alert tone="danger">{error}</Alert>}
+          <Alert tone="warning">{tx("disableWarning")}</Alert>
+          <OtpInput value={code} onChange={setCode} aria-label={tx("authenticatorCodeLabel")} invalid={Boolean(error)} />
+          <Button variant="danger" className="w-full" onClick={disable} disabled={busy || code.length < 6}>
+            {busy ? <Spinner /> : tx("confirmDisable")}
           </Button>
         </div>
       </Dialog>

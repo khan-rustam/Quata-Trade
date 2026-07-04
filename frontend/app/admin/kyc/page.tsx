@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, FileText } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { z } from "zod";
@@ -121,6 +121,12 @@ function ReviewDialog({ row, onClose }: { row: Row; onClose: () => void }): Reac
     reject: tx("toastRejected"),
   };
 
+  const { data: docs, isLoading: docsLoading, isError: docsError } = useQuery({
+    queryKey: ["admin", "kyc-documents", row.id],
+    queryFn: () => adminApi.adminKycDocuments(row.id),
+    staleTime: 60_000,
+  });
+
   const submit = async () => {
     setBusy(true);
     setError(null);
@@ -140,9 +146,44 @@ function ReviewDialog({ row, onClose }: { row: Row; onClose: () => void }): Reac
     <Dialog open onClose={onClose} title={tx("dialogTitle", { email: row.userEmail })} description={tx("dialogDescription", { tier: row.tier, doc: row.docType.replace(/_/g, " ") })}>
       <div className="space-y-4">
         {error && <Alert tone="danger">{error}</Alert>}
-        <Alert tone="info">
-          {tx("alertInfo", { count: row.files.length, tier: row.tier })}
-        </Alert>
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium">{tx("documentsLabel")}</p>
+          {docsLoading ? (
+            <div className="grid grid-cols-2 gap-2">
+              {Array.from({ length: Math.min(row.files.length || 2, 4) }).map((_, i) => (
+                <Skeleton key={i} className="h-28 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : docsError || !docs || docs.documents.length === 0 ? (
+            <Alert tone="warning">{tx("documentsError")}</Alert>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                {docs.documents.map((d) => (
+                  <a
+                    key={d.key}
+                    href={d.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block overflow-hidden rounded-lg border border-border transition-colors hover:border-accent-400/50"
+                  >
+                    {d.kind === "image" ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- short-TTL presigned MinIO URL; no optimization
+                      <img src={d.url} alt="" loading="lazy" className="h-28 w-full object-cover" />
+                    ) : (
+                      <div className="flex h-28 flex-col items-center justify-center gap-1 bg-surface-2 text-text-2">
+                        <FileText size={22} />
+                        <span className="text-xs">{d.kind === "pdf" ? tx("openPdf") : tx("openFile")}</span>
+                      </div>
+                    )}
+                  </a>
+                ))}
+              </div>
+              <p className="text-xs text-text-3">{tx("documentsTtl", { seconds: docs.ttlSeconds })}</p>
+            </>
+          )}
+        </div>
         <div>
           <p className="mb-1.5 text-sm font-medium">{tx("decisionLabel")}</p>
           <Segmented

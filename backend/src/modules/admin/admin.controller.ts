@@ -29,6 +29,7 @@ import {
   zAdminMetricsQuery,
   zUuid,
   type AdminKpisResponse,
+  type AdminKycDocumentsResponse,
   type AdminMetricsQuery,
   type AdminMetricsResponse,
   type AdminProfile,
@@ -278,6 +279,20 @@ export class AdminController {
   }
 
   // ── KYC review (SUPER / COMPLIANCE) — manual decisions only ──────────────
+
+  @Roles(...RBAC.kycReview)
+  @Get("kyc/:id/documents")
+  async kycDocuments(
+    @CurrentAdminId() adminId: string,
+    @Param("id", new ZodPipe(zUuid)) submissionId: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AdminKycDocumentsResponse> {
+    try {
+      return await this.kycAdmin.documents(submissionId, adminId, this.ip(req));
+    } catch (err) {
+      throw mapAdminError(err);
+    }
+  }
 
   @Roles(...RBAC.kycReview)
   @Post("kyc/:id/approve")

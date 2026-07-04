@@ -22,6 +22,7 @@ const prod = (overrides: Record<string, unknown> = {}): Record<string, unknown> 
     WALLET_XPUB: "xpub-mainnet-watch-only-key-derived-offline",
     TRON_NETWORK: "mainnet",
     STORAGE_SSE_ENABLED: "true",
+    ADMIN_2FA_REQUIRED: "true",
     ...overrides,
   });
 
@@ -52,6 +53,10 @@ describe("validateEnv", () => {
 
   it("requires STORAGE_SSE_ENABLED (at-rest KYC/PII encryption) in production", () => {
     expect(() => validateEnv(prod({ STORAGE_SSE_ENABLED: "false" }))).toThrow(/STORAGE_SSE_ENABLED/);
+  });
+
+  it("requires ADMIN_2FA_REQUIRED (admin step-up 2FA) in production", () => {
+    expect(() => validateEnv(prod({ ADMIN_2FA_REQUIRED: "false" }))).toThrow(/ADMIN_2FA_REQUIRED/);
   });
 
   it("keeps the existing production hard-stops (mock signer, dev JWT, swagger)", () => {

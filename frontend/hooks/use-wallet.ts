@@ -23,3 +23,9 @@ export function useWithdrawals(page = 1) {
 export function useDeposits(page = 1) {
   return useQuery({ queryKey: qk.deposits(page), queryFn: () => api.deposits({ page }) });
 }
+
+export const withdrawalAddressesKey = ["wallet", "withdrawal-addresses"] as const;
+
+export function useWithdrawalAddresses() {
+  return useQuery({ queryKey: withdrawalAddressesKey, queryFn: () => api.withdrawalAddresses() });
+}

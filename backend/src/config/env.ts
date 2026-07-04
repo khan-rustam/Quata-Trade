@@ -21,6 +21,16 @@ export const envSchema = z.object({
   MASTER_ENCRYPTION_KEY: z
     .string()
     .refine((v) => Buffer.from(v, "base64").length === 32, "MASTER_ENCRYPTION_KEY must be 32 bytes base64"),
+  /**
+   * Enforce admin TOTP 2FA end-to-end: the step-up before every sensitive admin
+   * action (withdrawal approve/reject, dispute resolve = escrow release/refund,
+   * kill switch, setting update, ledger adjustment). Off in the test phase; MUST
+   * be true in production (enforced by the prod hard-stop below).
+   */
+  ADMIN_2FA_REQUIRED: z
+    .string()
+    .default("false")
+    .transform((v) => v === "true"),
 
   MINIO_ENDPOINT: z.string().default("localhost"),
   MINIO_PORT: z.coerce.number().int().default(9000),
@@ -116,6 +126,9 @@ export function validateEnv(config: Record<string, unknown>): Env {
     }
     if (!parsed.data.STORAGE_SSE_ENABLED) {
       throw new Error("STORAGE_SSE_ENABLED must be true in production (at-rest encryption of KYC/PII objects)");
+    }
+    if (!parsed.data.ADMIN_2FA_REQUIRED) {
+      throw new Error("ADMIN_2FA_REQUIRED must be true in production (admin step-up 2FA on escrow-release/withdrawal actions)");
     }
   }
   return parsed.data;

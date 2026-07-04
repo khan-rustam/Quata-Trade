@@ -4,10 +4,28 @@ import { DB } from "../../db/database.module";
 import type { Database } from "../../db/types";
 import { newId } from "../../common/ids";
 import { AuditService } from "../../common/audit/audit.service";
+import { MinioService } from "../../common/storage/minio.service";
 import { ReviewNotAllowedError, SubmissionNotFoundError } from "./kyc.errors";
 
 export type KycReviewDecision = "APPROVED" | "REJECTED" | "RESUBMIT";
 const REVIEW_DECISIONS: readonly KycReviewDecision[] = ["APPROVED", "REJECTED", "RESUBMIT"];
+
+/** Short TTL for presigned KYC document GETs (identity PII — minimise the window). */
+const KYC_PRESIGN_TTL_SECONDS = 120;
+
+export type KycDocumentKind = "image" | "pdf" | "other";
+export interface KycDocument {
+  key: string;
+  url: string;
+  kind: KycDocumentKind;
+}
+
+function docKind(key: string): KycDocumentKind {
+  const ext = key.toLowerCase().split(".").pop() ?? "";
+  if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) return "image";
+  if (ext === "pdf") return "pdf";
+  return "other";
+}
 
 export interface KycQueueItem {
   id: string;
@@ -38,7 +56,48 @@ export class KycAdminService {
   constructor(
     @Inject(DB) private readonly db: Kysely<Database>,
     private readonly audit: AuditService,
+    private readonly minio: MinioService,
   ) {}
+
+  /**
+   * Presigned, short-TTL GET URLs for a submission's KYC documents so a reviewer
+   * can actually SEE the identity docs. Gated at the controller by RBAC.kycReview
+   * (SUPER/COMPLIANCE) — strictly tighter than the queue. Every access is
+   * audit-logged (PII, Documents/08 §F); the URLs/bytes are NEVER logged. SSE-S3
+   * at-rest encryption is transparent on read, so presigned GET is unchanged.
+   */
+  async documents(
+    submissionId: string,
+    adminId: string,
+    ip?: string,
+  ): Promise<{ submissionId: string; ttlSeconds: number; documents: KycDocument[] }> {
+    const submission = await this.db
+      .selectFrom("kyc_submissions")
+      .select(["id", "user_id", "files"])
+      .where("id", "=", submissionId)
+      .executeTakeFirst();
+    if (!submission) throw new SubmissionNotFoundError(submissionId);
+
+    const documents = await Promise.all(
+      submission.files.map(async (key): Promise<KycDocument> => ({
+        key,
+        url: await this.minio.presignedGet("kyc", key, KYC_PRESIGN_TTL_SECONDS),
+        kind: docKind(key),
+      })),
+    );
+
+    await this.audit.log({
+      actorType: "admin",
+      actorId: adminId,
+      action: "kyc.documents_viewed",
+      targetType: "kyc_submission",
+      targetId: submissionId,
+      ip,
+      metadata: { userId: submission.user_id, fileCount: submission.files.length },
+    });
+
+    return { submissionId, ttlSeconds: KYC_PRESIGN_TTL_SECONDS, documents };
+  }
 
   /** Oldest-first review queue of PENDING submissions with the user's email. */
   async queue(pagination: { page: number; pageSize: number }): Promise<{ items: KycQueueItem[]; total: number }> {

@@ -96,6 +96,30 @@ export class TotpService {
     });
   }
 
+  /** Turn 2FA off after the user proves possession of a CURRENT code. */
+  async disable(userId: string, code: string): Promise<void> {
+    // Requires 2FA currently enabled + a valid code (throws InvalidCodeError otherwise).
+    await this.assertCode(userId, code);
+    await this.db
+      .updateTable("users")
+      .set({
+        totp_enabled: false,
+        totp_secret_enc: null,
+        // Hold withdrawals for 24h after a 2FA change — same defense as enable().
+        withdrawal_hold_until: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        updated_at: new Date(),
+      })
+      .where("id", "=", userId)
+      .execute();
+    await this.audit.log({
+      actorType: "user",
+      actorId: userId,
+      action: "auth.2fa_disabled",
+      targetType: "user",
+      targetId: userId,
+    });
+  }
+
   /**
    * Sensitive-flow check (withdrawals, seller confirm, /auth/2fa/verify):
    * throws unless 2FA is enabled AND the code is currently valid.

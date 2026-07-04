@@ -77,6 +77,12 @@ describe("admin RBAC matrix (RolesGuard x route metadata)", () => {
     },
     { name: "GET /admin/kyc/queue", cls: AdminController, handler: AdminController.prototype.kycQueue, allowed: ALL7 },
     {
+      name: "GET /admin/kyc/:id/documents",
+      cls: AdminController,
+      handler: AdminController.prototype.kycDocuments,
+      allowed: ["SUPER_ADMIN", "COMPLIANCE_ADMIN"],
+    },
+    {
       name: "GET /admin/disputes",
       cls: AdminController,
       handler: AdminController.prototype.disputeQueue,

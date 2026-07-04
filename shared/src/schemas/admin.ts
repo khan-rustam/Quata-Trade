@@ -147,6 +147,19 @@ export const zAdminKycQueueRow = z.object({
 });
 export const zAdminKycQueueResponse = zPaginated(zAdminKycQueueRow);
 
+// ---- KYC document viewer (presigned, short-TTL, kycReview-gated) ----
+export const zAdminKycDocument = z.object({
+  key: z.string(),
+  url: z.string(),
+  kind: z.enum(["image", "pdf", "other"]),
+});
+export const zAdminKycDocumentsResponse = z.object({
+  submissionId: zUuid,
+  ttlSeconds: z.number().int(),
+  documents: z.array(zAdminKycDocument),
+});
+export type AdminKycDocumentsResponse = z.infer<typeof zAdminKycDocumentsResponse>;
+
 // ---- dispute queue ----
 export const zAdminDisputeRow = z.object({
   id: zUuid,
