@@ -444,4 +444,160 @@ describe("Escrow state machine (Gate 4)", () => {
       .where("key", "=", "kill_switches")
       .execute();
   });
+
+  // ── Branch coverage: guards and terminal edges of the FSM ──
+
+  it("locking a non-existent trade is a 404 (TradeNotFoundError)", async () => {
+    await expect(escrow.cancelTrade(newId(), newId())).rejects.toBeInstanceOf(TradeNotFoundError);
+  });
+
+  it("the transition guard rejects a stale from-status (numUpdatedRows === 0)", async () => {
+    const seller = await fundedUser(5n * USDT);
+    const buyer = await fundedUser(0n);
+    const offer = await createOffer(seller, 5n * USDT);
+    const trade = await openTrade(buyer, offer.id, 5n * USDT); // real status = ESCROW_LOCKED
+
+    await expect(
+      ledger.withMoneyTransaction(async (trx) =>
+        // claim the row is OPENED when it is really ESCROW_LOCKED → WHERE status='OPENED' matches nothing
+        escrow.transition(trx, { id: trade.id, status: "OPENED" }, "CANCELLED", "test"),
+      ),
+    ).rejects.toBeInstanceOf(IllegalTransitionError);
+  });
+
+  it("release with zero fee credits the buyer the full amount and skips the treasury leg", async () => {
+    const seller = await fundedUser(10n * USDT);
+    const buyer = await fundedUser(0n);
+    const offer = await createOffer(seller, 10n * USDT);
+    const trade = await openTrade(buyer, offer.id, 10n * USDT);
+    // A fee-free rail: force fee_amount to 0 before release (CHECK fee_amount < amount holds).
+    await t.db.updateTable("trades").set({ fee_amount: 0n }).where("id", "=", trade.id).execute();
+    await submitPayment(trade.id, buyer);
+
+    const treasuryBefore = await treasuryBalance();
+    const confirmed = await trades.confirmTrade(trade.id, seller, `c0-${trade.id}`);
+    expect(confirmed.status).toBe("COMPLETED");
+    expect(await balanceOf(buyer, "user_available")).toBe(10n * USDT); // full amount, no fee taken
+    expect((await treasuryBalance()) - treasuryBefore).toBe(0n); // no treasury leg posted
+    expect(await balanceOf(seller, "user_escrow")).toBe(0n);
+  });
+
+  it("refund on a trade whose offer was deleted skips restock but still refunds", async () => {
+    const seller = await fundedUser(10n * USDT);
+    const buyer = await fundedUser(0n);
+    const offer = await createOffer(seller, 10n * USDT);
+    const trade = await openTrade(buyer, offer.id, 10n * USDT);
+    await t.db.updateTable("offers").set({ status: "DELETED" }).where("id", "=", offer.id).execute();
+
+    const cancelled = await trades.cancelTrade(trade.id, buyer, `del-${trade.id}`);
+    expect(cancelled.status).toBe("CANCELLED");
+    expect(await balanceOf(seller, "user_available")).toBe(10n * USDT); // seller still refunded
+    const offerAfter = await t.db.selectFrom("offers").selectAll().where("id", "=", offer.id).executeTakeFirstOrThrow();
+    expect(offerAfter.status).toBe("DELETED"); // untouched — restock skipped
+    expect(offerAfter.remaining).toBe(0n);
+  });
+
+  it("refund restocks an exhausted offer and flips it back to ACTIVE", async () => {
+    const seller = await fundedUser(10n * USDT);
+    const buyer = await fundedUser(0n);
+    const offer = await createOffer(seller, 10n * USDT);
+    const trade = await openTrade(buyer, offer.id, 10n * USDT); // consumes the offer → EXHAUSTED
+    const mid = await t.db.selectFrom("offers").selectAll().where("id", "=", offer.id).executeTakeFirstOrThrow();
+    expect(mid.status).toBe("EXHAUSTED");
+
+    await trades.cancelTrade(trade.id, buyer, `rex-${trade.id}`);
+    const offerAfter = await t.db.selectFrom("offers").selectAll().where("id", "=", offer.id).executeTakeFirstOrThrow();
+    expect(offerAfter.remaining).toBe(10n * USDT); // restocked
+    expect(offerAfter.status).toBe("ACTIVE"); // EXHAUSTED → ACTIVE
+  });
+
+  it("refund restocks an offer that still has remaining without changing its status", async () => {
+    const seller = await fundedUser(30n * USDT);
+    const buyer = await fundedUser(0n);
+    const offer = await createOffer(seller, 30n * USDT); // remaining 30, max 30
+    const trade = await openTrade(buyer, offer.id, 10n * USDT); // remaining 20 → still ACTIVE
+    const mid = await t.db.selectFrom("offers").selectAll().where("id", "=", offer.id).executeTakeFirstOrThrow();
+    expect(mid.status).toBe("ACTIVE");
+
+    await trades.cancelTrade(trade.id, buyer, `ra-${trade.id}`);
+    const offerAfter = await t.db.selectFrom("offers").selectAll().where("id", "=", offer.id).executeTakeFirstOrThrow();
+    expect(offerAfter.remaining).toBe(30n * USDT); // restocked
+    expect(offerAfter.status).toBe("ACTIVE"); // unchanged — it was never EXHAUSTED
+  });
+
+  it("cancelling an already-cancelled trade is an idempotent no-op", async () => {
+    const seller = await fundedUser(10n * USDT);
+    const buyer = await fundedUser(0n);
+    const offer = await createOffer(seller, 10n * USDT);
+    const trade = await openTrade(buyer, offer.id, 10n * USDT);
+    await trades.cancelTrade(trade.id, buyer, `c1-${trade.id}`); // → CANCELLED + refund
+    const again = await trades.cancelTrade(trade.id, buyer, `c2-${trade.id}`);
+    expect(again.status).toBe("CANCELLED");
+    expect(await balanceOf(seller, "user_available")).toBe(10n * USDT); // refunded exactly once
+  });
+
+  it("cancelling a resting OPENED trade moves no funds (OPENED → CANCELLED)", async () => {
+    const seller = await fundedUser(10n * USDT);
+    const buyer = await fundedUser(0n);
+    const offer = await createOffer(seller, 10n * USDT);
+    // openTrade auto-locks escrow, so a resting OPENED trade must be crafted directly.
+    const tradeId = newId();
+    await t.db
+      .insertInto("trades")
+      .values({
+        id: tradeId,
+        short_ref: `T-${newId().slice(0, 8)}`,
+        offer_id: offer.id,
+        seller_id: seller,
+        buyer_id: buyer,
+        asset: "USDT_TRC20",
+        amount: 10n * USDT,
+        price_xaf_per_unit: 650n,
+        fiat_amount_xaf: 6_500n,
+        payment_method: "MTN_MOMO",
+        fee_bps: 50,
+        fee_amount: 50_000n,
+        status: "OPENED",
+      })
+      .execute();
+
+    const cancelled = await trades.cancelTrade(tradeId, buyer, `co-${tradeId}`);
+    expect(cancelled.status).toBe("CANCELLED");
+    expect(await balanceOf(seller, "user_available")).toBe(10n * USDT); // nothing was locked
+    expect(await balanceOf(seller, "user_escrow")).toBe(0n);
+  });
+
+  it("expireTrade is a no-op while the payment deadline is still in the future", async () => {
+    const seller = await fundedUser(10n * USDT);
+    const buyer = await fundedUser(0n);
+    const offer = await createOffer(seller, 10n * USDT);
+    const trade = await openTrade(buyer, offer.id, 10n * USDT); // ESCROW_LOCKED, deadline in the future
+    expect(await escrow.expireTrade(trade.id)).toBe(false);
+    expect(await balanceOf(seller, "user_escrow")).toBe(10n * USDT); // funds untouched
+  });
+
+  it("markDisputed rejects a trade that is neither locked nor payment-submitted", async () => {
+    const seller = await fundedUser(10n * USDT);
+    const buyer = await fundedUser(0n);
+    const offer = await createOffer(seller, 10n * USDT);
+    const trade = await openTrade(buyer, offer.id, 10n * USDT);
+    await submitPayment(trade.id, buyer);
+    await trades.confirmTrade(trade.id, seller, `k-${trade.id}`); // → COMPLETED (terminal)
+
+    await expect(disputeTrade(trade.id, buyer)).rejects.toBeInstanceOf(IllegalTransitionError);
+  });
+
+  it("same-outcome re-resolve of a REFUND dispute is idempotent (no double refund)", async () => {
+    const seller = await fundedUser(10n * USDT);
+    const buyer = await fundedUser(0n);
+    const offer = await createOffer(seller, 10n * USDT);
+    const trade = await openTrade(buyer, offer.id, 10n * USDT);
+    await disputeTrade(trade.id, seller);
+
+    await escrow.resolveDispute(trade.id, newId(), "REFUND_TO_SELLER"); // → RESOLVED_REFUND
+    const sellerAfter = await balanceOf(seller, "user_available");
+    const again = await escrow.resolveDispute(trade.id, newId(), "REFUND_TO_SELLER");
+    expect(again.status).toBe("RESOLVED_REFUND");
+    expect(await balanceOf(seller, "user_available")).toBe(sellerAfter); // not refunded twice
+  });
 });

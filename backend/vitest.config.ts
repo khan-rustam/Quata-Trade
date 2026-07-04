@@ -42,15 +42,17 @@ export default defineConfig({
         "src/modules/fees/fees.ts",
         "src/modules/escrow/escrow.service.ts",
       ],
-      // Ratchet at the achieved floor so CI blocks regressions. The Documents/09
-      // launch gate (100% branch on ledger/escrow/fees) still requires fault-
-      // injection tests for the serialization-retry and unique-violation race
-      // recovery paths — tracked in Documents/audits/gate-1.md before mainnet.
+      // Documents/09 launch gate: 100% branch on ledger/escrow/fees — now MET.
+      // Fault-injection tests cover the serialization/deadlock retry loop, the
+      // unique-violation race recovery (fixed to use a SAVEPOINT so a same-key
+      // 23505 no longer poisons the tx), and the FSM guard/terminal edges. The few
+      // provably-unreachable defensive guards carry a `/* v8 ignore */` stating the
+      // invariant that makes them unreachable. Locked at 100 so CI blocks regressions.
       thresholds: {
-        branches: 84,
+        branches: 100,
         functions: 100,
-        lines: 93,
-        statements: 93,
+        lines: 100,
+        statements: 100,
       },
     },
   },

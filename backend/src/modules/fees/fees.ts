@@ -24,7 +24,7 @@ export interface FeeSplit {
 export function split(amount: bigint, bps: number): FeeSplit {
   const fee = computeFee(amount, bps);
   const buyerCredit = amount - fee;
-  /* istanbul ignore if -- mathematically unreachable; kept as a tripwire */
+  /* v8 ignore next 3 -- mathematically unreachable: buyerCredit + fee always === amount; kept as a tripwire */
   if (buyerCredit + fee !== amount) {
     throw new FeeError("fee split invariant violated");
   }

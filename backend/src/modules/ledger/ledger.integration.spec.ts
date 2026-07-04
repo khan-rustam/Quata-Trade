@@ -5,7 +5,13 @@ import { newId } from "../../common/ids";
 import { startTestDb, type TestDb } from "../../../test/helpers/pg";
 import { createUser } from "../../../test/helpers/fixtures";
 import { LedgerService } from "./ledger.service";
-import { InsufficientFundsError, InvalidJournalError, UnbalancedJournalError, UnknownAccountError } from "./ledger.errors";
+import {
+  InsufficientFundsError,
+  InvalidJournalError,
+  SerializationRetryExhaustedError,
+  UnbalancedJournalError,
+  UnknownAccountError,
+} from "./ledger.errors";
 
 /**
  * AUDIT GATE 1 — the heaviest gate (Documents/05-build-phases.md).
@@ -389,5 +395,110 @@ describe("LedgerService (Gate 1)", () => {
       .having((eb) => eb(eb.fn.sum<bigint>("amount"), "<>", 0n))
       .execute();
     expect(rows).toHaveLength(0);
+  });
+
+  // ── Fault injection: the money-transaction retry loop (Gate-1 requirement) ──
+  // Doc 04 mandates deadlock/serialization retry with jitter. These drive that
+  // loop deterministically by throwing fake pg errors from the transaction body,
+  // rather than relying on a flaky live contention window.
+
+  it("withMoneyTransaction retries on a serialization failure (40001) then succeeds", async () => {
+    let calls = 0;
+    const result = await ledger.withMoneyTransaction(async () => {
+      calls += 1;
+      if (calls === 1) throw Object.assign(new Error("could not serialize access"), { code: "40001" });
+      return "committed" as const;
+    });
+    expect(result).toBe("committed");
+    expect(calls).toBe(2); // failed once, retried once, succeeded
+  });
+
+  it("withMoneyTransaction retries on a deadlock (40P01) then succeeds", async () => {
+    let calls = 0;
+    const result = await ledger.withMoneyTransaction(async () => {
+      calls += 1;
+      if (calls === 1) throw Object.assign(new Error("deadlock detected"), { code: "40P01" });
+      return calls;
+    });
+    expect(result).toBe(2);
+  });
+
+  it("withMoneyTransaction gives up after MAX_RETRIES on persistent serialization failure", async () => {
+    let calls = 0;
+    await expect(
+      ledger.withMoneyTransaction(async () => {
+        calls += 1;
+        throw Object.assign(new Error("serialization failure"), { code: "40001" });
+      }),
+    ).rejects.toBeInstanceOf(SerializationRetryExhaustedError);
+    expect(calls).toBe(3); // MAX_RETRIES attempts, all failed
+  });
+
+  it("withMoneyTransaction only retries on 40001/40P01 — any other thrown value rethrows on the first attempt", async () => {
+    const nonRetryable: unknown[] = [
+      "a-string-error", // not an object
+      null, // typeof object but === null
+      new Error("plain error, no pg code"), // object, no code property
+      Object.assign(new Error("numeric code"), { code: 500 }), // code present but not a string
+      Object.assign(new Error("unrelated pg code"), { code: "23514" }), // a non-retryable pg code
+    ];
+    for (const errValue of nonRetryable) {
+      let calls = 0;
+      let thrown: unknown = Symbol("unthrown");
+      try {
+        await ledger.withMoneyTransaction(async () => {
+          calls += 1;
+          throw errValue;
+        });
+      } catch (e) {
+        thrown = e;
+      }
+      expect(thrown).toBe(errValue); // rethrown unchanged
+      expect(calls).toBe(1); // never retried
+    }
+  });
+
+  it("postInTrx recovers from a concurrent same-key insert (unique-violation race)", async () => {
+    const userId = await createUser(t.db);
+    const available = await ledger.getOrCreateAccount(userId, "user_available", "USDT_TRC20");
+    const key = `race-${newId()}`;
+
+    // Fire several deposits sharing ONE idempotency key at once. All pass the step-1
+    // existence check before any commits, then serialise on the balance lock: exactly
+    // one wins the journal_entries UNIQUE insert; the losers catch 23505 and recover
+    // the winner's journal (replayed=true). Money moves exactly once.
+    const N = 4;
+    const results = await Promise.all(Array.from({ length: N }, () => deposit(available, 1_000_000n, key)));
+
+    const journalIds = new Set(results.map((r) => r.journalId));
+    expect(journalIds.size).toBe(1); // all resolved to the same journal
+    expect(results.filter((r) => !r.replayed)).toHaveLength(1); // exactly one applied
+    expect(results.filter((r) => r.replayed)).toHaveLength(N - 1); // the rest recovered via the race branch
+    expect(await ledger.balanceOf(available)).toBe(1_000_000n); // applied once, never N times
+  });
+
+  it("postInTrx rethrows a non-unique DB error from the journal insert (not a replay)", async () => {
+    const userId = await createUser(t.db);
+    const available = await ledger.getOrCreateAccount(userId, "user_available", "USDT_TRC20");
+    // reference_id is a uuid column: a malformed value trips 22P02 at the journal
+    // insert — a non-23505 error that must propagate, never be recovered as a replay.
+    await expect(
+      ledger.postJournal({
+        reason: "adjustment",
+        referenceType: "test",
+        referenceId: "not-a-valid-uuid",
+        idempotencyKey: `bad-ref-${newId()}`,
+        createdBy: "system",
+        asset: "USDT_TRC20",
+        legs: [
+          { accountId: available, amount: 1n },
+          { accountId: externalId, amount: -1n },
+        ],
+      }),
+    ).rejects.toThrow(/uuid/i); // the raw 22P02 propagates — it is not swallowed as a replay
+  });
+
+  it("balanceOf returns 0 for an account with no balance row", async () => {
+    expect(await ledger.balanceOf(newId())).toBe(0n);
   });
 });

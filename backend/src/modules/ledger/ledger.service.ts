@@ -148,6 +148,7 @@ export class LedgerService {
       .execute();
     if (balances.length !== accountIds.length) {
       const found = new Set(balances.map((b) => b.account_id));
+      /* v8 ignore next -- a length mismatch guarantees a missing id; the "unknown" fallback is unreachable */
       const missing = accountIds.find((id) => !found.has(id)) ?? "unknown";
       throw new UnknownAccountError(missing);
     }
@@ -160,6 +161,7 @@ export class LedgerService {
       .execute();
     for (const id of accountIds) {
       const account = accounts.find((a) => a.id === id);
+      /* v8 ignore next 3 -- defensive: a locked balance implies its immutable accounts row exists; v1 is single-asset */
       if (!account || account.asset !== input.asset) {
         throw new UnknownAccountError(id);
       }
@@ -170,6 +172,7 @@ export class LedgerService {
     const updates: Array<{ accountId: string; newBalance: bigint }> = [];
     for (const leg of input.legs) {
       const row = byId.get(leg.accountId);
+      /* v8 ignore next -- unreachable: byId is built from the balance rows just locked for every accountId */
       if (!row) throw new UnknownAccountError(leg.accountId);
       const newBalance = row.balance + leg.amount;
       if (row.kind !== "external" && newBalance < 0n) {
@@ -178,8 +181,14 @@ export class LedgerService {
       updates.push({ accountId: leg.accountId, newBalance });
     }
 
-    // 5. Insert journal + legs; concurrent same-key insert resolves via UNIQUE.
+    // 5. Insert the journal inside a SAVEPOINT. A concurrent same-key insert raises
+    //    23505 which POISONS the whole transaction ("current transaction is aborted"),
+    //    so the recovery SELECT cannot run on the same connection. ROLLBACK TO SAVEPOINT
+    //    clears just the failed insert and un-aborts the tx, letting the loser recover
+    //    the winner's journal id. (ON CONFLICT is unavailable — journal_entries carries
+    //    append-only RULEs, and Postgres forbids ON CONFLICT on ruled tables.)
     const journalId = newId();
+    await sql`SAVEPOINT ledger_journal`.execute(trx);
     try {
       await trx
         .insertInto("journal_entries")
@@ -192,16 +201,19 @@ export class LedgerService {
           created_by: input.createdBy,
         })
         .execute();
+      await sql`RELEASE SAVEPOINT ledger_journal`.execute(trx);
     } catch (err) {
-      if (pgCode(err) === UNIQUE_VIOLATION) {
-        const raced = await trx
-          .selectFrom("journal_entries")
-          .select(["id"])
-          .where("idempotency_key", "=", input.idempotencyKey)
-          .executeTakeFirst();
-        if (raced) return { journalId: raced.id, replayed: true };
-      }
-      throw err;
+      // Only a same-key 23505 is recoverable; any other DB error propagates (tx already poisoned).
+      if (pgCode(err) !== UNIQUE_VIOLATION) throw err;
+      await sql`ROLLBACK TO SAVEPOINT ledger_journal`.execute(trx);
+      const winner = await trx
+        .selectFrom("journal_entries")
+        .select(["id"])
+        .where("idempotency_key", "=", input.idempotencyKey)
+        .executeTakeFirst();
+      /* v8 ignore next -- unreachable: journal_entries' only realistic UNIQUE is idempotency_key, so the row exists */
+      if (!winner) throw err;
+      return { journalId: winner.id, replayed: true };
     }
 
     await trx
@@ -258,6 +270,7 @@ export class LedgerService {
           ownerUserId === null ? eb("owner_user_id", "is", null) : eb("owner_user_id", "=", ownerUserId),
         )
         .executeTakeFirst();
+      /* v8 ignore next -- unreachable: an insert conflict means the row exists for this same SELECT */
       if (!found) throw new UnknownAccountError(`${ownerUserId ?? "platform"}/${kind}/${asset}`);
       accountId = found.id;
     }
@@ -289,6 +302,7 @@ export class LedgerService {
       .select(sql<bigint>`COALESCE(SUM(amount), 0)::int8`.as("total"))
       .where("account_id", "=", accountId)
       .executeTakeFirst();
+    /* v8 ignore next -- a GROUP-BY-less SUM aggregate always returns exactly one row with a non-null COALESCE'd total */
     return row?.total ?? 0n;
   }
 
