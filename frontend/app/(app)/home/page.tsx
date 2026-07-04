@@ -13,6 +13,7 @@ import { Alert } from "@/components/ui/alert";
 import { Keyhole } from "@/components/brand/keyhole";
 import { useMe } from "@/hooks/use-auth";
 import { useBalances } from "@/hooks/use-wallet";
+import { INDICATIVE_XAF_PER_USDT } from "@/lib/market";
 
 const KYC_TONE = {
   APPROVED: "success",
@@ -102,7 +103,7 @@ export default function HomePage(): React.JSX.Element {
         </Card>
         <Card>
           <p className="text-sm text-text-2">USDT / XAF</p>
-          <p className="mt-1 font-money text-xl font-semibold tabular-nums">≈ 650</p>
+          <p className="mt-1 font-money text-xl font-semibold tabular-nums">≈ {INDICATIVE_XAF_PER_USDT}</p>
           <p className="mt-1 text-xs text-text-3">{tx("indicativeRate")}</p>
         </Card>
       </div>

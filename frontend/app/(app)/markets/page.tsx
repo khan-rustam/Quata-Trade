@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { INDICATIVE_XAF_PER_USDT } from "@/lib/market";
 
 /**
  * Markets — single asset in Phase 1 (USDT/XAF). Layout is built to scale to
@@ -37,7 +38,7 @@ export default function MarketsPage(): React.JSX.Element {
 
         <div className="mt-5 flex items-end justify-between">
           <div>
-            <p className="font-money text-3xl font-bold tabular-nums">650 XAF</p>
+            <p className="font-money text-3xl font-bold tabular-nums">{INDICATIVE_XAF_PER_USDT} XAF</p>
             <p className="text-sm text-text-2">{tx("perUsdt")}</p>
           </div>
           <div className="text-right text-sm">

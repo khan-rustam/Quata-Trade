@@ -8,6 +8,12 @@
 > funds is blocked by a handful of hard gates that are **mostly legal/human, not code**. It is an
 > excellent **testnet demo today**. See [`claude-handoff.md`](./claude-handoff.md) to continue the code work.
 
+> **Update 2026-07-04:** the four code-fixable gaps in §4 are now **DONE** — withdrawal-whitelist UI,
+> admin KYC document viewer, enforceable admin step-up 2FA (`ADMIN_2FA_REQUIRED`), and the user 2FA-disable
+> flow (verified: 150/150 backend unit tests + frontend build). Remaining *code* work is P4 (French legal
+> **seam** — final text is a lawyer dependency) and P5 (money-path 100% coverage — needs Docker). The
+> **hard launch blockers (legal, signer, pen-test, ops) in §3 are unchanged.** Details in `claude-handoff.md`.
+
 ---
 
 ## 1. Verdict & scorecard

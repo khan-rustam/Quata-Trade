@@ -1,13 +1,46 @@
 # QuataTrade — Claude Handoff (continue the code from home)
 
-**Date:** 2026-07-03 · **Branch:** `main` · **Commit:** `928cccf` (`origin/main`)
-**Read order for the next session:** this file → `../../HANDOFF.md` (running log) → `../../CLAUDE.md` →
-`Documents/01-overview.md`, `02-tech-stack.md`. The `Documents/` folder is the single source of truth.
-The launch verdict + gaps live in [`README.md`](./README.md) (this folder).
+**Updated:** 2026-07-04 · **Branch:** `main` · **Latest on `origin/main`**
+**Read order for the next session:** this file → `../../CLAUDE.md` → `Documents/01-overview.md`,
+`02-tech-stack.md`. The `Documents/` folder is the single source of truth. The launch verdict + gaps live
+in [`README.md`](./README.md) (this folder).
 
 > **Goal of this doc:** get a fresh machine (your home laptop) running the stack, then take the **code**
 > as close to 100% as code can go. The remaining *non-code* launch blockers (legal, signer, pen-test,
-> monitoring) are listed in `README.md §4` and are **not** things a coding session should attempt.
+> monitoring) are listed in `README.md §3` and are **not** things a coding session should attempt.
+
+---
+
+## ✅ Progress — 2026-07-04 (code-readiness pass)
+
+Shipped + verified this session (commit `ad26f9f` + follow-up on `origin/main`; shared build + backend
+typecheck + **150/150 backend unit tests** + frontend lint + build all green):
+
+- **P1 — Withdrawals now work in the UI.** `/wallet/withdraw` picks from saved, whitelisted, past-cooldown
+  addresses (list + inline add/remove) instead of the free-form address the backend always rejected.
+- **P2 — Admin KYC document viewer.** `GET /admin/kyc/:id/documents` → short-TTL (120s) presigned URLs,
+  `RBAC.kycReview`-gated, audit-logged (`kyc.documents_viewed`); the review dialog renders images inline +
+  PDF/file links.
+- **P3 — Admin step-up 2FA is now enforceable.** New `ADMIN_2FA_REQUIRED` flag + prod boot hard-stop; when
+  on, `verifyTotp` fails closed for non-enrolled admins on every money/escrow action. Test phase (flag off)
+  unchanged. **Roll-out:** enroll all admins' 2FA in staging, then set `ADMIN_2FA_REQUIRED=true` for prod.
+- **P6a — User 2FA disable flow.** `POST /auth/2fa/disable` (verify a current code → clear secret + 24h
+  withdrawal hold + audit) + "Disable 2FA" UI on the security page.
+- **P6b — De-magicked the indicative XAF rate** into `frontend/lib/market.ts` (display-only; real pricing
+  uses the seller's `priceXafPerUnit`).
+- **Ops:** Hostinger SMTP host/port template in `.env.example` (fill `SMTP_USER`/`SMTP_PASS` on the box —
+  `smtp.hostinger.com:465`, `SMTP_SECURE=true`); removed the stale root `HANDOFF.md` (this folder is the source).
+
+### Remaining code items
+- **P4 — French legal pages:** the locale *seam* is not built, and the final French text is a **lawyer
+  dependency** (do not invent legal French).
+- **P5 — 100% money-path branch coverage** (`ledger/escrow/fees`, ~84%): needs **Docker / Testcontainers**
+  to run the gate suite — do it on a machine with Docker, tests-first.
+- Minor: KYC OCR prefill (stubbed), a real rate feed, a logged-in EN/FR visual pass.
+
+**Non-code launch blockers are unchanged** (see [`README.md`](./README.md)): legal entity + crypto licence
++ lawyer-reviewed pages, the human-written signer + key ceremony, external pen-test, monitoring/backups/
+on-call. Those gate a real-money launch and are not coding tasks.
 
 ---
 
