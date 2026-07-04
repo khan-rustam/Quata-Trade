@@ -1,12 +1,23 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { Kysely } from "kysely";
-import type { AdminCountry, Country } from "@quatatrade/shared";
+import type { AdminCountry, Country, PaymentMethod } from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
 import type { Database } from "../../db/types";
+import { parsePgEnumArray } from "../../common/pg";
 
 const CACHE_TTL_MS = 10_000;
 
-const COUNTRY_COLS = ["code", "name_en", "name_fr", "dial_code", "currency_code", "enabled", "sort_order"] as const;
+const COUNTRY_COLS = [
+  "code",
+  "name_en",
+  "name_fr",
+  "dial_code",
+  "currency_code",
+  "fiat_decimals",
+  "payment_methods",
+  "enabled",
+  "sort_order",
+] as const;
 
 type CountryRow = {
   code: string;
@@ -14,6 +25,9 @@ type CountryRow = {
   name_fr: string;
   dial_code: string;
   currency_code: string;
+  fiat_decimals: number;
+  // pg returns enum arrays as a raw literal string — parsePgEnumArray normalizes it.
+  payment_methods: PaymentMethod[];
   enabled: boolean;
   sort_order: number;
 };
@@ -23,6 +37,9 @@ const toWire = (r: CountryRow): Country => ({
   nameEn: r.name_en,
   nameFr: r.name_fr,
   dialCode: r.dial_code,
+  currencyCode: r.currency_code,
+  fiatDecimals: r.fiat_decimals,
+  paymentMethods: parsePgEnumArray<PaymentMethod>(r.payment_methods),
 });
 
 const toAdminWire = (r: CountryRow): AdminCountry => ({
@@ -31,6 +48,8 @@ const toAdminWire = (r: CountryRow): AdminCountry => ({
   nameFr: r.name_fr,
   dialCode: r.dial_code,
   currencyCode: r.currency_code,
+  fiatDecimals: r.fiat_decimals,
+  paymentMethods: parsePgEnumArray<PaymentMethod>(r.payment_methods),
   enabled: r.enabled,
   sortOrder: r.sort_order,
 });

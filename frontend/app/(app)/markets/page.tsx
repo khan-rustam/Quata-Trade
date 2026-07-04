@@ -7,7 +7,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { INDICATIVE_XAF_PER_USDT } from "@/lib/market";
+import { useUserMarket } from "@/hooks/use-user-market";
+import { indicativeRate } from "@/lib/market";
 
 /**
  * Markets — single asset in Phase 1 (USDT/XAF). Layout is built to scale to
@@ -16,6 +17,11 @@ import { INDICATIVE_XAF_PER_USDT } from "@/lib/market";
  */
 export default function MarketsPage(): React.JSX.Element {
   const tx = useTranslations("markets");
+  const market = useUserMarket();
+  const rate = indicativeRate(market.currencyCode);
+  const high = rate !== null ? Math.round(rate * 1.006) : null;
+  const low = rate !== null ? Math.round(rate * 0.994) : null;
+  const dash = "—";
   return (
     <div className="space-y-5">
       <PageHeader title={tx("title")} subtitle={tx("subtitle")} />
@@ -38,7 +44,9 @@ export default function MarketsPage(): React.JSX.Element {
 
         <div className="mt-5 flex items-end justify-between">
           <div>
-            <p className="font-money text-3xl font-bold tabular-nums">{INDICATIVE_XAF_PER_USDT} XAF</p>
+            <p className="font-money text-3xl font-bold tabular-nums">
+              {rate !== null ? `${rate.toLocaleString()} ${market.currencyCode}` : dash}
+            </p>
             <p className="text-sm text-text-2">{tx("perUsdt")}</p>
           </div>
           <div className="text-right text-sm">
@@ -50,8 +58,8 @@ export default function MarketsPage(): React.JSX.Element {
         </div>
 
         <div className="mt-5 grid grid-cols-3 gap-2 text-center text-sm">
-          <Stat label={tx("high24h")} value="654" up />
-          <Stat label={tx("low24h")} value="646" />
+          <Stat label={tx("high24h")} value={high !== null ? high.toLocaleString() : dash} up />
+          <Stat label={tx("low24h")} value={low !== null ? low.toLocaleString() : dash} />
           <Stat label={tx("spread")} value="~1.2%" />
         </div>
 

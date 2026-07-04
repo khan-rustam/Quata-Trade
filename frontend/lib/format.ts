@@ -13,10 +13,13 @@ export function formatXaf(units: string | bigint): string {
   return sharedFormatXAF(units);
 }
 
-/** Compact price like 650 XAF/USDT for offer cards. */
-export function formatRate(priceXafPerUnit: string | bigint): string {
+/**
+ * Compact offer price like "650 XAF" / "1,600,000 NGN" per USDT. Prices are whole
+ * local-currency units; `currencyCode` defaults to XAF for public/CM surfaces.
+ */
+export function formatRate(priceXafPerUnit: string | bigint, currencyCode = "XAF", locale = "en"): string {
   const n = typeof priceXafPerUnit === "string" ? priceXafPerUnit : priceXafPerUnit.toString();
-  return `${Number(n).toLocaleString("fr-FR")} XAF`;
+  return `${Number(n).toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${currencyCode}`;
 }
 
 /** Truncate a TRON address / hash for display: TQ12…9fZ. */

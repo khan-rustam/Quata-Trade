@@ -7,7 +7,6 @@ import { Pause, Pencil, Play, Plus, Trash2 } from "lucide-react";
 import {
   fromDisplay,
   toDisplay,
-  PAYMENT_METHODS,
   type Offer,
   type OfferStatus,
   type PaymentMethod,
@@ -26,6 +25,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Alert } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/toast";
 import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
+import { useUserMarket } from "@/hooks/use-user-market";
 import {
   useActivateOffer,
   useDeleteOffer,
@@ -34,7 +34,8 @@ import {
   useUpdateOffer,
 } from "@/hooks/use-trade";
 import { apiErrorMessage } from "@/lib/api/errors";
-import { formatRate, formatUsdt } from "@/lib/format";
+import { formatUsdt } from "@/lib/format";
+import { Xaf } from "@/components/ui/amount";
 import { cn } from "@/lib/utils";
 
 const STATUS_TONE: Record<OfferStatus, "success" | "warning" | "neutral" | "danger"> = {
@@ -123,9 +124,7 @@ export default function MyOffersPage(): React.JSX.Element {
                   <Badge tone={STATUS_TONE[offer.status]}>{tx(`status_${offer.status}`)}</Badge>
                 </div>
                 <div className="text-right">
-                  <span className="font-money text-lg font-semibold tabular-nums">
-                    {formatRate(offer.priceXafPerUnit)}
-                  </span>{" "}
+                  <Xaf value={offer.priceXafPerUnit} className="text-lg font-semibold" />{" "}
                   <span className="text-xs text-text-3">{tx("perUsdt")}</span>
                 </div>
               </div>
@@ -211,6 +210,7 @@ export default function MyOffersPage(): React.JSX.Element {
 function EditOfferDialog({ offer, onClose }: { offer: Offer; onClose: () => void }): React.JSX.Element {
   const tx = useTranslations("myOffers");
   const toast = useToast();
+  const market = useUserMarket();
   const update = useUpdateOffer();
   const [price, setPrice] = useState(offer.priceXafPerUnit);
   const [minTrade, setMinTrade] = useState(usdtInput(offer.minTrade));
@@ -257,7 +257,7 @@ function EditOfferDialog({ offer, onClose }: { offer: Offer; onClose: () => void
               {...p}
               inputMode="numeric"
               mono
-              suffix="XAF"
+              suffix={market.currencyCode}
               value={price}
               onChange={(e) => setPrice(e.target.value.replace(/[^\d]/g, ""))}
             />
@@ -292,7 +292,7 @@ function EditOfferDialog({ offer, onClose }: { offer: Offer; onClose: () => void
         <div>
           <p className="mb-1.5 text-sm font-medium">{tx("paymentMethods")}</p>
           <div className="flex flex-wrap gap-2">
-            {PAYMENT_METHODS.map((m) => {
+            {market.paymentMethods.map((m) => {
               const active = methods.includes(m);
               return (
                 <button

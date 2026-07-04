@@ -16,8 +16,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
+import { Xaf } from "@/components/ui/amount";
 import { useOffers } from "@/hooks/use-trade";
-import { formatRate, formatUsdt } from "@/lib/format";
+import { formatUsdt } from "@/lib/format";
 
 function TradeBrowser(): React.JSX.Element {
   const tx = useTranslations("tradeBrowse");
@@ -121,7 +122,9 @@ function TradeBrowser(): React.JSX.Element {
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="font-money text-lg font-semibold tabular-nums">{formatRate(offer.priceXafPerUnit)}</p>
+                    <p className="text-lg font-semibold">
+                      <Xaf value={offer.priceXafPerUnit} />
+                    </p>
                     <p className="text-xs text-text-3">{tx("perUsdt")}</p>
                     <Badge tone="neutral" className="mt-2">
                       {formatUsdt(offer.minTrade, "USDT_TRC20", 0)}–{formatUsdt(offer.maxTrade, "USDT_TRC20", 0)} USDT

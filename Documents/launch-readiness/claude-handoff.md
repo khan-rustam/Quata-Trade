@@ -40,6 +40,26 @@ typecheck + **150/150 backend unit tests** + frontend lint + build all green):
 - **Ops:** Hostinger SMTP host/port template in `.env.example` (fill `SMTP_USER`/`SMTP_PASS` on the box —
   `smtp.hostinger.com:465`, `SMTP_SECURE=true`); removed the stale root `HANDOFF.md` (this folder is the source).
 
+## ✅ Progress — 2026-07-04 (multi-country rollout)
+
+Shipped + verified (commits `c9e50c5` + follow-up; shared build + BE typecheck + **261/261 backend tests**,
+money-path branch coverage still **100%**, FE typecheck + lint + build all green):
+
+- **Country-segmented markets + phased rollout (D26).** New `countries` reference table (migration 0015,
+  26 African markets seeded, **only Cameroon enabled**), `users.country` FK-bound, `country` denormalized
+  onto `offers`/`trades`. Sign-up is gated to ENABLED markets + a phone dial-code check; the offer browse +
+  detail and **`openTrade` (money-path)** are scoped to the caller's market — a cross-market or disabled-market
+  trade is rejected (409) with **no money moved / no trade row / offer intact** (tests-first). `openTrade`
+  re-checks `enabled`, so disabling a market freezes new trades. The migration normalizes any stray historical
+  country code to `CM` before the FK so it deploys safe on a populated DB.
+- **Enable-a-country-any-time = admin-editable (migration 0016).** Broadened the `payment_method` domain with
+  8 pan-African rails + default fees; each market's **available rails are set from the admin console** (the
+  Markets page is a configure dialog: enabled + rails multi-select + reason + TOTP + audit; an enabled market
+  must have ≥1 rail). Fiat display is **currency-aware** (`useUserMarket` → the user's `currencyCode`), so a
+  Nigerian sees NGN, a Cameroonian XAF. Currency + rail generalisation is now **complete**: enabling a second
+  market is a data action, not a code change. Rail labels/colours + which rails belong to each market are a
+  **business input** (the client sets them per market).
+
 ### Remaining code items
 - **P4 — French legal pages:** the locale *seam* is not built, and the final French text is a **lawyer
   dependency** (do not invent legal French). **This is the only substantial code item left.**

@@ -19,10 +19,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { useRegister } from "@/hooks/use-auth";
 import { useCountries } from "@/hooks/use-countries";
+import { CM_MARKET } from "@/hooks/use-user-market";
 import { apiErrorMessage } from "@/lib/api/errors";
 
 /** Fallback so the picker is never empty before /countries resolves (CM is always live). */
-const FALLBACK_COUNTRIES = [{ code: "CM", nameEn: "Cameroon", nameFr: "Cameroun", dialCode: "+237" }];
+const FALLBACK_COUNTRIES = [CM_MARKET];
 
 type FormValues = RegisterRequest & { acceptTerms: true };
 

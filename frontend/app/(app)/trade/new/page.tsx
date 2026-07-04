@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { fromDisplay, PAYMENT_METHODS, type CreateOfferRequest, type OfferSide, type PaymentMethod } from "@quatatrade/shared";
+import { fromDisplay, type CreateOfferRequest, type OfferSide, type PaymentMethod } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
+import { useUserMarket } from "@/hooks/use-user-market";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input, Textarea } from "@/components/ui/input";
@@ -22,12 +23,13 @@ export default function NewOfferPage(): React.JSX.Element {
   const router = useRouter();
   const toast = useToast();
   const tx = useTranslations("tradeNew");
+  const market = useUserMarket();
   const [side, setSide] = useState<OfferSide>("SELL");
   const [price, setPrice] = useState("");
   const [minTrade, setMinTrade] = useState("");
   const [maxTrade, setMaxTrade] = useState("");
   const [total, setTotal] = useState("");
-  const [methods, setMethods] = useState<PaymentMethod[]>(["MTN_MOMO"]);
+  const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [terms, setTerms] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -80,7 +82,7 @@ export default function NewOfferPage(): React.JSX.Element {
 
         <Field label={tx("priceLabel")} required>
           {(p) => (
-            <Input inputMode="numeric" mono suffix="XAF" placeholder="650" value={price} onChange={(e) => setPrice(e.target.value.replace(/[^\d]/g, ""))} {...p} />
+            <Input inputMode="numeric" mono suffix={market.currencyCode} value={price} onChange={(e) => setPrice(e.target.value.replace(/[^\d]/g, ""))} {...p} />
           )}
         </Field>
 
@@ -106,7 +108,7 @@ export default function NewOfferPage(): React.JSX.Element {
         <div>
           <p className="mb-1.5 text-sm font-medium">{tx("paymentMethods")}</p>
           <div className="flex flex-wrap gap-2">
-            {PAYMENT_METHODS.map((m) => {
+            {market.paymentMethods.map((m) => {
               const active = methods.includes(m);
               return (
                 <button

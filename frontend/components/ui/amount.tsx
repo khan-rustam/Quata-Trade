@@ -1,4 +1,9 @@
-import { formatUsdt, formatXaf } from "@/lib/format";
+"use client";
+
+import { formatFiat } from "@quatatrade/shared";
+import { useLocale } from "next-intl";
+import { formatUsdt } from "@/lib/format";
+import { useUserMarket } from "@/hooks/use-user-market";
 import { cn } from "@/lib/utils";
 
 /**
@@ -25,6 +30,17 @@ export function Usdt({
   );
 }
 
+/**
+ * Local fiat amount, rendered in the SIGNED-IN user's market currency (XAF, NGN, …).
+ * Amounts are stored as whole local-currency units, so this only labels + groups them.
+ * Falls back to XAF on public/pre-auth surfaces.
+ */
 export function Xaf({ value, className }: { value: string | bigint; className?: string }): React.JSX.Element {
-  return <span className={cn("font-money tabular-nums text-text-1", className)}>{formatXaf(value)}</span>;
+  const { currencyCode } = useUserMarket();
+  const locale = useLocale();
+  return (
+    <span className={cn("font-money tabular-nums text-text-1", className)}>
+      {formatFiat(value, currencyCode, locale)}
+    </span>
+  );
 }

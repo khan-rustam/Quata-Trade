@@ -1,10 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { Kysely } from "kysely";
 import { z } from "zod";
+import { FEE_BPS, type PaymentMethod } from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
 import type { Database } from "../../db/types";
 
-const zFeeBps = z.object({ QUATAPAY: z.number().int(), MTN_MOMO: z.number().int(), ORANGE_MONEY: z.number().int() });
+// Fee (bps) per rail — a record so new rails (migration 0016) don't break the parse.
+const zFeeBps = z.record(z.string(), z.number().int().min(0).max(10_000));
 const zKillSwitches = z.object({ withdrawals_paused: z.boolean(), trades_paused: z.boolean() });
 const zWithdrawalCaps = z.object({
   per_tx_max: z.string(),
@@ -43,8 +45,9 @@ export class SettingsService {
     this.cache.clear();
   }
 
-  async feeBps(method: "QUATAPAY" | "MTN_MOMO" | "ORANGE_MONEY"): Promise<number> {
-    return zFeeBps.parse(await this.raw("fee_bps"))[method];
+  async feeBps(method: PaymentMethod): Promise<number> {
+    // Fall back to the compiled default if a rail somehow isn't in the settings row.
+    return zFeeBps.parse(await this.raw("fee_bps"))[method] ?? FEE_BPS[method];
   }
 
   async tradePaymentWindowMinutes(): Promise<number> {

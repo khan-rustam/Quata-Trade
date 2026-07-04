@@ -19,14 +19,23 @@
 > dependency). The **hard launch blockers (legal, signer, pen-test, ops) in §3 are unchanged.** Details in
 > `claude-handoff.md`.
 
+> **Update 2026-07-04 (multi-country):** the platform is no longer Cameroon-hardcoded. **Country-segmented
+> markets + a phased, one-country-at-a-time rollout** shipped — a user signs up with a country dial code and
+> only ever sees/trades their own market; the backend ships all markets but **only Cameroon is enabled**, and
+> an admin switches others on from the console (enabled state + payment rails, TOTP-gated + audited). Fiat is
+> **currency-aware** (XAF/NGN/…). `openTrade` (money-path) rejects cross-market/disabled trades before any
+> escrow movement, tests-first. **261/261 backend tests green, money-path coverage still 100%,** FE builds
+> clean. Net effect on this report: **Code/features readiness rises** (multi-country is a real product
+> capability, enable-any-time with zero code); **all §3 hard blockers remain unchanged.**
+
 ---
 
 ## 1. Verdict & scorecard
 
 | Dimension | Built | Real-money ready | The gap |
 |---|---|---|---|
-| **Code / features** | ~88% | ~72% | Withdrawals can't complete in the UI; hard dependency on the external signer |
-| **Security / money-path** | ~90% | ~60% | 5 of 7 audit gates unsigned (incl. crypto-critical Gate 3); admin 2FA not enforced; no external pen-test |
+| **Code / features** | ~93% | ~72% | Withdrawal UI fixed (P1) + multi-country shipped; still a hard dependency on the external signer for payouts; only P4 (French legal seam) left |
+| **Security / money-path** | ~92% | ~62% | Money-path branch coverage now **100%** + a real ledger bug fixed (P5); admin step-up 2FA now enforceable (P3); still 5 of 7 audit gates unsigned (incl. crypto-critical Gate 3) + no external pen-test |
 | **Legal / compliance** | ~80% pages exist | **~15–20%** | No legal entity, no crypto licence, no lawyer review, no French legal text |
 | **Ops / launch** | runbooks written | ~40% | No live monitoring/alerting; backups local-only & never restore-tested; on-call blank; manual payment rails |
 

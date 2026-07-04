@@ -54,7 +54,22 @@ export type OfferStatus = (typeof OFFER_STATUSES)[number];
 export const OFFER_SIDES = ["SELL", "BUY"] as const;
 export type OfferSide = (typeof OFFER_SIDES)[number];
 
-export const PAYMENT_METHODS = ["QUATAPAY", "MTN_MOMO", "ORANGE_MONEY"] as const;
+// The value DOMAIN of payment rails (mirrors the payment_method PG enum, migrations
+// 0001 + 0016). Which rails a given country actually offers is data — countries.payment_methods,
+// set per market by an admin — NOT this list. Grow this only alongside an ALTER TYPE migration.
+export const PAYMENT_METHODS = [
+  "QUATAPAY",
+  "MTN_MOMO",
+  "ORANGE_MONEY",
+  "BANK_TRANSFER",
+  "MPESA",
+  "AIRTEL_MONEY",
+  "MOOV_MONEY",
+  "WAVE",
+  "VODAFONE_CASH",
+  "OPAY",
+  "PALMPAY",
+] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 /**
@@ -119,11 +134,23 @@ export type AdminRole = (typeof ADMIN_ROLES)[number];
 export const USER_STATUSES = ["active", "frozen", "suspended", "closed"] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
 
-/** Trading fee in basis points per payment method (0.3% / 0.5% / 0.5%). */
+/**
+ * Default trading fee in basis points per rail (QuataPay 0.3%, everything else 0.5%).
+ * These are DEFAULTS/fallbacks — the live values come from the `fee_bps` settings row
+ * (seed 0006 + 0016), editable by an admin. Every rail in PAYMENT_METHODS must appear here.
+ */
 export const FEE_BPS: Record<PaymentMethod, number> = {
   QUATAPAY: 30,
   MTN_MOMO: 50,
   ORANGE_MONEY: 50,
+  BANK_TRANSFER: 50,
+  MPESA: 50,
+  AIRTEL_MONEY: 50,
+  MOOV_MONEY: 50,
+  WAVE: 50,
+  VODAFONE_CASH: 50,
+  OPAY: 50,
+  PALMPAY: 50,
 };
 
 /** Default payment window for a trade before auto-expiry. */

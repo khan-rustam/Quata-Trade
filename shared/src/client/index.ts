@@ -45,7 +45,7 @@ import {
 import {
   zCountriesResponse,
   zAdminCountriesResponse,
-  type SetCountryEnabledRequest,
+  type UpdateCountryRequest,
 } from "../schemas/countries.js";
 import {
   zFeePreviewResponse,
@@ -349,7 +349,7 @@ export class QuataApiClient {
   adminSetKillSwitch = (body: KillSwitchRequest) =>
     this.request("POST", "/api/v1/admin/kill-switch", zKillSwitchState, body);
   adminCountries = () => this.request("GET", "/api/v1/admin/countries", zAdminCountriesResponse);
-  adminSetCountryEnabled = (code: string, body: SetCountryEnabledRequest) =>
+  adminUpdateCountry = (code: string, body: UpdateCountryRequest) =>
     this.request("POST", `/api/v1/admin/countries/${code}`, zAdminCountriesResponse, body);
   adminUpdateSetting = (body: UpdateSettingRequest): Promise<unknown> =>
     this.request("PATCH", "/api/v1/admin/settings", zAnyRecord, body);

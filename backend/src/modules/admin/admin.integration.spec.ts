@@ -174,7 +174,7 @@ describe("admin RBAC matrix (RolesGuard x route metadata)", () => {
     {
       name: "POST /admin/countries/:code",
       cls: AdminController,
-      handler: AdminController.prototype.setCountryEnabled,
+      handler: AdminController.prototype.updateCountry,
       allowed: ["SUPER_ADMIN", "FINANCE_ADMIN"],
     },
     {
@@ -463,20 +463,24 @@ describe("admin flows (Testcontainers PG16)", () => {
 
   // ── country rollout toggle ────────────────────────────────────────────────
 
-  it("enables/disables a market with TOTP + audit; wrong TOTP and unknown code change nothing", async () => {
+  it("configures a market (enabled + rails) with TOTP + audit; wrong TOTP and unknown code change nothing", async () => {
     const superAdmin = await makeAdmin("SUPER_ADMIN");
 
-    // NG ships disabled — enable it (opens sign-up + trading for that market)
-    const afterEnable = await admin.setCountryEnabled(superAdmin.id, "NG", {
+    // NG ships disabled with no rails — enable it AND set its rails in one action
+    const afterEnable = await admin.updateCountry(superAdmin.id, "NG", {
       enabled: true,
+      paymentMethods: ["BANK_TRANSFER", "OPAY"],
       totpCode: code(superAdmin),
       reason: "opening the Nigeria market",
     });
-    expect(afterEnable.countries.find((c) => c.code === "NG")?.enabled).toBe(true);
+    const ng = afterEnable.countries.find((c) => c.code === "NG");
+    expect(ng?.enabled).toBe(true);
+    expect(ng?.paymentMethods).toEqual(["BANK_TRANSFER", "OPAY"]); // rails persisted + round-tripped
 
     // lowercase code is accepted (normalized)
-    const afterDisable = await admin.setCountryEnabled(superAdmin.id, "ng", {
+    const afterDisable = await admin.updateCountry(superAdmin.id, "ng", {
       enabled: false,
+      paymentMethods: [],
       totpCode: code(superAdmin),
       reason: "pausing rollout",
     });
@@ -484,12 +488,22 @@ describe("admin flows (Testcontainers PG16)", () => {
 
     // wrong TOTP changes nothing
     await expect(
-      admin.setCountryEnabled(superAdmin.id, "NG", { enabled: true, totpCode: "000000", reason: "nope" }),
+      admin.updateCountry(superAdmin.id, "NG", {
+        enabled: true,
+        paymentMethods: ["BANK_TRANSFER"],
+        totpCode: "000000",
+        reason: "nope",
+      }),
     ).rejects.toBeInstanceOf(AdminVerificationError);
 
     // unknown ISO code → domain 404
     await expect(
-      admin.setCountryEnabled(superAdmin.id, "ZZ", { enabled: true, totpCode: code(superAdmin), reason: "unknown" }),
+      admin.updateCountry(superAdmin.id, "ZZ", {
+        enabled: true,
+        paymentMethods: ["BANK_TRANSFER"],
+        totpCode: code(superAdmin),
+        reason: "unknown",
+      }),
     ).rejects.toBeInstanceOf(CountryNotFoundError);
 
     // CM must remain enabled throughout, and the audit chain stays intact

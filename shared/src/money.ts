@@ -73,3 +73,14 @@ export function formatXAF(amount: bigint | string): string {
   const units = typeof amount === "string" ? parseAmount(amount) : amount;
   return `${units.toLocaleString("fr-FR")} XAF`;
 }
+
+/**
+ * Format a fiat amount for any market. Amounts are stored as WHOLE local-currency
+ * units (e.g. XAF francs, NGN naira), so this only groups the number and appends the
+ * market's currency code — no smallest-unit division. `locale` controls grouping style.
+ */
+export function formatFiat(amount: bigint | string, currencyCode: string, locale = "en"): string {
+  const units = typeof amount === "string" ? parseAmount(amount) : amount;
+  const grouped = units.toLocaleString(locale === "fr" ? "fr-FR" : "en-US");
+  return `${grouped} ${currencyCode}`;
+}

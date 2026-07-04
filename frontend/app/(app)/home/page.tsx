@@ -13,7 +13,8 @@ import { Alert } from "@/components/ui/alert";
 import { Keyhole } from "@/components/brand/keyhole";
 import { useMe } from "@/hooks/use-auth";
 import { useBalances } from "@/hooks/use-wallet";
-import { INDICATIVE_XAF_PER_USDT } from "@/lib/market";
+import { useUserMarket } from "@/hooks/use-user-market";
+import { indicativeRate } from "@/lib/market";
 
 const KYC_TONE = {
   APPROVED: "success",
@@ -28,6 +29,8 @@ export default function HomePage(): React.JSX.Element {
   const tx = useTranslations("appHome");
   const { data: me } = useMe();
   const { data: balances, isLoading } = useBalances();
+  const market = useUserMarket();
+  const rate = indicativeRate(market.currencyCode);
 
   const usdt = balances?.balances.find((b) => b.asset === "USDT_TRC20");
   const available = usdt?.available ?? "0";
@@ -102,8 +105,10 @@ export default function HomePage(): React.JSX.Element {
           <p className="mt-1 text-xs text-text-3">{tx("reputationHint")}</p>
         </Card>
         <Card>
-          <p className="text-sm text-text-2">USDT / XAF</p>
-          <p className="mt-1 font-money text-xl font-semibold tabular-nums">≈ {INDICATIVE_XAF_PER_USDT}</p>
+          <p className="text-sm text-text-2">USDT / {market.currencyCode}</p>
+          <p className="mt-1 font-money text-xl font-semibold tabular-nums">
+            {rate !== null ? `≈ ${rate.toLocaleString()}` : "—"}
+          </p>
           <p className="mt-1 text-xs text-text-3">{tx("indicativeRate")}</p>
         </Card>
       </div>

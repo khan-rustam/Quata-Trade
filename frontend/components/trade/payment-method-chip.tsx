@@ -1,11 +1,21 @@
 import type { PaymentMethod } from "@quatatrade/shared";
 import { cn } from "@/lib/utils";
 
-/** Partner-colored chips on neutral backgrounds (Documents/11 §11.6). */
+/** Partner-colored chips on neutral backgrounds (Documents/11 §11.6). Covers every
+ * rail in the payment_method domain so any market's rails render (labels/colours are
+ * cosmetic; availability per market is admin-controlled). */
 const META: Record<PaymentMethod, { label: string; dot: string }> = {
+  QUATAPAY: { label: "QuataPay", dot: "bg-accent-400" },
   MTN_MOMO: { label: "MTN MoMo", dot: "bg-[#FFCB05]" },
   ORANGE_MONEY: { label: "Orange Money", dot: "bg-[#FF7900]" },
-  QUATAPAY: { label: "QuataPay", dot: "bg-accent-400" },
+  BANK_TRANSFER: { label: "Bank transfer", dot: "bg-[#5B7CFA]" },
+  MPESA: { label: "M-Pesa", dot: "bg-[#4CAF50]" },
+  AIRTEL_MONEY: { label: "Airtel Money", dot: "bg-[#ED1C24]" },
+  MOOV_MONEY: { label: "Moov Money", dot: "bg-[#F58220]" },
+  WAVE: { label: "Wave", dot: "bg-[#1DC8FF]" },
+  VODAFONE_CASH: { label: "Vodafone Cash", dot: "bg-[#E60000]" },
+  OPAY: { label: "OPay", dot: "bg-[#1DCF6B]" },
+  PALMPAY: { label: "PalmPay", dot: "bg-[#6C2BD9]" },
 };
 
 export function PaymentMethodChip({ method, className }: { method: PaymentMethod; className?: string }): React.JSX.Element {

@@ -890,7 +890,21 @@
     "toastEnabledBody": "{country} est maintenant actif.",
     "toastDisabledTitle": "Marché désactivé",
     "toastDisabledBody": "{country} a été suspendu.",
-    "errorUpdate": "Impossible de mettre à jour le marché. Veuillez réessayer."
+    "errorUpdate": "Impossible de mettre à jour le marché. Veuillez réessayer.",
+    "colRails": "Moyens",
+    "noRails": "Aucun moyen défini",
+    "configure": "Configurer",
+    "configureTitle": "Configurer {country}",
+    "configureDesc": "Définissez si ce marché est actif et quels moyens de paiement ses utilisateurs peuvent utiliser.",
+    "enabledLabel": "Marché activé (inscription et échanges possibles)",
+    "railsLabel": "Moyens de paiement de ce marché",
+    "railsRequired": "Un marché actif nécessite au moins un moyen.",
+    "reasonPlaceholder": "Pourquoi effectuez-vous ce changement ?",
+    "totpLabel": "Code d'authentification",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "savedTitle": "Marché mis à jour",
+    "savedBody": "{country} a été mis à jour."
   },
   "adminSettings": {
     "pageTitle": "Paramètres et contrôles",

@@ -890,7 +890,21 @@
     "toastEnabledBody": "{country} is now live.",
     "toastDisabledTitle": "Market disabled",
     "toastDisabledBody": "{country} has been paused.",
-    "errorUpdate": "Could not update the market. Please try again."
+    "errorUpdate": "Could not update the market. Please try again.",
+    "colRails": "Rails",
+    "noRails": "No rails set",
+    "configure": "Configure",
+    "configureTitle": "Configure {country}",
+    "configureDesc": "Set whether this market is live and which payment rails its traders can use.",
+    "enabledLabel": "Market enabled (users can sign up and trade)",
+    "railsLabel": "Payment rails offered in this market",
+    "railsRequired": "An enabled market needs at least one rail.",
+    "reasonPlaceholder": "Why are you making this change?",
+    "totpLabel": "Authenticator code",
+    "cancel": "Cancel",
+    "save": "Save market",
+    "savedTitle": "Market updated",
+    "savedBody": "{country} has been updated."
   },
   "adminSettings": {
     "pageTitle": "Settings & controls",

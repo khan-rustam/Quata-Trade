@@ -22,7 +22,7 @@ import { useToast } from "@/components/ui/toast";
 import { useOffer, useOpenTrade } from "@/hooks/use-trade";
 import { api } from "@/lib/api/client";
 import { apiErrorMessage } from "@/lib/api/errors";
-import { formatRate, formatUsdt } from "@/lib/format";
+import { formatUsdt } from "@/lib/format";
 
 export default function OfferDetailPage(): React.JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -100,7 +100,9 @@ export default function OfferDetailPage(): React.JSX.Element {
             </p>
           </div>
           <div className="ml-auto text-right">
-            <p className="font-money text-lg font-semibold">{formatRate(offer.priceXafPerUnit)}</p>
+            <p className="text-lg font-semibold">
+              <Xaf value={offer.priceXafPerUnit} />
+            </p>
             <p className="text-xs text-text-3">{tx("perUsdt")}</p>
           </div>
         </div>

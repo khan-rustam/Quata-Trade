@@ -1,7 +1,18 @@
 /**
- * Indicative XAF-per-USDT rate — DISPLAY ONLY. Real trades price off the seller's
- * `priceXafPerUnit` (offer/trade flow) and `api.feePreview`, never this number.
- * There is no live feed yet; update this when the market moves, or replace it
- * when the rate service lands (see markets/page.tsx).
+ * Indicative USDT→local-fiat rates — DISPLAY ONLY. Real trades price off the
+ * seller's `priceXafPerUnit` (offer/trade flow) and `api.feePreview`, never these.
+ * There is no live feed yet; keyed by ISO currency so each market shows its own
+ * hint (or none). Add a currency here when that market goes live, or replace the
+ * whole map when a rate service lands.
  */
-export const INDICATIVE_XAF_PER_USDT = 650;
+export const INDICATIVE_RATES: Record<string, number> = {
+  XAF: 650,
+};
+
+/** Back-compat: the Cameroon (XAF) indicative rate. Prefer `indicativeRate(currency)`. */
+export const INDICATIVE_XAF_PER_USDT = INDICATIVE_RATES.XAF;
+
+/** Indicative rate for a currency, or null when we don't have one yet (hide the hint). */
+export function indicativeRate(currencyCode: string): number | null {
+  return INDICATIVE_RATES[currencyCode] ?? null;
+}

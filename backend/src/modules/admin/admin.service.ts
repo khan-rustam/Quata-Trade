@@ -9,7 +9,7 @@ import type {
   AdminUserDetail,
   KillSwitchRequest,
   KillSwitchState,
-  SetCountryEnabledRequest,
+  UpdateCountryRequest,
   UserStatus,
 } from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
@@ -767,18 +767,20 @@ export class AdminService {
   }
 
   /**
-   * Enable/disable a market. Same stakes as the kill switch — TOTP step-up +
-   * hash-chained audit in one transaction. Enabling opens sign-up + trading for
-   * that country; disabling freezes NEW trades (openTrade re-checks enabled).
+   * Configure a market: set its enabled state AND its available payment rails.
+   * Same stakes as the kill switch — TOTP step-up + hash-chained audit in one
+   * transaction. Enabling opens sign-up + trading for that country; disabling
+   * freezes NEW trades (openTrade re-checks enabled). The zod contract already
+   * guarantees an enabled market has ≥1 rail.
    */
-  async setCountryEnabled(
+  async updateCountry(
     adminId: string,
     code: string,
-    dto: SetCountryEnabledRequest,
+    dto: UpdateCountryRequest,
     ip?: string,
   ): Promise<AdminCountriesResponse> {
     const norm = code.toUpperCase();
-    await this.adminAuth.verifyTotp(adminId, dto.totpCode, "admin.country_toggle", ip);
+    await this.adminAuth.verifyTotp(adminId, dto.totpCode, "admin.country_update", ip);
 
     await this.db.transaction().execute(async (trx) => {
       const row = await trx
@@ -791,14 +793,14 @@ export class AdminService {
 
       await trx
         .updateTable("countries")
-        .set({ enabled: dto.enabled, updated_at: new Date() })
+        .set({ enabled: dto.enabled, payment_methods: dto.paymentMethods, updated_at: new Date() })
         .where("code", "=", norm)
         .execute();
       await trx
         .insertInto("outbox")
         .values({
           id: newId(),
-          event_type: "admin.country_toggle",
+          event_type: "admin.country_update",
           payload: JSON.stringify({ code: norm, enabled: dto.enabled, adminId }),
         })
         .execute();
@@ -810,7 +812,13 @@ export class AdminService {
           // target_id is a uuid column; the ISO code lives in metadata (like setKillSwitch).
           targetType: "country",
           ip,
-          metadata: { code: norm, enabled: dto.enabled, reason: dto.reason, previous: row.enabled },
+          metadata: {
+            code: norm,
+            enabled: dto.enabled,
+            paymentMethods: dto.paymentMethods,
+            reason: dto.reason,
+            previousEnabled: row.enabled,
+          },
         },
         trx,
       );

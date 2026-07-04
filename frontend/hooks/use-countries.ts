@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { SetCountryEnabledRequest } from "@quatatrade/shared";
+import type { UpdateCountryRequest } from "@quatatrade/shared";
 import { api } from "@/lib/api/client";
 import { adminApi } from "@/lib/api/admin-client";
 
@@ -15,11 +15,11 @@ export function useAdminCountries() {
   return useQuery({ queryKey: ["admin", "countries"], queryFn: () => adminApi.adminCountries() });
 }
 
-export function useSetCountryEnabled() {
+export function useUpdateCountry() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ code, body }: { code: string; body: SetCountryEnabledRequest }) =>
-      adminApi.adminSetCountryEnabled(code, body),
+    mutationFn: ({ code, body }: { code: string; body: UpdateCountryRequest }) =>
+      adminApi.adminUpdateCountry(code, body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["admin", "countries"] });
       void qc.invalidateQueries({ queryKey: ["countries"] });

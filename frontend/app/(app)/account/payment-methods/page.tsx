@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
 import { useToast } from "@/components/ui/toast";
 import { useMe } from "@/hooks/use-auth";
+import { useUserMarket } from "@/hooks/use-user-market";
 import { api } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
 import { apiErrorMessage } from "@/lib/api/errors";
@@ -27,6 +28,7 @@ const emptyDraft = (): Draft =>
 export default function PaymentMethodsPage(): React.JSX.Element {
   const tx = useTranslations("paymentMethods");
   const { data: me, isLoading } = useMe();
+  const market = useUserMarket();
   const qc = useQueryClient();
   const toast = useToast();
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -69,13 +71,13 @@ export default function PaymentMethodsPage(): React.JSX.Element {
 
       {isLoading ? (
         <div className="space-y-3">
-          {PAYMENT_METHODS.map((m) => (
+          {market.paymentMethods.map((m) => (
             <Skeleton key={m} className="h-40 w-full rounded-xl" />
           ))}
         </div>
       ) : (
         <div className="space-y-3">
-          {PAYMENT_METHODS.map((m) => (
+          {market.paymentMethods.map((m) => (
             <Card key={m} className="space-y-3">
               <PaymentMethodChip method={m} />
               <Field label={tx("numberLabel")}>

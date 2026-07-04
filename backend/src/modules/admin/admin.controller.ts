@@ -25,7 +25,7 @@ import {
   zPagination,
   zRejectWithdrawalRequest,
   zResolveDisputeRequest,
-  zSetCountryEnabledRequest,
+  zUpdateCountryRequest,
   zUpdateSettingRequest,
   zAdminMetricsQuery,
   zUuid,
@@ -40,7 +40,7 @@ import {
   type KillSwitchState,
   type Pagination,
   type ResolveDisputeRequest,
-  type SetCountryEnabledRequest,
+  type UpdateCountryRequest,
 } from "@quatatrade/shared";
 import { ZodPipe } from "../../common/zod.pipe";
 import { CurrentAdminId, CurrentAuth, Roles } from "../../common/auth/decorators";
@@ -444,14 +444,14 @@ export class AdminController {
   @Roles(...RBAC.manageCountries)
   @Post("countries/:code")
   @HttpCode(HttpStatus.OK)
-  async setCountryEnabled(
+  async updateCountry(
     @CurrentAdminId() adminId: string,
     @Param("code", new ZodPipe(z.string().trim().length(2))) code: string,
-    @Body(new ZodPipe(zSetCountryEnabledRequest)) dto: SetCountryEnabledRequest,
+    @Body(new ZodPipe(zUpdateCountryRequest)) dto: UpdateCountryRequest,
     @Req() req: AuthenticatedRequest,
   ): Promise<AdminCountriesResponse> {
     try {
-      return await this.admin.setCountryEnabled(adminId, code, dto, this.ip(req));
+      return await this.admin.updateCountry(adminId, code, dto, this.ip(req));
     } catch (err) {
       throw mapAdminError(err);
     }
