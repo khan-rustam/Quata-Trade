@@ -2,12 +2,14 @@ import { Inject, Injectable } from "@nestjs/common";
 import { sql, type Kysely } from "kysely";
 import { z } from "zod";
 import type {
+  AdminCountriesResponse,
   AdminKpisResponse,
   AdminMetricsQuery,
   AdminMetricsResponse,
   AdminUserDetail,
   KillSwitchRequest,
   KillSwitchState,
+  SetCountryEnabledRequest,
   UserStatus,
 } from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
@@ -16,6 +18,7 @@ import { newId } from "../../common/ids";
 import { AuditService } from "../../common/audit/audit.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { SettingsService } from "../settings/settings.service";
+import { CountriesService } from "../countries/countries.service";
 import { AdminAuthService } from "./admin-auth.service";
 import {
   SETTING_VALUE_SCHEMAS,
@@ -34,6 +37,7 @@ function dayRange(from?: string, to?: string): { fromDate?: Date; toDate?: Date 
   };
 }
 import {
+  CountryNotFoundError,
   InvalidSettingValueError,
   SettingKeyNotAllowedError,
   TargetUserNotFoundError,
@@ -71,6 +75,7 @@ export class AdminService {
     private readonly settings: SettingsService,
     private readonly audit: AuditService,
     private readonly adminAuth: AdminAuthService,
+    private readonly countries: CountriesService,
   ) {}
 
   // ── dashboards ────────────────────────────────────────────────────────────
@@ -752,6 +757,67 @@ export class AdminService {
 
     this.settings.invalidate();
     return { withdrawalsPaused: next.withdrawals_paused, tradesPaused: next.trades_paused };
+  }
+
+  // ── countries (phased market rollout) ──────────────────────────────────────
+
+  /** Every market, enabled or not, for the rollout console. */
+  async listCountries(): Promise<AdminCountriesResponse> {
+    return { countries: await this.countries.listAll() };
+  }
+
+  /**
+   * Enable/disable a market. Same stakes as the kill switch — TOTP step-up +
+   * hash-chained audit in one transaction. Enabling opens sign-up + trading for
+   * that country; disabling freezes NEW trades (openTrade re-checks enabled).
+   */
+  async setCountryEnabled(
+    adminId: string,
+    code: string,
+    dto: SetCountryEnabledRequest,
+    ip?: string,
+  ): Promise<AdminCountriesResponse> {
+    const norm = code.toUpperCase();
+    await this.adminAuth.verifyTotp(adminId, dto.totpCode, "admin.country_toggle", ip);
+
+    await this.db.transaction().execute(async (trx) => {
+      const row = await trx
+        .selectFrom("countries")
+        .select(["code", "enabled"])
+        .where("code", "=", norm)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!row) throw new CountryNotFoundError(norm);
+
+      await trx
+        .updateTable("countries")
+        .set({ enabled: dto.enabled, updated_at: new Date() })
+        .where("code", "=", norm)
+        .execute();
+      await trx
+        .insertInto("outbox")
+        .values({
+          id: newId(),
+          event_type: "admin.country_toggle",
+          payload: JSON.stringify({ code: norm, enabled: dto.enabled, adminId }),
+        })
+        .execute();
+      await this.audit.log(
+        {
+          actorType: "admin",
+          actorId: adminId,
+          action: dto.enabled ? "admin.country.enable" : "admin.country.disable",
+          // target_id is a uuid column; the ISO code lives in metadata (like setKillSwitch).
+          targetType: "country",
+          ip,
+          metadata: { code: norm, enabled: dto.enabled, reason: dto.reason, previous: row.enabled },
+        },
+        trx,
+      );
+    });
+
+    this.countries.invalidate();
+    return { countries: await this.countries.listAll() };
   }
 
   // ── settings ──────────────────────────────────────────────────────────────

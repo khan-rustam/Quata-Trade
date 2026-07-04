@@ -3,21 +3,26 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Sparkles } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { zRegisterRequest, type RegisterRequest } from "@quatatrade/shared";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { useRegister } from "@/hooks/use-auth";
+import { useCountries } from "@/hooks/use-countries";
 import { apiErrorMessage } from "@/lib/api/errors";
+
+/** Fallback so the picker is never empty before /countries resolves (CM is always live). */
+const FALLBACK_COUNTRIES = [{ code: "CM", nameEn: "Cameroon", nameFr: "Cameroun", dialCode: "+237" }];
 
 type FormValues = RegisterRequest & { acceptTerms: true };
 
@@ -34,7 +39,7 @@ const STEPS = [
     key: "contact",
     titleKey: "step2Title",
     subtitleKey: "step2Subtitle",
-    fields: ["email", "phone"],
+    fields: ["email", "country", "phone"],
   },
   {
     key: "secure",
@@ -47,9 +52,11 @@ const LAST = STEPS.length - 1;
 
 export default function RegisterPage(): React.JSX.Element {
   const tx = useTranslations("authRegister");
+  const locale = useLocale();
   const router = useRouter();
   const toast = useToast();
   const registerMut = useRegister();
+  const { data: countriesData } = useCountries();
   const [step, setStep] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -57,12 +64,20 @@ export default function RegisterPage(): React.JSX.Element {
     register,
     handleSubmit,
     trigger,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(zRegisterRequest),
     mode: "onBlur",
     defaultValues: { country: "CM" },
   });
+
+  // Enabled markets for the picker; the selected one drives the phone dial-code hint.
+  // useWatch (subscription) rather than watch() so React Compiler can memoize cleanly.
+  const selectedCountry = useWatch({ control, name: "country" });
+  const countries = countriesData?.countries.length ? countriesData.countries : FALLBACK_COUNTRIES;
+  const countryOptions = countries.map((c) => ({ value: c.code, label: locale === "fr" ? c.nameFr : c.nameEn }));
+  const dialCode = countries.find((c) => c.code === selectedCountry)?.dialCode ?? "+237";
 
   // Optional text fields submit "" when untouched — coerce to undefined so the
   // `.optional()` zod rules accept them instead of failing the format check.
@@ -145,8 +160,13 @@ export default function RegisterPage(): React.JSX.Element {
               <Field label={tx("emailLabel")} error={errors.email?.message} required>
                 {(p) => <Input type="email" autoComplete="email" placeholder={tx("emailPlaceholder")} autoFocus {...p} {...register("email")} />}
               </Field>
+              <Field label={tx("countryLabel")} hint={tx("countryHint")} error={errors.country?.message} required>
+                {(p) => <Select options={countryOptions} {...p} {...register("country")} />}
+              </Field>
               <Field label={tx("phoneLabel")} hint={tx("phoneHint")} error={errors.phone?.message}>
-                {(p) => <Input type="tel" autoComplete="tel" placeholder="+2376XXXXXXXX" {...p} {...register("phone", emptyToUndefined)} />}
+                {(p) => (
+                  <Input type="tel" autoComplete="tel" placeholder={`${dialCode} 6XXXXXXXX`} {...p} {...register("phone", emptyToUndefined)} />
+                )}
               </Field>
             </>
           )}

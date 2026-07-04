@@ -21,6 +21,7 @@ import type { AccessTokenPayload, AuthenticatedRequest } from "../../common/auth
 import { LedgerService } from "../ledger/ledger.service";
 import { InsufficientFundsError } from "../ledger/ledger.errors";
 import { SettingsService } from "../settings/settings.service";
+import { CountriesService } from "../countries/countries.service";
 import { ScreeningService } from "../screening/screening.service";
 import { WithdrawalsService } from "../withdrawals/withdrawals.service";
 import { ApprovalNotAllowedError, DualApprovalError } from "../withdrawals/withdrawals.errors";
@@ -32,6 +33,7 @@ import { TreasuryController } from "../treasury/treasury.controller";
 import {
   AdminAuthError,
   AdminVerificationError,
+  CountryNotFoundError,
   InvalidSettingValueError,
   SettingKeyNotAllowedError,
   TargetUserNotFoundError,
@@ -161,6 +163,18 @@ describe("admin RBAC matrix (RolesGuard x route metadata)", () => {
       name: "POST /admin/kill-switch",
       cls: AdminController,
       handler: AdminController.prototype.setKillSwitch,
+      allowed: ["SUPER_ADMIN", "FINANCE_ADMIN"],
+    },
+    {
+      name: "GET /admin/countries",
+      cls: AdminController,
+      handler: AdminController.prototype.countries,
+      allowed: ALL7,
+    },
+    {
+      name: "POST /admin/countries/:code",
+      cls: AdminController,
+      handler: AdminController.prototype.setCountryEnabled,
       allowed: ["SUPER_ADMIN", "FINANCE_ADMIN"],
     },
     {
@@ -304,7 +318,7 @@ describe("admin flows (Testcontainers PG16)", () => {
     const config = new ConfigService<Env, true>(env);
     jwt = new JwtService({ secret: JWT_SECRET, signOptions: { expiresIn: 600 } });
     adminAuth = new AdminAuthService(t.db, jwt, config, audit);
-    admin = new AdminService(t.db, ledger, settings, audit, adminAuth);
+    admin = new AdminService(t.db, ledger, settings, audit, adminAuth, new CountriesService(t.db));
     withdrawals = new WithdrawalsService(t.db, ledger, settings, audit, config, new ScreeningService(t.db));
     passwordHash = await argon2.hash(PASSWORD, { type: argon2.argon2id });
   });
@@ -444,6 +458,42 @@ describe("admin flows (Testcontainers PG16)", () => {
       totpCode: code(superAdmin),
       reason: "drill complete",
     });
+    expect(await audit.verifyChain()).toEqual([]);
+  });
+
+  // ── country rollout toggle ────────────────────────────────────────────────
+
+  it("enables/disables a market with TOTP + audit; wrong TOTP and unknown code change nothing", async () => {
+    const superAdmin = await makeAdmin("SUPER_ADMIN");
+
+    // NG ships disabled — enable it (opens sign-up + trading for that market)
+    const afterEnable = await admin.setCountryEnabled(superAdmin.id, "NG", {
+      enabled: true,
+      totpCode: code(superAdmin),
+      reason: "opening the Nigeria market",
+    });
+    expect(afterEnable.countries.find((c) => c.code === "NG")?.enabled).toBe(true);
+
+    // lowercase code is accepted (normalized)
+    const afterDisable = await admin.setCountryEnabled(superAdmin.id, "ng", {
+      enabled: false,
+      totpCode: code(superAdmin),
+      reason: "pausing rollout",
+    });
+    expect(afterDisable.countries.find((c) => c.code === "NG")?.enabled).toBe(false);
+
+    // wrong TOTP changes nothing
+    await expect(
+      admin.setCountryEnabled(superAdmin.id, "NG", { enabled: true, totpCode: "000000", reason: "nope" }),
+    ).rejects.toBeInstanceOf(AdminVerificationError);
+
+    // unknown ISO code → domain 404
+    await expect(
+      admin.setCountryEnabled(superAdmin.id, "ZZ", { enabled: true, totpCode: code(superAdmin), reason: "unknown" }),
+    ).rejects.toBeInstanceOf(CountryNotFoundError);
+
+    // CM must remain enabled throughout, and the audit chain stays intact
+    expect(afterDisable.countries.find((c) => c.code === "CM")?.enabled).toBe(true);
     expect(await audit.verifyChain()).toEqual([]);
   });
 

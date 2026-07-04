@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
-import { Inject, Injectable } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import * as argon2 from "argon2";
@@ -13,6 +13,7 @@ import { AuditService } from "../../common/audit/audit.service";
 import type { AccessTokenPayload } from "../../common/auth/jwt.types";
 import { TotpService } from "./totp.service";
 import { RiskService } from "../risk/risk.service";
+import { CountriesService } from "../countries/countries.service";
 import { InvalidCodeError, InvalidCredentialsError, InvalidTokenError } from "./auth.errors";
 
 const EMAIL_OTP_TTL_MS = 15 * 60_000;
@@ -76,11 +77,29 @@ export class AuthService {
     private readonly audit: AuditService,
     private readonly totp: TotpService,
     private readonly risk: RiskService,
+    private readonly countries: CountriesService,
   ) {}
 
   // ── register ────────────────────────────────────────────────────────────
 
+  /**
+   * Sign-up is gated to ENABLED markets, and (when a phone is given) the number
+   * must belong to the chosen country's dial code. The countries FK on `users`
+   * is the final backstop; this returns a clean 400 instead of an FK 500. The
+   * enabled set is public (GET /countries), so a clear message leaks nothing.
+   */
+  private async assertMarketAllowed(dto: RegisterRequest): Promise<void> {
+    const country = await this.countries.find(dto.country);
+    if (!country || !country.enabled) {
+      throw new BadRequestException("This country is not available yet.");
+    }
+    if (dto.phone && !dto.phone.startsWith(country.dial_code)) {
+      throw new BadRequestException("Phone number does not match the selected country.");
+    }
+  }
+
   async register(dto: RegisterRequest, meta: RequestMeta): Promise<RegisterResponse> {
+    await this.assertMarketAllowed(dto);
     // hash BEFORE the duplicate check so both paths cost the same (no timing enumeration)
     const passwordHash = await argon2.hash(dto.password, { type: argon2.argon2id });
     const userId = newId();

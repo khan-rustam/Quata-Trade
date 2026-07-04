@@ -190,6 +190,8 @@ export interface WithdrawalsTable {
 export interface OffersTable {
   id: string;
   user_id: string;
+  /** market segmentation — stamped from the maker's country at creation (migration 0015) */
+  country: string;
   side: OfferSide;
   asset: AssetCode;
   price_xaf_per_unit: bigint;
@@ -206,6 +208,8 @@ export interface OffersTable {
 export interface TradesTable {
   id: string;
   short_ref: string;
+  /** market of the trade — inherited from the offer; buyer & seller are both in it (migration 0015) */
+  country: string;
   offer_id: string;
   seller_id: string;
   buyer_id: string;
@@ -410,8 +414,24 @@ export interface BlockedAddressesTable {
   updated_at: ColumnType<Date | null, never, Date | string>;
 }
 
+/** Country reference table + market gate (migration 0015). Admin toggles `enabled`. */
+export interface CountriesTable {
+  code: string;
+  name_en: string;
+  name_fr: string;
+  dial_code: string;
+  currency_code: string;
+  fiat_decimals: Generated<number>;
+  payment_methods: Generated<PaymentMethod[]>;
+  enabled: Generated<boolean>;
+  sort_order: Generated<number>;
+  created_at: Timestamp;
+  updated_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
 export interface Database {
   users: UsersTable;
+  countries: CountriesTable;
   sessions: SessionsTable;
   auth_tokens: AuthTokensTable;
   admins: AdminsTable;

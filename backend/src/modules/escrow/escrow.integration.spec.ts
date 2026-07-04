@@ -57,12 +57,19 @@ describe("Escrow state machine (Gate 4)", () => {
     return userId;
   };
 
-  const createOffer = async (sellerId: string, remaining: bigint, minTrade = 1n * USDT, maxTrade = remaining) => {
+  const createOffer = async (
+    sellerId: string,
+    remaining: bigint,
+    minTrade = 1n * USDT,
+    maxTrade = remaining,
+    country = "CM",
+  ) => {
     return t.db
       .insertInto("offers")
       .values({
         id: newId(),
         user_id: sellerId,
+        country,
         side: "SELL",
         asset: "USDT_TRC20",
         price_xaf_per_unit: 650n,
@@ -75,6 +82,10 @@ describe("Escrow state machine (Gate 4)", () => {
       .returningAll()
       .executeTakeFirstOrThrow();
   };
+
+  /** Put a user in a specific market (users default to CM). */
+  const setCountry = (userId: string, country: string) =>
+    t.db.updateTable("users").set({ country }).where("id", "=", userId).execute();
 
   const balanceOf = async (userId: string, kind: "user_available" | "user_escrow") =>
     ledger.balanceOf(await ledger.getOrCreateAccount(userId, kind, "USDT_TRC20"));
@@ -547,6 +558,7 @@ describe("Escrow state machine (Gate 4)", () => {
       .values({
         id: tradeId,
         short_ref: `T-${newId().slice(0, 8)}`,
+        country: "CM",
         offer_id: offer.id,
         seller_id: seller,
         buyer_id: buyer,
@@ -599,5 +611,53 @@ describe("Escrow state machine (Gate 4)", () => {
     const again = await escrow.resolveDispute(trade.id, newId(), "REFUND_TO_SELLER");
     expect(again.status).toBe("RESOLVED_REFUND");
     expect(await balanceOf(seller, "user_available")).toBe(sellerAfter); // not refunded twice
+  });
+
+  // ── Market segmentation (country gate at openTrade — money-path) ──
+
+  it("openTrade pairs only same-market users; a cross-market taker is rejected with no money movement", async () => {
+    const seller = await fundedUser(10n * USDT); // CM (default)
+    const buyer = await fundedUser(0n);
+    await setCountry(buyer, "NG"); // buyer in a different market
+    const offer = await createOffer(seller, 10n * USDT); // CM offer
+
+    await expect(openTrade(buyer, offer.id, 10n * USDT)).rejects.toBeInstanceOf(OfferUnavailableError);
+    // whole tx rolled back: escrow untouched, offer intact, no trade row
+    expect(await balanceOf(seller, "user_escrow")).toBe(0n);
+    const offerAfter = await t.db.selectFrom("offers").selectAll().where("id", "=", offer.id).executeTakeFirstOrThrow();
+    expect(offerAfter.remaining).toBe(10n * USDT);
+    expect(await t.db.selectFrom("trades").select("id").where("offer_id", "=", offer.id).execute()).toHaveLength(0);
+  });
+
+  it("openTrade stamps the offer's market onto the trade row", async () => {
+    const seller = await fundedUser(10n * USDT);
+    const buyer = await fundedUser(0n);
+    const offer = await createOffer(seller, 10n * USDT);
+    const trade = await openTrade(buyer, offer.id, 10n * USDT);
+    const row = await t.db.selectFrom("trades").select("country").where("id", "=", trade.id).executeTakeFirstOrThrow();
+    expect(row.country).toBe("CM");
+  });
+
+  it("openTrade is frozen when the offer's market is disabled, and resumes once re-enabled", async () => {
+    // Both parties + offer in NG (same market), but NG is disabled at launch.
+    const seller = await fundedUser(10n * USDT);
+    const buyer = await fundedUser(0n);
+    await setCountry(seller, "NG");
+    await setCountry(buyer, "NG");
+    const offer = await createOffer(seller, 10n * USDT, 1n * USDT, 10n * USDT, "NG");
+
+    await expect(openTrade(buyer, offer.id, 10n * USDT)).rejects.toBeInstanceOf(OfferUnavailableError);
+    expect(await balanceOf(seller, "user_escrow")).toBe(0n); // nothing locked
+
+    // Enabling the market is the ONLY thing that was blocking it.
+    await t.db.updateTable("countries").set({ enabled: true }).where("code", "=", "NG").execute();
+    try {
+      const trade = await openTrade(buyer, offer.id, 10n * USDT);
+      expect(trade.status).toBe("ESCROW_LOCKED");
+      expect(trade.country).toBe("NG");
+    } finally {
+      // restore seed state so later tests still see NG disabled
+      await t.db.updateTable("countries").set({ enabled: false }).where("code", "=", "NG").execute();
+    }
   });
 });

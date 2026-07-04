@@ -8,7 +8,10 @@ export const zRegisterRequest = z
     password: zPassword,
     firstName: z.string().trim().min(1).max(80).optional(),
     lastName: z.string().trim().min(1).max(80).optional(),
-    country: z.string().length(2).toUpperCase().default("CM"),
+    // Market at sign-up (ISO alpha-2). Required — no default: the client must pick an
+    // ENABLED country. Enablement + phone dial-code coupling are enforced server-side
+    // (auth.service) since zod can't reach the countries table.
+    country: z.string().length(2).toUpperCase(),
     acceptTerms: z.literal(true),
   })
   .strict();

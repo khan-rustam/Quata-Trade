@@ -50,3 +50,10 @@ export class SettingKeyNotAllowedError extends AdminError {
 
 /** Setting value failed its per-key schema — would break the running app. */
 export class InvalidSettingValueError extends AdminError {}
+
+/** POST /admin/countries/:code with an unknown ISO code. */
+export class CountryNotFoundError extends AdminError {
+  constructor(code: string) {
+    super(`country not found: ${code}`);
+  }
+}

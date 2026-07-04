@@ -14,6 +14,7 @@ import { SessionNotFoundError } from "../users/users.errors";
 import { AuthService, type IssuedTokens, type LoginOutcome, type RequestMeta } from "./auth.service";
 import { TotpService } from "./totp.service";
 import { RiskService } from "../risk/risk.service";
+import { CountriesService } from "../countries/countries.service";
 import { PinService } from "./pin.service";
 import {
   InvalidCodeError,
@@ -91,7 +92,7 @@ describe("Auth (Gate 2)", () => {
     // Risk scoring is a fail-open monitoring side-effect of login; stub it here so
     // auth assertions are isolated from risk_events writes / Redis.
     const risk = { scoreLogin: async () => ({ score: 0, flags: {} }) } as unknown as RiskService;
-    auth = new AuthService(t.db, jwt, config, audit, totp, risk);
+    auth = new AuthService(t.db, jwt, config, audit, totp, risk, new CountriesService(t.db));
     pin = new PinService(t.db, audit);
     users = new UsersService(t.db, audit, { send: async () => {} });
   });

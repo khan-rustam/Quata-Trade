@@ -9,6 +9,7 @@ export * from "./schemas/users.js";
 export * from "./schemas/kyc.js";
 export * from "./schemas/wallet.js";
 export * from "./schemas/offers.js";
+export * from "./schemas/countries.js";
 export * from "./schemas/traders.js";
 export * from "./schemas/trades.js";
 export * from "./schemas/disputes.js";

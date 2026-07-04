@@ -12,6 +12,7 @@ export const RBAC = {
   kycReview: ["SUPER_ADMIN", "COMPLIANCE_ADMIN"],
   freezeUser: ["SUPER_ADMIN", "COMPLIANCE_ADMIN", "SUPPORT_ADMIN", "MODERATOR"],
   killSwitch: ["SUPER_ADMIN", "FINANCE_ADMIN"],
+  manageCountries: ["SUPER_ADMIN", "FINANCE_ADMIN"],
   editSettings: ["SUPER_ADMIN", "FINANCE_ADMIN"],
   viewAudit: ["SUPER_ADMIN", "COMPLIANCE_ADMIN", "AUDITOR"],
 } satisfies Record<string, AdminRole[]>;

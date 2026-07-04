@@ -5,6 +5,7 @@ import { DB } from "../../db/database.module";
 import type { Database, OffersTable } from "../../db/types";
 import { newId } from "../../common/ids";
 import { LedgerService } from "../ledger/ledger.service";
+import { CountriesService } from "../countries/countries.service";
 import { OfferUnavailableError } from "../escrow/escrow.errors";
 
 export type OfferRow = Selectable<OffersTable>;
@@ -19,15 +20,27 @@ export class OffersService {
   constructor(
     @Inject(DB) private readonly db: Kysely<Database>,
     private readonly ledger: LedgerService,
+    private readonly countries: CountriesService,
   ) {}
+
+  /** The market the caller trades in — derived per request (country is not in the JWT). */
+  private async viewerCountry(userId: string): Promise<string> {
+    const u = await this.db.selectFrom("users").select("country").where("id", "=", userId).executeTakeFirst();
+    if (!u) throw new NotFoundException(); // authenticated but no row — treat as absent
+    return u.country;
+  }
 
   async create(userId: string, dto: CreateOfferRequest): Promise<OfferRow> {
     const user = await this.db
       .selectFrom("users")
-      .select(["status"])
+      .select(["status", "country"])
       .where("id", "=", userId)
       .executeTakeFirst();
     if (!user || user.status !== "active") throw new OfferUnavailableError("account is not active");
+    // A disabled market accepts no new offers (mirrors the openTrade enabled gate).
+    if (!(await this.countries.isEnabled(user.country))) {
+      throw new OfferUnavailableError("your market is not currently available");
+    }
 
     if (dto.side === "SELL") {
       const accountId = await this.ledger.getOrCreateAccount(userId, "user_available", dto.asset);
@@ -42,6 +55,7 @@ export class OffersService {
       .values({
         id: newId(),
         user_id: userId,
+        country: user.country, // stamp the maker's market — the browse/trade scope key
         side: dto.side,
         asset: dto.asset,
         price_xaf_per_unit: BigInt(dto.priceXafPerUnit),
@@ -88,21 +102,26 @@ export class OffersService {
     return updated;
   }
 
-  async getPublic(offerId: string): Promise<OfferRow | null> {
+  async getPublic(viewerUserId: string, offerId: string): Promise<OfferRow | null> {
+    const country = await this.viewerCountry(viewerUserId);
     const offer = await this.db
       .selectFrom("offers")
       .selectAll()
       .where("id", "=", offerId)
       .where("status", "!=", "DELETED")
+      .where("country", "=", country) // cross-market offers are invisible → 404
       .executeTakeFirst();
     return offer ?? null;
   }
 
-  async list(query: OffersQuery): Promise<{ items: OfferRow[]; total: number }> {
-    let qb = this.db.selectFrom("offers").selectAll().where("status", "=", "ACTIVE");
+  async list(viewerUserId: string, query: OffersQuery): Promise<{ items: OfferRow[]; total: number }> {
+    const country = await this.viewerCountry(viewerUserId);
+    // country is the mandatory first filter — a user only ever sees their own market.
+    let qb = this.db.selectFrom("offers").selectAll().where("country", "=", country).where("status", "=", "ACTIVE");
     let cq = this.db
       .selectFrom("offers")
       .select((eb) => eb.fn.countAll<bigint>().as("n"))
+      .where("country", "=", country)
       .where("status", "=", "ACTIVE");
 
     if (query.side) {

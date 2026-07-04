@@ -25,9 +25,11 @@ import {
   zPagination,
   zRejectWithdrawalRequest,
   zResolveDisputeRequest,
+  zSetCountryEnabledRequest,
   zUpdateSettingRequest,
   zAdminMetricsQuery,
   zUuid,
+  type AdminCountriesResponse,
   type AdminKpisResponse,
   type AdminKycDocumentsResponse,
   type AdminMetricsQuery,
@@ -38,6 +40,7 @@ import {
   type KillSwitchState,
   type Pagination,
   type ResolveDisputeRequest,
+  type SetCountryEnabledRequest,
 } from "@quatatrade/shared";
 import { ZodPipe } from "../../common/zod.pipe";
 import { CurrentAdminId, CurrentAuth, Roles } from "../../common/auth/decorators";
@@ -75,6 +78,7 @@ import {
 import {
   AdminNotFoundError,
   AdminVerificationError,
+  CountryNotFoundError,
   InvalidSettingValueError,
   SettingKeyNotAllowedError,
   TargetUserNotFoundError,
@@ -102,6 +106,7 @@ function mapAdminError(err: unknown): Error {
   if (err instanceof UserStatusChangeError) return new ConflictException(err.message);
   if (err instanceof SettingKeyNotAllowedError) return new BadRequestException(err.message);
   if (err instanceof InvalidSettingValueError) return new BadRequestException(err.message);
+  if (err instanceof CountryNotFoundError) return new NotFoundException(err.message);
   if (err instanceof SubmissionNotFoundError) return new NotFoundException("submission not found");
   if (err instanceof ReviewNotAllowedError) return new ConflictException(err.message);
   if (err instanceof DisputeNotFoundError) return new NotFoundException(err.message);
@@ -423,6 +428,30 @@ export class AdminController {
   ): Promise<KillSwitchState> {
     try {
       return await this.admin.setKillSwitch(adminId, dto, this.ip(req));
+    } catch (err) {
+      throw mapAdminError(err);
+    }
+  }
+
+  // ── countries (view: dashboards; toggle: SUPER+FINANCE) ──────────────────
+
+  @Roles(...RBAC.viewDashboards)
+  @Get("countries")
+  async countries(): Promise<AdminCountriesResponse> {
+    return this.admin.listCountries();
+  }
+
+  @Roles(...RBAC.manageCountries)
+  @Post("countries/:code")
+  @HttpCode(HttpStatus.OK)
+  async setCountryEnabled(
+    @CurrentAdminId() adminId: string,
+    @Param("code", new ZodPipe(z.string().trim().length(2))) code: string,
+    @Body(new ZodPipe(zSetCountryEnabledRequest)) dto: SetCountryEnabledRequest,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AdminCountriesResponse> {
+    try {
+      return await this.admin.setCountryEnabled(adminId, code, dto, this.ip(req));
     } catch (err) {
       throw mapAdminError(err);
     }

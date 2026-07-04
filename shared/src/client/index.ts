@@ -43,6 +43,11 @@ import {
   type UpdateOfferRequest,
 } from "../schemas/offers.js";
 import {
+  zCountriesResponse,
+  zAdminCountriesResponse,
+  type SetCountryEnabledRequest,
+} from "../schemas/countries.js";
+import {
   zFeePreviewResponse,
   zTrade,
   zTradeDetailResponse,
@@ -165,6 +170,9 @@ export class QuataApiClient {
     }
     return schema.parse(json) as z.infer<S>;
   }
+
+  // ---- countries (public: enabled markets for the sign-up picker) ----
+  countries = () => this.request("GET", "/api/v1/countries", zCountriesResponse);
 
   // ---- auth ----
   register = (body: RegisterRequest) => this.request("POST", "/api/v1/auth/register", zRegisterResponse, body);
@@ -340,6 +348,9 @@ export class QuataApiClient {
   adminKillSwitch = () => this.request("GET", "/api/v1/admin/kill-switch", zKillSwitchState);
   adminSetKillSwitch = (body: KillSwitchRequest) =>
     this.request("POST", "/api/v1/admin/kill-switch", zKillSwitchState, body);
+  adminCountries = () => this.request("GET", "/api/v1/admin/countries", zAdminCountriesResponse);
+  adminSetCountryEnabled = (code: string, body: SetCountryEnabledRequest) =>
+    this.request("POST", `/api/v1/admin/countries/${code}`, zAdminCountriesResponse, body);
   adminUpdateSetting = (body: UpdateSettingRequest): Promise<unknown> =>
     this.request("PATCH", "/api/v1/admin/settings", zAnyRecord, body);
   adminAuditLogs = (query?: Query) =>

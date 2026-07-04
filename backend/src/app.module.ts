@@ -13,6 +13,7 @@ import { AlertsModule } from "./common/alerts/alerts.module";
 import { RedisModule } from "./common/redis/redis.module";
 import { StorageModule } from "./common/storage/storage.module";
 import { SettingsModule } from "./modules/settings/settings.module";
+import { CountriesModule } from "./modules/countries/countries.module";
 import { HealthModule } from "./modules/health/health.module";
 import { FeesModule } from "./modules/fees/fees.module";
 import { LedgerModule } from "./modules/ledger/ledger.module";
@@ -76,6 +77,7 @@ import { ContentModule } from "./modules/content/content.module";
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]), // global baseline; auth endpoints add stricter buckets
     DatabaseModule,
     SettingsModule,
+    CountriesModule,
     AuditModule,
     AlertsModule,
     RedisModule,

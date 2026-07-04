@@ -12,6 +12,7 @@ import { ADMIN_ROLES, type AdminRole } from "@quatatrade/shared";
  * | KYC approve/reject    |  ✓    |         |    ✓       |         |     |         |         |
  * | Freeze/suspend user   |  ✓    |         |    ✓       |   ✓     |  ✓  |         |         |
  * | Kill switch           |  ✓    |   ✓     |            |         |     |         |         |
+ * | Manage countries      |  ✓    |   ✓     |            |         |     |         |         |
  * | Ledger adjustment     |  ✓    |         |            |         |     |         |         |
  * | View dashboards       |  ✓    |   ✓     |    ✓       |   ✓     |  ✓  |   ✓     |   ✓     |
  * | Edit settings/fees    |  ✓    |   ✓     |            |         |     |         |         |
@@ -30,6 +31,8 @@ export const RBAC = {
   kycReview: ["SUPER_ADMIN", "COMPLIANCE_ADMIN"] as const,
   freezeUser: ["SUPER_ADMIN", "COMPLIANCE_ADMIN", "SUPPORT_ADMIN", "MODERATOR"] as const,
   killSwitch: ["SUPER_ADMIN", "FINANCE_ADMIN"] as const,
+  /** Enable/disable a market (phased country rollout) — same tier as the kill switch. */
+  manageCountries: ["SUPER_ADMIN", "FINANCE_ADMIN"] as const,
   ledgerAdjustment: ["SUPER_ADMIN"] as const,
   viewDashboards: ADMIN_ROLES,
   editSettings: ["SUPER_ADMIN", "FINANCE_ADMIN"] as const,

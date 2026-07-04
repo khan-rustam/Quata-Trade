@@ -31,6 +31,7 @@ function tradeRow(overrides: Partial<Selectable<TradesTable>> = {}): Selectable<
   return {
     id: TRADE_ID,
     short_ref: "QT-8F3K2",
+    country: "CM",
     offer_id: OFFER_ID,
     seller_id: SELLER_ID,
     buyer_id: BUYER_ID,
@@ -186,6 +187,7 @@ describe("mapOffer — row → zOffer", () => {
   const offerRow: Selectable<OffersTable> = {
     id: OFFER_ID,
     user_id: SELLER_ID,
+    country: "CM",
     side: "SELL",
     asset: "USDT_TRC20",
     price_xaf_per_unit: 655n,

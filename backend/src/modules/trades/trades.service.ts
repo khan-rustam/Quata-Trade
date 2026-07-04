@@ -67,19 +67,31 @@ export class TradesService {
       }
       if (offer.remaining < amount) throw new OfferUnavailableError("insufficient remaining");
 
+      // Market gate: the offer's market must still be enabled — disabling a country
+      // (phased-rollout kill) freezes NEW trades. Read via the tx connection (no extra
+      // pool connection, transactionally consistent) rather than the cached accessor.
+      const market = await trx
+        .selectFrom("countries")
+        .select("enabled")
+        .where("code", "=", offer.country)
+        .executeTakeFirst();
+      if (!market?.enabled) throw new OfferUnavailableError("market is not currently available");
+
       // SELL offer: maker sells, taker buys. BUY offer: maker buys, taker sells.
       const sellerId = offer.side === "SELL" ? offer.user_id : takerId;
       const buyerId = offer.side === "SELL" ? takerId : offer.user_id;
 
-      // 2. Both parties must be active; KYC tier caps the trade size.
+      // 2. Both parties must be active, in the OFFER'S market, and within KYC caps.
       const parties = await trx
         .selectFrom("users")
-        .select(["id", "status", "kyc_tier"])
+        .select(["id", "status", "kyc_tier", "country"])
         .where("id", "in", [sellerId, buyerId])
         .execute();
       for (const id of [sellerId, buyerId]) {
         const u = parties.find((p) => p.id === id);
         if (!u || u.status !== "active") throw new OfferUnavailableError("party is not active");
+        // Same-country invariant: a trade only ever pairs two users in the offer's market.
+        if (u.country !== offer.country) throw new OfferUnavailableError("cross-market trade not allowed");
         const { maxTrade } = await this.settings.kycTierLimits(u.kyc_tier);
         if (amount > maxTrade) throw new OfferUnavailableError("amount exceeds KYC tier limit");
       }
@@ -113,6 +125,7 @@ export class TradesService {
         .values({
           id: tradeId,
           short_ref: newShortRef(),
+          country: offer.country, // inherit the offer's market — records the same-country invariant
           offer_id: offer.id,
           seller_id: sellerId,
           buyer_id: buyerId,

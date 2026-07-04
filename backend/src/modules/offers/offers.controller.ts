@@ -61,10 +61,13 @@ export class OffersController {
     return this.toWire(row);
   }
 
-  /** Marketplace browse — ACTIVE offers only (service enforces). */
+  /** Marketplace browse — ACTIVE offers in the CALLER'S market only (service scopes by country). */
   @Get()
-  async list(@Query(new ZodPipe(zOffersQuery)) query: OffersQuery): Promise<OffersListResponse> {
-    const { items, total } = await this.offers.list(query);
+  async list(
+    @CurrentUserId() userId: string,
+    @Query(new ZodPipe(zOffersQuery)) query: OffersQuery,
+  ): Promise<OffersListResponse> {
+    const { items, total } = await this.offers.list(userId, query);
     const traders = await fetchTraders(this.db, items.map((o) => o.user_id));
     const mapped: Offer[] = [];
     for (const row of items) {
@@ -90,10 +93,10 @@ export class OffersController {
     return { items };
   }
 
-  /** 404 when missing or soft-DELETED — deleted offers are indistinguishable from absent. */
+  /** 404 when missing, soft-DELETED, or in another market — all indistinguishable from absent. */
   @Get(":id")
-  async detail(@Param("id", new ZodPipe(zUuid)) id: string): Promise<Offer> {
-    const row = await this.offers.getPublic(id);
+  async detail(@CurrentUserId() userId: string, @Param("id", new ZodPipe(zUuid)) id: string): Promise<Offer> {
+    const row = await this.offers.getPublic(userId, id);
     if (!row) throw new NotFoundException("offer not found");
     return this.toWire(row);
   }
