@@ -15,7 +15,7 @@
  *    NODE_ENV=production would trip the SIGNER_MODE=mock hard-stop on the test
  *    box, which runs NODE_ENV=staging.)
  *  - The web process has no .env for its port, so we pass PORT explicitly.
- *    Nginx proxies trade.quatadigital.com -> 127.0.0.1:3800, so the web app
+ *    Nginx proxies quatatrade.com -> 127.0.0.1:3800, so the web app
  *    MUST listen on 3800 (port 3000 is used by another project on this box).
  *    Override with QT_WEB_PORT if the nginx upstream ever changes.
  */

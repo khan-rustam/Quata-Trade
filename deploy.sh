@@ -16,8 +16,8 @@
 #   QT_BRANCH=main
 #   QT_APP_DIR=<repo dir>            (defaults to this script's directory)
 #   QT_PNPM_VERSION=11.2.2
-#   QT_API_HEALTH_URL=https://api.trade.quatadigital.com/health
-#   QT_WEB_URL=https://trade.quatadigital.com
+#   QT_API_HEALTH_URL=https://api.quatatrade.com/health
+#   QT_WEB_URL=https://quatatrade.com
 #   QT_WEB_PORT=3800                 (web listen port; must match the Nginx upstream)
 #   QT_SKIP_MIGRATE=0                (set 1 to skip migrations)
 #
@@ -47,8 +47,8 @@ fi
 BRANCH="${QT_BRANCH:-main}"
 APP_DIR="${QT_APP_DIR}"
 PNPM_VERSION="${QT_PNPM_VERSION:-11.2.2}"
-API_HEALTH_URL="${QT_API_HEALTH_URL:-https://api.trade.quatadigital.com/health}"
-WEB_URL="${QT_WEB_URL:-https://trade.quatadigital.com}"
+API_HEALTH_URL="${QT_API_HEALTH_URL:-https://api.quatatrade.com/health}"
+WEB_URL="${QT_WEB_URL:-https://quatatrade.com}"
 ECOSYSTEM="${QT_ECOSYSTEM:-$APP_DIR/ecosystem.config.cjs}"
 SKIP_MIGRATE="${QT_SKIP_MIGRATE:-0}"
 WEB_PORT="${QT_WEB_PORT:-3800}"
