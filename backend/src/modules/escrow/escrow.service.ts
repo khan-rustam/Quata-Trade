@@ -11,6 +11,16 @@ import { IllegalTransitionError, TradeNotFoundError } from "./escrow.errors";
 export type TradeRow = Selectable<TradesTable>;
 
 /**
+ * What the seller escrows for a trade: the principal plus their (per-side) fee.
+ * Everything locked here must leave escrow again — released (buyer + treasury) on
+ * completion, or refunded in full to the seller otherwise. Single source of truth
+ * so lock, release, and refund can never disagree on the escrowed quantity.
+ */
+function escrowLocked(trade: Pick<TradeRow, "amount" | "seller_fee_amount">): bigint {
+  return trade.amount + trade.seller_fee_amount;
+}
+
+/**
  * escrow — review priority #1 (Documents/06-backend-modules.md).
  *
  * The ONLY module that mutates trades.status, and the ONLY caller of
@@ -106,6 +116,8 @@ export class EscrowService {
   /**
    * OPENED → ESCROW_LOCKED: move seller available → escrow atomically.
    * Called by TradesService inside the same tx that created the trade row.
+   * The seller locks amount + seller_fee_amount (their fee is escrowed up front,
+   * released to treasury only on completion — refunded in full otherwise).
    */
   async lockEscrow(
     trx: Transaction<Database>,
@@ -115,6 +127,7 @@ export class EscrowService {
   ): Promise<void> {
     const sellerAvailable = await this.ledger.getOrCreateAccount(trade.seller_id, "user_available", trade.asset, trx);
     const sellerEscrow = await this.ledger.getOrCreateAccount(trade.seller_id, "user_escrow", trade.asset, trx);
+    const sellerLock = escrowLocked(trade);
     const { journalId } = await this.ledger.postJournal(
       {
         reason: "escrow_lock",
@@ -127,8 +140,8 @@ export class EscrowService {
         createdBy: actor,
         asset: trade.asset,
         legs: [
-          { accountId: sellerAvailable, amount: -trade.amount },
-          { accountId: sellerEscrow, amount: trade.amount },
+          { accountId: sellerAvailable, amount: -sellerLock },
+          { accountId: sellerEscrow, amount: sellerLock },
         ],
       },
       trx,
@@ -167,22 +180,28 @@ export class EscrowService {
     });
   }
 
-  /** Shared release legs: escrow → buyer (amount − fee) + treasury (fee). */
+  /**
+   * Shared release legs: escrow → buyer (amount − buyerFee) + treasury (buyerFee +
+   * sellerFee). What leaves escrow is exactly what was locked (amount + sellerFee);
+   * the per-side split guarantees sellerLock === buyerCredit + totalFee.
+   */
   private async postRelease(trx: Transaction<Database>, trade: TradeRow, actor: string): Promise<string> {
     const sellerEscrow = await this.ledger.getOrCreateAccount(trade.seller_id, "user_escrow", trade.asset, trx);
     const buyerAvailable = await this.ledger.getOrCreateAccount(trade.buyer_id, "user_available", trade.asset, trx);
     const treasury = await this.ledger.getOrCreateAccount(null, "platform_treasury", trade.asset, trx);
+    const locked = escrowLocked(trade);
     const buyerCredit = trade.amount - trade.fee_amount;
+    const totalFee = trade.fee_amount + trade.seller_fee_amount;
 
     const legs =
-      trade.fee_amount > 0n
+      totalFee > 0n
         ? [
-            { accountId: sellerEscrow, amount: -trade.amount },
+            { accountId: sellerEscrow, amount: -locked },
             { accountId: buyerAvailable, amount: buyerCredit },
-            { accountId: treasury, amount: trade.fee_amount },
+            { accountId: treasury, amount: totalFee },
           ]
         : [
-            { accountId: sellerEscrow, amount: -trade.amount },
+            { accountId: sellerEscrow, amount: -locked },
             { accountId: buyerAvailable, amount: buyerCredit },
           ];
 
@@ -201,10 +220,15 @@ export class EscrowService {
     return journalId;
   }
 
-  /** Shared refund legs: escrow → seller available (full amount, no fee). */
+  /**
+   * Shared refund legs: escrow → seller available (the FULL locked amount +
+   * seller_fee, no fee charged). A non-completed trade never earns the platform a
+   * fee, so the seller's fee escrow is returned intact along with the principal.
+   */
   private async postRefund(trx: Transaction<Database>, trade: TradeRow, actor: string): Promise<string> {
     const sellerEscrow = await this.ledger.getOrCreateAccount(trade.seller_id, "user_escrow", trade.asset, trx);
     const sellerAvailable = await this.ledger.getOrCreateAccount(trade.seller_id, "user_available", trade.asset, trx);
+    const locked = escrowLocked(trade);
     const { journalId } = await this.ledger.postJournal(
       {
         reason: "escrow_refund",
@@ -216,8 +240,8 @@ export class EscrowService {
         createdBy: actor,
         asset: trade.asset,
         legs: [
-          { accountId: sellerEscrow, amount: -trade.amount },
-          { accountId: sellerAvailable, amount: trade.amount },
+          { accountId: sellerEscrow, amount: -locked },
+          { accountId: sellerAvailable, amount: locked },
         ],
       },
       trx,

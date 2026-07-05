@@ -23,6 +23,7 @@ import { InsufficientFundsError } from "../ledger/ledger.errors";
 import { SettingsService } from "../settings/settings.service";
 import { CountriesService } from "../countries/countries.service";
 import { ScreeningService } from "../screening/screening.service";
+import { PromoService } from "../promo/promo.service";
 import { WithdrawalsService } from "../withdrawals/withdrawals.service";
 import { ApprovalNotAllowedError, DualApprovalError } from "../withdrawals/withdrawals.errors";
 import { AdminAuthService } from "./admin-auth.service";
@@ -319,7 +320,7 @@ describe("admin flows (Testcontainers PG16)", () => {
     jwt = new JwtService({ secret: JWT_SECRET, signOptions: { expiresIn: 600 } });
     adminAuth = new AdminAuthService(t.db, jwt, config, audit);
     admin = new AdminService(t.db, ledger, settings, audit, adminAuth, new CountriesService(t.db));
-    withdrawals = new WithdrawalsService(t.db, ledger, settings, audit, config, new ScreeningService(t.db));
+    withdrawals = new WithdrawalsService(t.db, ledger, settings, audit, config, new ScreeningService(t.db), new PromoService(settings));
     passwordHash = await argon2.hash(PASSWORD, { type: argon2.argon2id });
   });
 
@@ -522,15 +523,16 @@ describe("admin flows (Testcontainers PG16)", () => {
       finance.id,
       "fee_bps",
       { ...fullFee, QUATAPAY: 40, MTN_MOMO: 60, ORANGE_MONEY: 60 },
+      "launch promo pricing",
       code(finance),
     );
     expect(await settings.feeBps("QUATAPAY")).toBe(40);
 
     await expect(
-      admin.updateSetting(finance.id, "kyc_retention_days", 9999, code(finance)),
+      admin.updateSetting(finance.id, "kyc_retention_days", 9999, "test", code(finance)),
     ).rejects.toBeInstanceOf(SettingKeyNotAllowedError); // not on the whitelist
     await expect(
-      admin.updateSetting(finance.id, "fee_bps", { QUATAPAY: "not-a-number" }, code(finance)),
+      admin.updateSetting(finance.id, "fee_bps", { QUATAPAY: "not-a-number" }, "test", code(finance)),
     ).rejects.toBeInstanceOf(InvalidSettingValueError);
 
     const auditRow = await t.db
@@ -540,7 +542,7 @@ describe("admin flows (Testcontainers PG16)", () => {
       .orderBy("created_at", "desc")
       .limit(1)
       .executeTakeFirstOrThrow();
-    expect(auditRow.metadata).toMatchObject({ key: "fee_bps" });
+    expect(auditRow.metadata).toMatchObject({ key: "fee_bps", reason: "launch promo pricing" });
   });
 
   // ── ledger adjustment ─────────────────────────────────────────────────────

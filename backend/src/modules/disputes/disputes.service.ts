@@ -13,6 +13,7 @@ import { AuditService } from "../../common/audit/audit.service";
 import { MinioService } from "../../common/storage/minio.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { EscrowService } from "../escrow/escrow.service";
+import { SettingsService } from "../settings/settings.service";
 import { IllegalTransitionError, TradeNotFoundError } from "../escrow/escrow.errors";
 import {
   DisputeAlreadyOpenError,
@@ -74,6 +75,7 @@ export class DisputesService {
     private readonly escrow: EscrowService,
     private readonly audit: AuditService,
     private readonly minio: MinioService,
+    private readonly settings: SettingsService,
   ) {}
 
   /**
@@ -101,6 +103,29 @@ export class DisputesService {
       } catch (err) {
         if (pgCode(err) === UNIQUE_VIOLATION) throw new DisputeAlreadyOpenError(); // → 409
         throw err;
+      }
+
+      // Dispute fee (fee-engine): DISABLED by default (0 → free, no ledger touch).
+      // When set > 0, the opener is charged atomically with opening the dispute.
+      const disputeFee = await this.settings.disputeFee();
+      if (disputeFee > 0n) {
+        const opener = await this.ledger.getOrCreateAccount(userId, "user_available", trade.asset, trx);
+        const treasury = await this.ledger.getOrCreateAccount(null, "platform_treasury", trade.asset, trx);
+        await this.ledger.postJournal(
+          {
+            reason: "dispute_fee",
+            referenceType: "dispute",
+            referenceId: disputeId,
+            idempotencyKey: `dispute_fee:${disputeId}`,
+            createdBy: userId,
+            asset: trade.asset,
+            legs: [
+              { accountId: opener, amount: -disputeFee },
+              { accountId: treasury, amount: disputeFee },
+            ],
+          },
+          trx,
+        );
       }
 
       await this.escrow.markDisputed(trx, trade, userId); // the ONLY trade-status writer

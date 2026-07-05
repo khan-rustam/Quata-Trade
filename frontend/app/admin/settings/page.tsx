@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, Pause, Play } from "lucide-react";
-import { fromDisplay, toDisplay, zFeeBpsValue, zWithdrawalCapsValue } from "@quatatrade/shared";
+import { fromDisplay, MAX_FEE_BPS, toDisplay, zFeeBpsValue, zWithdrawalCapsValue } from "@quatatrade/shared";
 import { AdminTitle } from "@/components/admin/admin-ui";
 import { TotpActionDialog } from "@/components/admin/totp-dialog";
 import { Card } from "@/components/ui/card";
@@ -113,12 +113,8 @@ function SettingsConfigEditor(): React.JSX.Element {
   // Key on the snapshot so the form remounts (re-seeds from props, no effect) after a save refetches.
   const feeKey = Object.values(data.feeBps).join(",");
   const capsKey = Object.values(data.withdrawalCaps).join(",");
-  return (
-    <ConfigForm
-      key={`${data.paymentWindowMinutes}:${data.depositPolicy.minAmount}:${data.depositPolicy.confirmations}:${feeKey}:${capsKey}`}
-      data={data}
-    />
-  );
+  const depKey = Object.values(data.depositPolicy).join(",");
+  return <ConfigForm key={`${data.paymentWindowMinutes}:${depKey}:${feeKey}:${capsKey}:${data.sellerFeeBps}`} data={data} />;
 }
 
 function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSettings>> }): React.JSX.Element {
@@ -128,14 +124,18 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
   const { data: me } = useAdminMe();
 
   const [windowMin, setWindowMin] = useState(String(data.paymentWindowMinutes));
-  const [depMin, setDepMin] = useState(
-    toDisplay(data.depositPolicy.minAmount, "USDT_TRC20", 6).replace(/\.?0+$/, ""),
-  );
+  const usdt = (raw: string) => toDisplay(raw, "USDT_TRC20", 6).replace(/\.?0+$/, "");
+  const [depMin, setDepMin] = useState(usdt(data.depositPolicy.minAmount));
+  const [depMax, setDepMax] = useState(data.depositPolicy.maxAmount ? usdt(data.depositPolicy.maxAmount) : "");
+  const [depFeeFixed, setDepFeeFixed] = useState(usdt(data.depositPolicy.feeFixed));
+  const [depFeeBps, setDepFeeBps] = useState(String(data.depositPolicy.feeBps));
   const [depConf, setDepConf] = useState(String(data.depositPolicy.confirmations));
   // fee bps per rail (as input strings) + withdrawal caps (as USDT display strings)
   const [feeBps, setFeeBps] = useState<Record<string, string>>(
     Object.fromEntries(Object.entries(data.feeBps).map(([k, v]) => [k, String(v)])),
   );
+  // Global SELLER trading fee (Phase 2) — a single bps, separate from the per-rail buyer fee.
+  const [sellerFeeBps, setSellerFeeBps] = useState(String(data.sellerFeeBps));
   const capToDisplay = (raw: string) => toDisplay(raw, "USDT_TRC20", 6).replace(/\.?0+$/, "");
   const [caps, setCaps] = useState({
     per_tx_max: capToDisplay(data.withdrawalCaps.perTxMax),
@@ -156,7 +156,13 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
     try {
       setPending({
         key: "deposit_policy",
-        value: { min_amount: fromDisplay(depMin || "0").toString(), confirmations: Number(depConf) },
+        value: {
+          min_amount: fromDisplay(depMin || "0").toString(),
+          max_amount: depMax.trim() ? fromDisplay(depMax).toString() : null,
+          fee_fixed: fromDisplay(depFeeFixed || "0").toString(),
+          fee_bps: Number(depFeeBps || "0"),
+          confirmations: Number(depConf),
+        },
       });
     } catch (err) {
       setError(apiErrorMessage(err, tx("errorUpdate")));
@@ -173,6 +179,15 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
       return;
     }
     setPending({ key: "fee_bps", value });
+  };
+  const saveSellerFee = () => {
+    setError(null);
+    const value = Number(sellerFeeBps || "0");
+    if (!Number.isInteger(value) || value < 0 || value > MAX_FEE_BPS) {
+      setError(tx("errorUpdate"));
+      return;
+    }
+    setPending({ key: "seller_fee_bps", value });
   };
   const saveCaps = () => {
     setError(null);
@@ -195,12 +210,17 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
     }
   };
 
-  const confirm = async (v: { totpCode: string }) => {
+  const confirm = async (v: { totpCode: string; reason?: string }) => {
     if (!pending) return;
     setBusy(true);
     setError(null);
     try {
-      await adminApi.adminUpdateSetting({ key: pending.key, value: pending.value, totpCode: v.totpCode || undefined });
+      await adminApi.adminUpdateSetting({
+        key: pending.key,
+        value: pending.value,
+        reason: v.reason?.trim() || "(no reason given)",
+        totpCode: v.totpCode || undefined,
+      });
       toast.success(tx("settingSavedTitle"), tx("settingSavedBody"));
       setPending(null);
       void qc.invalidateQueries({ queryKey: ["admin", "settings"] });
@@ -244,36 +264,41 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
         </div>
       </Card>
 
-      {/* editable: deposit policy */}
+      {/* editable: deposit policy + platform deposit fee */}
       <Card className="space-y-3">
-        <p className="font-medium">{tx("depositTitle")}</p>
-        <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <p className="font-medium">{tx("depositTitle")}</p>
+          <p className="text-sm text-text-2">{tx("depositDesc")}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Field label={tx("depositMinLabel")}>
             {(p) => (
-              <Input
-                {...p}
-                mono
-                inputMode="decimal"
-                suffix="USDT"
-                value={depMin}
-                onChange={(e) => setDepMin(e.target.value.replace(/[^\d.]/g, ""))}
-                className="w-40"
-              />
+              <Input {...p} mono inputMode="decimal" suffix="USDT" value={depMin} onChange={(e) => setDepMin(e.target.value.replace(/[^\d.]/g, ""))} />
+            )}
+          </Field>
+          <Field label={tx("depositMaxLabel")} hint={tx("depositMaxHint")}>
+            {(p) => (
+              <Input {...p} mono inputMode="decimal" suffix="USDT" placeholder={tx("noLimit")} value={depMax} onChange={(e) => setDepMax(e.target.value.replace(/[^\d.]/g, ""))} />
+            )}
+          </Field>
+          <Field label={tx("depositFeeFixedLabel")}>
+            {(p) => (
+              <Input {...p} mono inputMode="decimal" suffix="USDT" value={depFeeFixed} onChange={(e) => setDepFeeFixed(e.target.value.replace(/[^\d.]/g, ""))} />
+            )}
+          </Field>
+          <Field label={tx("depositFeeBpsLabel")}>
+            {(p) => (
+              <Input {...p} mono inputMode="numeric" suffix={tx("bpsUnit")} value={depFeeBps} onChange={(e) => setDepFeeBps(e.target.value.replace(/[^\d]/g, ""))} />
             )}
           </Field>
           <Field label={tx("depositConfirmationsLabel")}>
             {(p) => (
-              <Input
-                {...p}
-                mono
-                inputMode="numeric"
-                value={depConf}
-                onChange={(e) => setDepConf(e.target.value.replace(/[^\d]/g, ""))}
-                className="w-32"
-              />
+              <Input {...p} mono inputMode="numeric" value={depConf} onChange={(e) => setDepConf(e.target.value.replace(/[^\d]/g, ""))} />
             )}
           </Field>
-          <Button size="sm" onClick={saveDeposit} disabled={depConf === ""}>
+        </div>
+        <div>
+          <Button size="sm" onClick={saveDeposit} disabled={depConf === "" || depMin === ""}>
             {tx("saveChanges")}
           </Button>
         </div>
@@ -306,6 +331,27 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
             {tx("saveFees")}
           </Button>
         </div>
+        <div className="border-t border-border pt-3 space-y-2">
+          <p className="text-sm font-medium">{tx("sellerFeeTitle")}</p>
+          <p className="text-xs text-text-3">{tx("sellerFeeDesc")}</p>
+          <div className="flex items-end gap-3">
+            <Field label={tx("sellerFeeLabel")}>
+              {(p) => (
+                <Input
+                  {...p}
+                  mono
+                  inputMode="numeric"
+                  suffix={tx("bpsUnit")}
+                  value={sellerFeeBps}
+                  onChange={(e) => setSellerFeeBps(e.target.value.replace(/[^\d]/g, ""))}
+                />
+              )}
+            </Field>
+            <Button size="sm" onClick={saveSellerFee}>
+              {tx("saveChanges")}
+            </Button>
+          </div>
+        </div>
       </Card>
 
       {/* editable: withdrawal caps + dual-approval threshold */}
@@ -334,6 +380,8 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
         title={tx("confirmChangeTitle")}
         description={tx("confirmChangeDesc")}
         actionLabel={tx("applyChange")}
+        reasonLabel={tx("changeReasonLabel")}
+        reasonRequired
         requireTotp={Boolean(me?.totpEnabled)}
         busy={busy}
         error={error}

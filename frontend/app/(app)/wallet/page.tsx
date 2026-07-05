@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { DepositStatusBadge, WithdrawalStatusBadge } from "@/components/ui/status-badge";
 import { Keyhole } from "@/components/brand/keyhole";
 import { shortHash, formatDateTime } from "@/lib/format";
+import { toDisplay } from "@quatatrade/shared";
 import { useBalances, useDeposits, useWithdrawals } from "@/hooks/use-wallet";
 
 export default function WalletPage(): React.JSX.Element {
@@ -102,6 +103,11 @@ function DepositsList(): React.JSX.Element {
           <div className="min-w-0">
             <p className="font-money text-sm">{shortHash(d.txHash)}</p>
             <p className="text-xs text-text-3">{formatDateTime(d.createdAt)}</p>
+            {d.fee !== "0" && (
+              <p className="text-xs text-text-3">
+                {tx("depositFeeNote", { fee: toDisplay(d.fee, "USDT_TRC20", 2), net: toDisplay(d.net, "USDT_TRC20", 2) })}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <Usdt value={d.amount} size="sm" showUnit={false} />

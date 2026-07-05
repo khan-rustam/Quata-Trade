@@ -6,6 +6,9 @@ import type { Database } from "../../db/types";
 import { newId } from "../../common/ids";
 import { LedgerService } from "../ledger/ledger.service";
 import { ScreeningService } from "../screening/screening.service";
+import { SettingsService } from "../settings/settings.service";
+import { PromoService } from "../promo/promo.service";
+import { computeDepositFee } from "../fees/fees";
 import { DEPOSITS_CONFIG, type DepositsConfig } from "./deposits.config";
 import { TRONGRID_CLIENT, type TronGridClient } from "./trongrid.client";
 
@@ -33,6 +36,8 @@ export class DepositConfirmationService {
     @Inject(DEPOSITS_CONFIG) private readonly cfg: DepositsConfig,
     private readonly ledger: LedgerService,
     private readonly screening: ScreeningService,
+    private readonly settings: SettingsService,
+    private readonly promo: PromoService,
   ) {}
 
   @Cron(CronExpression.EVERY_30_SECONDS)
@@ -140,8 +145,55 @@ export class DepositConfirmationService {
         }
       }
 
+      // Deposit policy (min/max on the GROSS amount) + platform fee, read live from
+      // settings. A deposit outside the admin-configured band is HELD for manual review
+      // (not auto-credited, not silently dropped) so an operator can decide.
+      const policy = await this.settings.depositPolicy();
+      const policyReason =
+        deposit.amount < policy.minAmount
+          ? "below the minimum deposit"
+          : policy.maxAmount !== null && deposit.amount > policy.maxAmount
+            ? "above the maximum deposit"
+            : null;
+      if (policyReason) {
+        await trx
+          .updateTable("deposits")
+          .set({ policy_hold: true, policy_reason: policyReason, confirmations, updated_at: new Date() })
+          .where("id", "=", deposit.id)
+          .execute();
+        return; // held — awaits manual review, never auto-credited
+      }
+
+      // An active deposit promo for the depositor's market WAIVES the platform fee
+      // entirely (net = gross). Country is read within the tx for a consistent view.
+      const depositor = await trx
+        .selectFrom("users")
+        .select("country")
+        .where("id", "=", deposit.user_id)
+        .executeTakeFirst();
+      const waived = depositor ? await this.promo.depositWaived(depositor.country) : false;
+      const fee = waived ? 0n : computeDepositFee(deposit.amount, policy.feeFixed, policy.feeBps);
+      const net = deposit.amount - fee; // net > 0 — the config refine guarantees fee < min <= amount
+
       const external = await this.ledger.getOrCreateAccount(null, "external", deposit.asset, trx);
       const userAvailable = await this.ledger.getOrCreateAccount(deposit.user_id, "user_available", deposit.asset, trx);
+
+      // external −gross, user +net, treasury +fee (balanced). Skip the fee leg when 0
+      // (a zero-amount ledger entry violates the amount<>0 CHECK).
+      const legs =
+        fee > 0n
+          ? [
+              { accountId: external, amount: -deposit.amount },
+              { accountId: userAvailable, amount: net },
+              {
+                accountId: await this.ledger.getOrCreateAccount(null, "platform_treasury", deposit.asset, trx),
+                amount: fee,
+              },
+            ]
+          : [
+              { accountId: external, amount: -deposit.amount },
+              { accountId: userAvailable, amount: deposit.amount },
+            ];
 
       const { journalId } = await this.ledger.postJournal(
         {
@@ -151,17 +203,14 @@ export class DepositConfirmationService {
           idempotencyKey: `deposit:${deposit.tx_hash}:${deposit.log_index}`,
           createdBy: "system",
           asset: deposit.asset,
-          legs: [
-            { accountId: external, amount: -deposit.amount },
-            { accountId: userAvailable, amount: deposit.amount },
-          ],
+          legs,
         },
         trx,
       );
 
       await trx
         .updateTable("deposits")
-        .set({ status: "CREDITED", credited_journal_id: journalId, confirmations, updated_at: new Date() })
+        .set({ status: "CREDITED", credited_journal_id: journalId, fee, confirmations, updated_at: new Date() })
         .where("id", "=", deposit.id)
         .execute();
 
@@ -174,7 +223,9 @@ export class DepositConfirmationService {
             depositId: deposit.id,
             userId: deposit.user_id,
             asset: deposit.asset,
-            amount: deposit.amount.toString(),
+            amount: deposit.amount.toString(), // gross
+            fee: fee.toString(),
+            net: net.toString(),
             txHash: deposit.tx_hash,
             logIndex: deposit.log_index,
             journalId,

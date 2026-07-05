@@ -42,6 +42,8 @@ function tradeRow(overrides: Partial<Selectable<TradesTable>> = {}): Selectable<
     payment_method: "QUATAPAY",
     fee_bps: 30,
     fee_amount: 3_000n,
+    seller_fee_bps: 0,
+    seller_fee_amount: 0n,
     status: "ESCROW_LOCKED",
     payment_deadline: deadline,
     completed_at: null,

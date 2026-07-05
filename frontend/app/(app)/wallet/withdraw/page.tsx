@@ -160,7 +160,10 @@ export default function WithdrawPage(): React.JSX.Element {
           </div>
           <div className="space-y-2 rounded-lg bg-surface-2 p-3 text-sm">
             <Row label={tx("rowAmount")} value={<Usdt value={result.amount} size="sm" />} />
-            <Row label={tx("rowNetworkFee")} value={<Usdt value={result.fee} size="sm" />} />
+            <Row label={tx("rowPlatformFee")} value={<Usdt value={result.fee} size="sm" />} />
+            {result.networkFeeEstimate !== "0" && (
+              <Row label={tx("rowNetworkFeeEstimate")} value={<Usdt value={result.networkFeeEstimate} size="sm" />} />
+            )}
             <Row
               label={tx("rowTotalDebited")}
               value={<Usdt value={(BigInt(result.amount) + BigInt(result.fee)).toString()} size="sm" />}

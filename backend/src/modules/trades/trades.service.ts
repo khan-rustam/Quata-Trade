@@ -7,7 +7,7 @@ import type { Database } from "../../db/types";
 import { newId, newShortRef } from "../../common/ids";
 import { parsePgEnumArray } from "../../common/pg";
 import { MinioService } from "../../common/storage/minio.service";
-import { fiatValueXaf, split } from "../fees/fees";
+import { fiatValueXaf, splitPerSide } from "../fees/fees";
 import { LedgerService } from "../ledger/ledger.service";
 import { EscrowService, type TradeRow } from "../escrow/escrow.service";
 import {
@@ -20,6 +20,7 @@ import {
 } from "../escrow/escrow.errors";
 import { validateChatAttachment } from "../chat/chat.validators";
 import { SettingsService } from "../settings/settings.service";
+import { PromoService } from "../promo/promo.service";
 
 const PROOF_PRESIGN_TTL_SECONDS = 120;
 
@@ -37,6 +38,7 @@ export class TradesService {
     private readonly escrow: EscrowService,
     private readonly settings: SettingsService,
     private readonly minio: MinioService,
+    private readonly promo: PromoService,
   ) {}
 
   async openTrade(takerId: string, dto: OpenTradeRequest): Promise<TradeRow> {
@@ -46,6 +48,7 @@ export class TradesService {
     const amount = BigInt(dto.amount);
     const windowMinutes = await this.settings.tradePaymentWindowMinutes();
     const feeBps = await this.settings.feeBps(dto.paymentMethod);
+    const sellerFeeBps = await this.settings.sellerFeeBps();
 
     return this.ledger.withMoneyTransaction(async (trx) => {
       // 1. Lock the offer row — the single serialization point against oversell.
@@ -96,8 +99,14 @@ export class TradesService {
         if (amount > maxTrade) throw new OfferUnavailableError("amount exceeds KYC tier limit");
       }
 
-      // 3. Money math — pure, property-tested functions only.
-      const { fee } = split(amount, feeBps);
+      // 3. Money math — pure, property-tested functions only. An active trading
+      // promo for the offer's market OVERRIDES the buyer rail fee AND waives the
+      // seller fee (a reduced/zero-fee campaign applies to the whole trade). The
+      // effective bps on each side is what we charge AND record on the trade.
+      const promoBps = await this.promo.tradingBps(offer.country);
+      const buyerBps = promoBps ?? feeBps;
+      const sellerBps = promoBps !== null ? 0 : sellerFeeBps;
+      const { buyerFee, sellerFee } = splitPerSide(amount, buyerBps, sellerBps);
       const fiatXaf = fiatValueXaf(amount, offer.price_xaf_per_unit, ASSET_DECIMALS[offer.asset]);
       if (fiatXaf <= 0n) throw new OfferUnavailableError("amount too small for fiat conversion");
 
@@ -134,8 +143,10 @@ export class TradesService {
           price_xaf_per_unit: offer.price_xaf_per_unit,
           fiat_amount_xaf: fiatXaf,
           payment_method: dto.paymentMethod,
-          fee_bps: feeBps,
-          fee_amount: fee,
+          fee_bps: buyerBps,
+          fee_amount: buyerFee,
+          seller_fee_bps: sellerBps,
+          seller_fee_amount: sellerFee,
         })
         .returningAll()
         .executeTakeFirstOrThrow();

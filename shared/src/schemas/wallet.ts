@@ -34,7 +34,9 @@ export type DepositAddressResponse = z.infer<typeof zDepositAddressResponse>;
 export const zDeposit = z.object({
   id: zUuid,
   asset: zAssetCode,
-  amount: zAmount,
+  amount: zAmount, // gross received
+  fee: zAmount, // platform deposit fee charged
+  net: zAmount, // amount − fee (credited to the user)
   txHash: z.string(),
   confirmations: z.number().int(),
   status: z.enum(DEPOSIT_STATUSES),
@@ -61,7 +63,8 @@ export const zWithdrawal = z.object({
   asset: zAssetCode,
   toAddress: z.string(),
   amount: zAmount,
-  fee: zAmount,
+  fee: zAmount, // platform withdrawal fee (deducted)
+  networkFeeEstimate: zAmount, // estimated on-chain network fee (display only)
   status: z.enum(WITHDRAWAL_STATUSES),
   txHash: z.string().nullable(),
   failureReason: z.string().nullable(),

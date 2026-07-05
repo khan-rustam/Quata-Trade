@@ -75,9 +75,13 @@ export const zTrade = z.object({
   priceXafPerUnit: zAmount,
   fiatAmountXaf: zAmount,
   paymentMethod: z.enum(PAYMENT_METHODS),
+  /** BUYER trading fee — deducted from the buyer's credit */
   feeBps: z.number().int(),
   feeAmount: zAmount,
-  /** amount − fee: what the buyer receives on release */
+  /** SELLER trading fee (Phase 2) — added to what the seller escrows; 0 when disabled */
+  sellerFeeBps: z.number().int(),
+  sellerFeeAmount: zAmount,
+  /** amount − buyerFee: what the buyer receives on release */
   buyerCredit: zAmount,
   status: z.enum(TRADE_STATUSES),
   paymentDeadline: z.string().nullable(),

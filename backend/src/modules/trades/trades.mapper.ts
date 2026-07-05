@@ -110,6 +110,8 @@ export function mapTrade(
     paymentMethod: row.payment_method,
     feeBps: row.fee_bps,
     feeAmount: row.fee_amount.toString(),
+    sellerFeeBps: row.seller_fee_bps,
+    sellerFeeAmount: row.seller_fee_amount.toString(),
     buyerCredit: (row.amount - row.fee_amount).toString(),
     status: row.status,
     paymentDeadline: row.payment_deadline ? row.payment_deadline.toISOString() : null,

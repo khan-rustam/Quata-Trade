@@ -475,7 +475,7 @@ export class AdminController {
     @Req() req: AuthenticatedRequest,
   ): Promise<{ ok: true }> {
     try {
-      await this.admin.updateSetting(adminId, dto.key, dto.value, dto.totpCode, this.ip(req));
+      await this.admin.updateSetting(adminId, dto.key, dto.value, dto.reason, dto.totpCode, this.ip(req));
       return { ok: true };
     } catch (err) {
       throw mapAdminError(err);

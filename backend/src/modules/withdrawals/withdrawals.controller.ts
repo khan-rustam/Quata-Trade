@@ -30,6 +30,7 @@ import {
 import { ZodPipe } from "../../common/zod.pipe";
 import { CurrentUserId } from "../../common/auth/decorators";
 import { RiskService } from "../risk/risk.service";
+import { SettingsService } from "../settings/settings.service";
 import { InsufficientFundsError, SerializationRetryExhaustedError } from "../ledger/ledger.errors";
 import { BlockedAddressError } from "../screening/screening.errors";
 import { WithdrawalsService, type WithdrawalRow } from "./withdrawals.service";
@@ -51,13 +52,14 @@ interface WithdrawalsPage {
 }
 
 /** DB row → zWithdrawal wire shape (amounts as strings, never numbers). */
-function toWire(row: WithdrawalRow): Withdrawal {
+function toWire(row: WithdrawalRow, networkFeeEstimate: string): Withdrawal {
   return {
     id: row.id,
     asset: row.asset,
     toAddress: row.to_address,
     amount: serializeAmount(row.amount),
     fee: serializeAmount(row.fee),
+    networkFeeEstimate,
     status: row.status,
     txHash: row.tx_hash,
     failureReason: row.failure_reason,
@@ -74,7 +76,13 @@ export class WithdrawalsController {
   constructor(
     private readonly withdrawals: WithdrawalsService,
     private readonly risk: RiskService,
+    private readonly settings: SettingsService,
   ) {}
+
+  /** Per-asset network-fee estimate as a wire string (display only). */
+  private async netEstimate(asset: string): Promise<string> {
+    return serializeAmount(await this.settings.withdrawalNetworkFee(asset));
+  }
 
   @Post()
   async request(
@@ -86,7 +94,8 @@ export class WithdrawalsController {
     // WithdrawalsService.request's "account is not active" guard.
     await this.risk.scoreWithdrawal(userId, BigInt(dto.amount)).catch(() => undefined);
     try {
-      return toWire(await this.withdrawals.request(userId, dto));
+      const wd = await this.withdrawals.request(userId, dto);
+      return toWire(wd, await this.netEstimate(wd.asset));
     } catch (err) {
       throw this.mapError(err);
     }
@@ -98,7 +107,8 @@ export class WithdrawalsController {
     @Query(new ZodPipe(zPagination)) query: Pagination,
   ): Promise<WithdrawalsPage> {
     const { items, total } = await this.withdrawals.listForUser(userId, query.page, query.pageSize);
-    return { items: items.map(toWire), page: query.page, pageSize: query.pageSize, total };
+    const est = await this.netEstimate("USDT_TRC20");
+    return { items: items.map((w) => toWire(w, est)), page: query.page, pageSize: query.pageSize, total };
   }
 
   // ---- address whitelist (declared before :id so /addresses isn't captured as an id) ----
@@ -137,7 +147,7 @@ export class WithdrawalsController {
   ): Promise<Withdrawal> {
     const row = await this.withdrawals.getForUser(id, userId);
     if (!row) throw new NotFoundException("withdrawal not found");
-    return toWire(row);
+    return toWire(row, await this.netEstimate(row.asset));
   }
 
   /** Domain errors → HTTP without leaking internals (generic auth failures). */

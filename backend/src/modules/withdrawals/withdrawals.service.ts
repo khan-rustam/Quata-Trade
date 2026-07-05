@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { sql, type Kysely, type Selectable, type Transaction } from "kysely";
+import { computeFee } from "../fees/fees";
 import * as argon2 from "argon2";
 import { authenticator } from "otplib";
 import { TronWeb } from "tronweb";
@@ -18,6 +19,7 @@ import { newId } from "../../common/ids";
 import { AuditService } from "../../common/audit/audit.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { SettingsService } from "../settings/settings.service";
+import { PromoService } from "../promo/promo.service";
 import { ScreeningService } from "../screening/screening.service";
 import { decryptSecret } from "./secret-crypto";
 import { RISK_HOLD_SCORE, scoreWithdrawalRisk } from "./withdrawal-risk";
@@ -86,6 +88,7 @@ export class WithdrawalsService {
     private readonly audit: AuditService,
     private readonly config: ConfigService<Env, true>,
     private readonly screening: ScreeningService,
+    private readonly promo: PromoService,
   ) {}
 
   // ------------------------------------------------------------------ request
@@ -225,7 +228,11 @@ export class WithdrawalsService {
     // whitelisted. On a hit this raises an aml.hit alert and refuses the withdrawal.
     await this.screening.assertAllowed(dto.asset, dto.toAddress, { userId, stage: "withdrawal" });
 
-    const fee = await this.settings.withdrawalFee(dto.asset);
+    // An active withdrawal promo for the user's market WAIVES the platform fee (the
+    // user still pays the on-chain network fee — that's outside our control).
+    const feeCfg = await this.settings.withdrawalFee(dto.asset);
+    const feeWaived = await this.promo.withdrawalWaived(user.country);
+    const fee = feeWaived ? 0n : feeCfg.fixed + computeFee(amount, feeCfg.bps); // fixed + percentage (combined)
     const caps = await this.settings.withdrawalCaps();
     const tier = await this.settings.kycTierLimits(user.kyc_tier);
     if (amount > caps.perTxMax) throw new WithdrawalCapExceededError("per-transaction withdrawal cap exceeded");

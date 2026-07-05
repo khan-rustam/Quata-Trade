@@ -163,6 +163,11 @@ export interface DepositsTable {
   /** Tainted-source hold: true → never auto-credited, awaits compliance review. */
   aml_hold: Generated<boolean>;
   aml_reason: string | null;
+  /** Platform deposit fee charged at credit (net credited = amount − fee). */
+  fee: Generated<bigint>;
+  /** Policy hold: gross below the min / above the max → held for manual review. */
+  policy_hold: Generated<boolean>;
+  policy_reason: string | null;
   created_at: Timestamp;
   updated_at: ColumnType<Date | null, never, Date | string>;
 }
@@ -218,8 +223,10 @@ export interface TradesTable {
   price_xaf_per_unit: bigint;
   fiat_amount_xaf: bigint;
   payment_method: PaymentMethod;
-  fee_bps: number;
-  fee_amount: bigint;
+  fee_bps: number; // BUYER trading fee bps (deducted from the buyer's credit)
+  fee_amount: bigint; // BUYER fee in smallest units
+  seller_fee_bps: Generated<number>; // SELLER trading fee bps (added to the seller's escrow lock)
+  seller_fee_amount: Generated<bigint>; // SELLER fee in smallest units
   status: Generated<TradeStatus>;
   payment_deadline: ColumnType<Date | null, Date | null | undefined, Date | null>;
   completed_at: ColumnType<Date | null, Date | null | undefined, Date | null>;

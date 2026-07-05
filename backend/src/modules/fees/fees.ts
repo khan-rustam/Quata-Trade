@@ -19,6 +19,17 @@ export function computeFee(amount: bigint, bps: number): bigint {
   return (amount * BigInt(bps)) / 10_000n;
 }
 
+/**
+ * Platform deposit fee = fixedFee + floor(amount * bps / 10000). Pure bigint math.
+ * The caller (deposit credit path) must ensure the resulting fee is strictly less
+ * than the deposit amount (the min-deposit policy + the config refine guarantee it)
+ * so the net credit stays positive and no zero-value ledger leg is posted.
+ */
+export function computeDepositFee(amount: bigint, fixedFee: bigint, bps: number): bigint {
+  if (fixedFee < 0n) throw new FeeError("fixed deposit fee must be non-negative");
+  return fixedFee + computeFee(amount, bps); // computeFee guards amount >= 0 and the bps range
+}
+
 export interface FeeSplit {
   buyerCredit: bigint;
   fee: bigint;
@@ -33,6 +44,34 @@ export function split(amount: bigint, bps: number): FeeSplit {
     throw new FeeError("fee split invariant violated");
   }
   return { buyerCredit, fee };
+}
+
+export interface PerSideSplit {
+  buyerFee: bigint; // borne by the buyer — deducted from what they receive
+  sellerFee: bigint; // borne by the seller — added to what they escrow
+  buyerCredit: bigint; // amount − buyerFee (credited to the buyer on release)
+  sellerLock: bigint; // amount + sellerFee (moved to escrow at lock time)
+  totalFee: bigint; // buyerFee + sellerFee (credited to treasury on release)
+}
+
+/**
+ * Per-side trading fee (fee-engine Phase 2). The seller escrows amount + sellerFee;
+ * on release the buyer receives amount − buyerFee and treasury receives both fees.
+ * ESCROW-CONSERVATION invariant: sellerLock === buyerCredit + totalFee, exactly — so
+ * everything the seller locks leaves escrow with no rounding leak. Both bps are
+ * bounded by MAX_FEE_BPS (< 10000) via computeFee, keeping buyerCredit > 0.
+ */
+export function splitPerSide(amount: bigint, buyerBps: number, sellerBps: number): PerSideSplit {
+  const buyerFee = computeFee(amount, buyerBps);
+  const sellerFee = computeFee(amount, sellerBps);
+  const buyerCredit = amount - buyerFee;
+  const sellerLock = amount + sellerFee;
+  const totalFee = buyerFee + sellerFee;
+  /* v8 ignore next 3 -- unreachable: (amount−buyerFee)+(buyerFee+sellerFee) always === amount+sellerFee */
+  if (sellerLock !== buyerCredit + totalFee) {
+    throw new FeeError("per-side fee split invariant violated");
+  }
+  return { buyerFee, sellerFee, buyerCredit, sellerLock, totalFee };
 }
 
 /**

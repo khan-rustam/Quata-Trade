@@ -1,13 +1,17 @@
 import { z, type ZodTypeAny } from "zod";
 import {
-  ASSET_CODES,
+  MAX_FEE_BPS,
   TRADE_STATUSES,
   WITHDRAWAL_STATUSES,
+  zDepositPolicyValue,
   zFeeBpsValue,
   zLedgerAdjustmentRequest,
   zPagination,
+  zPromoCampaignsValue,
   zUuid,
   zWithdrawalCapsValue,
+  zWithdrawalFeeValue,
+  zWithdrawalNetworkFeeValue,
   type LedgerAdjustmentRequest,
 } from "@quatatrade/shared";
 
@@ -70,16 +74,27 @@ export const SETTING_VALUE_SCHEMAS: Readonly<Record<string, ZodTypeAny>> = {
   // Coherent ordering (auto <= dual <= per_tx <= daily, per_tx > 0), BigInt-compared.
   // The dual-approval threshold is enforced live by the withdrawals DB trigger.
   withdrawal_caps: zWithdrawalCapsValue,
-  withdrawal_fee: z
-    .record(z.enum(ASSET_CODES), zAmountStr)
-    .refine((v) => typeof v.USDT_TRC20 === "string", "withdrawal_fee must include USDT_TRC20"),
+  // Platform withdrawal fee per asset: fixed + percentage (combined). Legacy fixed-only
+  // string form still accepted for back-compat.
+  withdrawal_fee: zWithdrawalFeeValue,
+  // Estimated on-chain network fee per asset, shown to the user (display only).
+  withdrawal_network_fee: zWithdrawalNetworkFeeValue,
+  // Action fees — 0 = disabled (fee-engine "exists but off"): ad-creation + dispute-open.
+  advertisement_fee: zAmountStr,
+  dispute_fee: zAmountStr,
+  // Global SELLER trading fee bps (Phase 2: 0.2–0.5% → 20–50). 0 = disabled (Phase 1).
+  seller_fee_bps: z.number().int().min(0).max(MAX_FEE_BPS),
+  // Promotional fee campaigns (time + country + reduced/zero fee).
+  promo_campaigns: zPromoCampaignsValue,
   kyc_tier_limits: z
     .record(z.string().regex(/^\d{1,2}$/), zTierLimitValue)
     .refine(
       (v) => ["0", "1", "2", "3"].every((tier) => v[tier] !== undefined),
       "kyc_tier_limits must define tiers 0-3",
     ),
-  deposit_policy: z.object({ min_amount: zAmountStr, confirmations: z.number().int().min(1).max(200) }).strict(),
+  // min/max (gross) + platform deposit fee (fixed + percentage), with the refine
+  // guaranteeing the fee never zeroes the smallest allowed deposit.
+  deposit_policy: zDepositPolicyValue,
 };
 
 /** Local response shape for the KYC review queue (no shared schema exists). */

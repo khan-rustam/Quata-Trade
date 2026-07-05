@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { Kysely } from "kysely";
 import { z } from "zod";
-import { FEE_BPS, MAX_FEE_BPS, type PaymentMethod } from "@quatatrade/shared";
+import { FEE_BPS, MAX_FEE_BPS, zPromoCampaignsValue, type PaymentMethod, type PromoCampaignsValue } from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
 import type { Database } from "../../db/types";
 
@@ -20,7 +20,21 @@ const zWithdrawalCaps = z.object({
 });
 const zTierLimit = z.object({ maxTrade: z.string(), dailyWithdrawal: z.string() });
 const zTierLimits = z.record(zTierLimit);
-const zDepositPolicy = z.object({ min_amount: z.string(), confirmations: z.number().int().min(1) });
+// Deposit fee fields are OPTIONAL on read with safe defaults (fee 0, no max), so a
+// row that predates the fee config (or hasn't been PATCHed yet) still reads and simply
+// charges no deposit fee — the write gate (zDepositPolicyValue) requires the full shape.
+const zDepositPolicy = z.object({
+  min_amount: zAmountStr,
+  confirmations: z.number().int().min(1),
+  max_amount: zAmountStr.optional(),
+  fee_fixed: zAmountStr.default("0"),
+  fee_bps: z.number().int().min(0).max(MAX_FEE_BPS).default(0),
+});
+// Platform withdrawal fee: legacy fixed-only string OR { fixed, bps }.
+const zWithdrawalFeeRead = z.record(
+  z.string(),
+  z.union([zAmountStr, z.object({ fixed: zAmountStr, bps: z.number().int().min(0).max(MAX_FEE_BPS) })]),
+);
 
 const CACHE_TTL_MS = 10_000;
 
@@ -52,6 +66,19 @@ export class SettingsService {
   async feeBps(method: PaymentMethod): Promise<number> {
     // Fall back to the compiled default if a rail somehow isn't in the settings row.
     return zFeeBps.parse(await this.raw("fee_bps"))[method] ?? FEE_BPS[method];
+  }
+
+  /**
+   * Global SELLER trading fee bps (fee-engine Phase 2 — added to the seller's escrow
+   * lock; borne by the seller). 0 = disabled (Phase 1). Reads the seller_fee_bps
+   * settings row; 0 when the key isn't seeded/malformed so it can never brick a trade.
+   */
+  async sellerFeeBps(): Promise<number> {
+    try {
+      return z.coerce.number().int().min(0).max(MAX_FEE_BPS).parse(await this.raw("seller_fee_bps"));
+    } catch {
+      return 0;
+    }
   }
 
   async tradePaymentWindowMinutes(): Promise<number> {
@@ -102,11 +129,54 @@ export class SettingsService {
     };
   }
 
-  async withdrawalFee(asset: string): Promise<bigint> {
-    const v = z.record(z.string()).parse(await this.raw("withdrawal_fee"));
-    const fee = v[asset];
-    if (fee === undefined) throw new Error(`no withdrawal fee configured for ${asset}`);
-    return BigInt(fee);
+  /**
+   * Platform withdrawal fee CONFIG for an asset: { fixed, bps }. The money math
+   * (fixed + floor(amount*bps/10000)) lives in the withdrawal service. Accepts the
+   * legacy fixed-only string form for back-compat (normalised to bps 0).
+   */
+  async withdrawalFee(asset: string): Promise<{ fixed: bigint; bps: number }> {
+    const v = zWithdrawalFeeRead.parse(await this.raw("withdrawal_fee"));
+    const entry = v[asset];
+    if (entry === undefined) throw new Error(`no withdrawal fee configured for ${asset}`);
+    return typeof entry === "string" ? { fixed: BigInt(entry), bps: 0 } : { fixed: BigInt(entry.fixed), bps: entry.bps };
+  }
+
+  /** Estimated on-chain network fee for an asset (display only). 0 when unset. */
+  async withdrawalNetworkFee(asset: string): Promise<bigint> {
+    try {
+      const v = z.record(z.string(), zAmountStr).parse(await this.raw("withdrawal_network_fee"));
+      return v[asset] !== undefined ? BigInt(v[asset]) : 0n;
+    } catch {
+      return 0n; // key not seeded yet → no estimate
+    }
+  }
+
+  /** Advertisement (offer-creation) fee — 0 = disabled. */
+  async advertisementFee(): Promise<bigint> {
+    return this.simpleAmount("advertisement_fee");
+  }
+
+  /** Dispute-open fee — 0 = disabled. */
+  async disputeFee(): Promise<bigint> {
+    return this.simpleAmount("dispute_fee");
+  }
+
+  /** A single smallest-unit amount stored as a JSON string; 0 when unset/absent. */
+  private async simpleAmount(key: string): Promise<bigint> {
+    try {
+      return BigInt(zAmountStr.parse(await this.raw(key)));
+    } catch {
+      return 0n;
+    }
+  }
+
+  /** Active + inactive promotional fee campaigns; [] when unset/malformed. */
+  async promoCampaigns(): Promise<PromoCampaignsValue> {
+    try {
+      return zPromoCampaignsValue.parse(await this.raw("promo_campaigns"));
+    } catch {
+      return [];
+    }
   }
 
   async kycTierLimits(tier: number): Promise<{ maxTrade: bigint; dailyWithdrawal: bigint }> {
@@ -121,10 +191,25 @@ export class SettingsService {
     return z.coerce.number().int().min(1).max(36500).parse(await this.raw("kyc_retention_days"));
   }
 
-  /** Deposit display policy (settings key "deposit_policy"): min amount + confirmations. */
-  async depositPolicy(): Promise<{ minAmount: bigint; confirmations: number }> {
+  /**
+   * Deposit policy (settings key "deposit_policy"): gross min/max + the platform
+   * deposit fee (fixed + percentage). maxAmount is null when no cap is configured.
+   */
+  async depositPolicy(): Promise<{
+    minAmount: bigint;
+    maxAmount: bigint | null;
+    feeFixed: bigint;
+    feeBps: number;
+    confirmations: number;
+  }> {
     const v = zDepositPolicy.parse(await this.raw("deposit_policy"));
-    return { minAmount: BigInt(v.min_amount), confirmations: v.confirmations };
+    return {
+      minAmount: BigInt(v.min_amount),
+      maxAmount: v.max_amount !== undefined ? BigInt(v.max_amount) : null,
+      feeFixed: BigInt(v.fee_fixed),
+      feeBps: v.fee_bps,
+      confirmations: v.confirmations,
+    };
   }
 
   /**
@@ -137,20 +222,29 @@ export class SettingsService {
    */
   async adminSnapshot(): Promise<{
     paymentWindowMinutes: number;
-    depositPolicy: { minAmount: string; confirmations: number };
+    depositPolicy: { minAmount: string; maxAmount: string | null; feeFixed: string; feeBps: number; confirmations: number };
     feeBps: Record<string, number>;
+    sellerFeeBps: number;
     withdrawalCaps: { perTxMax: string; dailyMax: string; dualApprovalThreshold: string; autoApproveBelow: string };
   }> {
-    const [window, deposit, caps, feeBps] = await Promise.all([
+    const [window, deposit, caps, feeBps, sellerFeeBps] = await Promise.all([
       this.tradePaymentWindowMinutes(),
       this.depositPolicy(),
       this.withdrawalCaps(),
       this.raw("fee_bps").then((v) => zFeeBps.parse(v)),
+      this.sellerFeeBps(),
     ]);
     return {
       paymentWindowMinutes: window,
-      depositPolicy: { minAmount: deposit.minAmount.toString(), confirmations: deposit.confirmations },
+      depositPolicy: {
+        minAmount: deposit.minAmount.toString(),
+        maxAmount: deposit.maxAmount !== null ? deposit.maxAmount.toString() : null,
+        feeFixed: deposit.feeFixed.toString(),
+        feeBps: deposit.feeBps,
+        confirmations: deposit.confirmations,
+      },
       feeBps,
+      sellerFeeBps,
       withdrawalCaps: {
         perTxMax: caps.perTxMax.toString(),
         dailyMax: caps.dailyMax.toString(),

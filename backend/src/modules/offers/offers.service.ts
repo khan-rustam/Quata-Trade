@@ -6,6 +6,7 @@ import type { Database, OffersTable } from "../../db/types";
 import { newId } from "../../common/ids";
 import { LedgerService } from "../ledger/ledger.service";
 import { CountriesService } from "../countries/countries.service";
+import { SettingsService } from "../settings/settings.service";
 import { OfferUnavailableError } from "../escrow/escrow.errors";
 
 export type OfferRow = Selectable<OffersTable>;
@@ -21,6 +22,7 @@ export class OffersService {
     @Inject(DB) private readonly db: Kysely<Database>,
     private readonly ledger: LedgerService,
     private readonly countries: CountriesService,
+    private readonly settings: SettingsService,
   ) {}
 
   /** The market the caller trades in — derived per request (country is not in the JWT). */
@@ -50,23 +52,48 @@ export class OffersService {
       }
     }
 
-    return this.db
-      .insertInto("offers")
-      .values({
-        id: newId(),
-        user_id: userId,
-        country: user.country, // stamp the maker's market — the browse/trade scope key
-        side: dto.side,
-        asset: dto.asset,
-        price_xaf_per_unit: BigInt(dto.priceXafPerUnit),
-        min_trade: BigInt(dto.minTrade),
-        max_trade: BigInt(dto.maxTrade),
-        remaining: BigInt(dto.totalAmount),
-        payment_methods: dto.paymentMethods,
-        terms: dto.terms ?? null,
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow();
+    const offerId = newId();
+    const values = {
+      id: offerId,
+      user_id: userId,
+      country: user.country, // stamp the maker's market — the browse/trade scope key
+      side: dto.side,
+      asset: dto.asset,
+      price_xaf_per_unit: BigInt(dto.priceXafPerUnit),
+      min_trade: BigInt(dto.minTrade),
+      max_trade: BigInt(dto.maxTrade),
+      remaining: BigInt(dto.totalAmount),
+      payment_methods: dto.paymentMethods,
+      terms: dto.terms ?? null,
+    };
+
+    // Advertisement fee (fee-engine): DISABLED by default (0 → free, no ledger touch).
+    // When an admin sets it > 0, the maker is charged atomically with the listing.
+    const adFee = await this.settings.advertisementFee();
+    if (adFee <= 0n) {
+      return this.db.insertInto("offers").values(values).returningAll().executeTakeFirstOrThrow();
+    }
+    return this.ledger.withMoneyTransaction(async (trx) => {
+      const offer = await trx.insertInto("offers").values(values).returningAll().executeTakeFirstOrThrow();
+      const maker = await this.ledger.getOrCreateAccount(userId, "user_available", dto.asset, trx);
+      const treasury = await this.ledger.getOrCreateAccount(null, "platform_treasury", dto.asset, trx);
+      await this.ledger.postJournal(
+        {
+          reason: "advertisement_fee",
+          referenceType: "offer",
+          referenceId: offerId,
+          idempotencyKey: `advertisement_fee:${offerId}`,
+          createdBy: userId,
+          asset: dto.asset,
+          legs: [
+            { accountId: maker, amount: -adFee },
+            { accountId: treasury, amount: adFee },
+          ],
+        },
+        trx,
+      );
+      return offer;
+    });
   }
 
   async update(userId: string, offerId: string, dto: UpdateOfferRequest): Promise<OfferRow> {

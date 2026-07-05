@@ -116,6 +116,9 @@ export default function TradeRoomPage(): React.JSX.Element {
         <Row label={tx("youTrade")} value={<Usdt value={trade.amount} size="sm" />} />
         <Row label={tx("fiatAmount")} value={<Xaf value={trade.fiatAmountXaf} />} />
         <Row label={tx("tradingFee")} value={<Usdt value={trade.feeAmount} size="sm" />} />
+        {isSeller && trade.sellerFeeAmount !== "0" && (
+          <Row label={tx("sellerFee")} value={<Usdt value={trade.sellerFeeAmount} size="sm" />} />
+        )}
         <Row label={isBuyer ? tx("youReceive") : tx("buyerReceives")} value={<Usdt value={trade.buyerCredit} size="sm" className="text-accent-400" />} />
         <div className="flex items-center justify-between pt-1">
           <span className="text-text-2">{tx("paymentMethod")}</span>

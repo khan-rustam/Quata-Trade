@@ -111,6 +111,8 @@ export class WalletController {
       id: d.id,
       asset: d.asset,
       amount: serializeAmount(d.amount),
+      fee: serializeAmount(d.fee),
+      net: serializeAmount(d.amount - d.fee),
       txHash: d.tx_hash,
       confirmations: d.confirmations,
       status: d.status,

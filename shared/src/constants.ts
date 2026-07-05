@@ -32,6 +32,8 @@ export const ENTRY_REASONS = [
   "escrow_refund",
   "internal_transfer",
   "adjustment",
+  "advertisement_fee",
+  "dispute_fee",
 ] as const;
 export type EntryReason = (typeof ENTRY_REASONS)[number];
 

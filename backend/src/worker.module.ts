@@ -9,6 +9,7 @@ import { AlertsModule } from "./common/alerts/alerts.module";
 import { RedisModule } from "./common/redis/redis.module";
 import { StorageModule } from "./common/storage/storage.module";
 import { SettingsModule } from "./modules/settings/settings.module";
+import { PromoModule } from "./modules/promo/promo.module";
 import { LedgerModule } from "./modules/ledger/ledger.module";
 import { EscrowModule } from "./modules/escrow/escrow.module";
 import { DepositsModule } from "./modules/deposits/deposits.module";
@@ -42,6 +43,7 @@ import { EmailSendJob } from "./jobs/email-send.job";
     RedisModule,
     StorageModule,
     SettingsModule,
+    PromoModule,
     LedgerModule,
     EscrowModule,
     DepositsModule,

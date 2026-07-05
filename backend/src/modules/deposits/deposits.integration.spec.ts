@@ -1,9 +1,11 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { newId } from "../../common/ids";
 import { startTestDb, type TestDb } from "../../../test/helpers/pg";
 import { createUser } from "../../../test/helpers/fixtures";
 import { LedgerService } from "../ledger/ledger.service";
 import { ScreeningService } from "../screening/screening.service";
+import { SettingsService } from "../settings/settings.service";
+import { PromoService } from "../promo/promo.service";
 import type { DepositsConfig } from "./deposits.config";
 import type { TronGridClient, Trc20Transfer } from "./trongrid.client";
 import { DepositScannerService } from "./deposit-scanner.service";
@@ -62,7 +64,16 @@ describe("deposits pipeline (Gate 3)", () => {
   let grid: FakeTronGrid;
   let scanner: DepositScannerService;
   let confirmer: DepositConfirmationService;
+  let settings: SettingsService;
   let addressSeq = 0;
+
+  /** Overwrite the deposit_policy settings row and drop the cache (test hook). */
+  const setDepositPolicy = async (value: unknown): Promise<void> => {
+    await t.db.updateTable("settings").set({ value: JSON.stringify(value) }).where("key", "=", "deposit_policy").execute();
+    settings.invalidate();
+  };
+  const treasuryBalance = async (): Promise<bigint> =>
+    ledger.balanceOf(await ledger.getOrCreateAccount(null, "platform_treasury", "USDT_TRC20"));
 
   const makeTransfer = (to: string, overrides: Partial<Trc20Transfer> = {}): Trc20Transfer => ({
     txHash: `tx-${newId()}`,
@@ -107,7 +118,13 @@ describe("deposits pipeline (Gate 3)", () => {
     ledger = new LedgerService(t.db);
     grid = new FakeTronGrid();
     scanner = new DepositScannerService(t.db, grid, CONFIG);
-    confirmer = new DepositConfirmationService(t.db, grid, CONFIG, ledger, new ScreeningService(t.db));
+    settings = new SettingsService(t.db);
+    confirmer = new DepositConfirmationService(t.db, grid, CONFIG, ledger, new ScreeningService(t.db), settings, new PromoService(settings));
+  });
+
+  afterEach(async () => {
+    // Restore the seeded permissive policy so unrelated tests aren't fee/hold-gated.
+    await setDepositPolicy({ min_amount: "1000000", confirmations: 19 });
   });
 
   afterAll(async () => {
@@ -281,6 +298,67 @@ describe("deposits pipeline (Gate 3)", () => {
     rows = await depositRows(address);
     expect(rows[0]?.status).toBe("CREDITED");
     expect(await availableBalance(userId)).toBe(5_000_000n);
+  });
+
+  it("charges the platform deposit fee: net to the user, fee to treasury, journal balanced", async () => {
+    // min 20 USDT, flat 1 USDT fee. Deposit 100 → user 99, platform 1.
+    await setDepositPolicy({ min_amount: "20000000", max_amount: "1000000000000", fee_fixed: "1000000", fee_bps: 0, confirmations: 19 });
+    const treasuryBefore = await treasuryBalance();
+    const { userId, address } = await watchedAddress();
+    const transfer = makeTransfer(address, { amount: 100_000_000n, blockNumber: 300_000n });
+    grid.transfersByAddress.set(address, [transfer]);
+
+    await scanner.scanOnce();
+    grid.height = 300_000n + 19n;
+    await confirmer.confirmOnce();
+
+    const rows = await depositRows(address);
+    expect(rows[0]?.status).toBe("CREDITED");
+    expect(rows[0]?.fee).toBe(1_000_000n);
+    expect(await availableBalance(userId)).toBe(99_000_000n); // net
+    expect((await treasuryBalance()) - treasuryBefore).toBe(1_000_000n); // fee revenue
+
+    const outbox = await t.db
+      .selectFrom("outbox")
+      .selectAll()
+      .where("event_type", "=", "deposit.credited")
+      .execute();
+    const payload = outbox.map((e) => String(e.payload)).find((p) => p.includes(transfer.txHash));
+    expect(payload).toContain('"fee":"1000000"');
+    expect(payload).toContain('"net":"99000000"');
+  });
+
+  it("HOLDS a below-minimum deposit for manual review (never auto-credited)", async () => {
+    await setDepositPolicy({ min_amount: "20000000", fee_fixed: "1000000", fee_bps: 0, confirmations: 19 });
+    const { userId, address } = await watchedAddress();
+    // 10 USDT: above the env dust floor (SEEN), below the 20 USDT policy minimum.
+    grid.transfersByAddress.set(address, [makeTransfer(address, { amount: 10_000_000n, blockNumber: 310_000n })]);
+
+    await scanner.scanOnce();
+    grid.height = 310_000n + 19n;
+    await confirmer.confirmOnce();
+
+    const rows = await depositRows(address);
+    expect(rows[0]?.status).not.toBe("CREDITED");
+    expect(rows[0]?.policy_hold).toBe(true);
+    expect(rows[0]?.policy_reason).toContain("minimum");
+    expect(rows[0]?.credited_journal_id).toBeNull();
+    expect(await availableBalance(userId)).toBe(0n);
+  });
+
+  it("HOLDS an above-maximum deposit for manual review", async () => {
+    await setDepositPolicy({ min_amount: "20000000", max_amount: "50000000", fee_fixed: "1000000", fee_bps: 0, confirmations: 19 });
+    const { userId, address } = await watchedAddress();
+    grid.transfersByAddress.set(address, [makeTransfer(address, { amount: 100_000_000n, blockNumber: 320_000n })]);
+
+    await scanner.scanOnce();
+    grid.height = 320_000n + 19n;
+    await confirmer.confirmOnce();
+
+    const rows = await depositRows(address);
+    expect(rows[0]?.policy_hold).toBe(true);
+    expect(rows[0]?.policy_reason).toContain("maximum");
+    expect(await availableBalance(userId)).toBe(0n);
   });
 
   it("RPC failure: pass aborts without throwing; 5 consecutive failures pause the scanner", async () => {

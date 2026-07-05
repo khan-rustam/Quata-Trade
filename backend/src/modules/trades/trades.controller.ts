@@ -54,6 +54,7 @@ import {
 import type { TradeRow } from "../escrow/escrow.service";
 import { fiatValueXaf, split } from "../fees/fees";
 import { SettingsService } from "../settings/settings.service";
+import { PromoService } from "../promo/promo.service";
 import { TradesService } from "./trades.service";
 import { fetchParties, fetchPayments, mapTrade, mapTradeDetail, type TradeDetailResponse } from "./trades.mapper";
 
@@ -128,14 +129,30 @@ export class TradesController {
     private readonly settings: SettingsService,
     private readonly config: ConfigService<Env, true>,
     private readonly risk: RiskService,
+    private readonly promo: PromoService,
   ) {}
 
-  /** Pure computation — no DB writes. Auth required (kept non-public on purpose). */
+  /**
+   * Fee estimate — no DB writes. Auth required (kept non-public on purpose). The
+   * quoted bps mirrors what openTrade will charge in the caller's market: an active
+   * trading promo for that country overrides the rail fee, so the preview never
+   * over-quotes a fee the user won't actually pay.
+   */
   @Post("fee-preview")
   @HttpCode(200)
-  async feePreview(@Body(new ZodPipe(zFeePreviewRequest)) dto: FeePreviewRequest): Promise<FeePreviewResponse> {
+  async feePreview(
+    @CurrentUserId() userId: string,
+    @Body(new ZodPipe(zFeePreviewRequest)) dto: FeePreviewRequest,
+  ): Promise<FeePreviewResponse> {
     const amount = BigInt(dto.amount);
-    const feeBps = await this.settings.feeBps(dto.paymentMethod);
+    const railBps = await this.settings.feeBps(dto.paymentMethod);
+    const user = await this.db
+      .selectFrom("users")
+      .select("country")
+      .where("id", "=", userId)
+      .executeTakeFirst();
+    const promoBps = user ? await this.promo.tradingBps(user.country) : null;
+    const feeBps = promoBps ?? railBps;
     const { buyerCredit, fee } = split(amount, feeBps);
     const fiatAmountXaf = fiatValueXaf(amount, BigInt(dto.priceXafPerUnit), ASSET_DECIMALS.USDT_TRC20);
     return {

@@ -13,6 +13,7 @@ import { AuditService } from "../../common/audit/audit.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { SettingsService } from "../settings/settings.service";
 import { ScreeningService } from "../screening/screening.service";
+import { PromoService } from "../promo/promo.service";
 import { BlockedAddressError } from "../screening/screening.errors";
 import { MockSignerService } from "../signer/mock-signer.service";
 import { WithdrawalPipelineService } from "../signer/withdrawal-pipeline.service";
@@ -71,7 +72,7 @@ describe("Withdrawals (Phase 3)", () => {
     });
     const config = new ConfigService<Env, true>(env);
     const screening = new ScreeningService(t.db);
-    withdrawals = new WithdrawalsService(t.db, ledger, settings, audit, config, screening);
+    withdrawals = new WithdrawalsService(t.db, ledger, settings, audit, config, screening, new PromoService(settings));
     const signer = new MockSignerService(config, t.db, settings);
     pipeline = new WithdrawalPipelineService(withdrawals, settings, signer);
     externalId = await ledger.getOrCreateAccount(null, "external", "USDT_TRC20");

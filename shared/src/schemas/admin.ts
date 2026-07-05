@@ -85,8 +85,16 @@ export type KillSwitchState = z.infer<typeof zKillSwitchState>;
  * schemas below (zFeeBpsValue / zWithdrawalCapsValue). */
 export const zAdminSettingsResponse = z.object({
   paymentWindowMinutes: z.number().int(),
-  depositPolicy: z.object({ minAmount: zAmount, confirmations: z.number().int() }),
+  depositPolicy: z.object({
+    minAmount: zAmount,
+    maxAmount: zAmount.nullable(),
+    feeFixed: zAmount,
+    feeBps: z.number().int(),
+    confirmations: z.number().int(),
+  }),
   feeBps: z.record(z.string(), z.number().int()),
+  /** Global SELLER trading fee bps (Phase 2). 0 = disabled. */
+  sellerFeeBps: z.number().int(),
   withdrawalCaps: z.object({
     perTxMax: zAmount,
     dailyMax: zAmount,
@@ -145,6 +153,88 @@ export const zWithdrawalCapsValue = z
     if (auto > dual) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "auto_approve_below must be <= dual_approval_threshold", path: ["auto_approve_below"] });
   });
 export type WithdrawalCapsValue = z.infer<typeof zWithdrawalCapsValue>;
+
+/**
+ * deposit_policy write value. Smallest-unit strings + a percentage. The platform
+ * deposit fee = fee_fixed + floor(gross * fee_bps / 10000); the min applies to the
+ * GROSS received amount. The refine guarantees the fee on the SMALLEST allowed deposit
+ * still leaves a positive net (so the credit never posts a zero/negative user leg).
+ * The FE editor imports this so both sides validate identically.
+ */
+export const zDepositPolicyValue = z
+  .object({
+    min_amount: zCapAmount,
+    // Null/absent = no maximum. When set it must be >= min and within int8.
+    max_amount: zCapAmount.nullable().optional(),
+    fee_fixed: zCapAmount,
+    fee_bps: z.number().int().min(0).max(MAX_FEE_BPS),
+    confirmations: z.number().int().min(1).max(200),
+  })
+  .strict()
+  .superRefine((v, ctx) => {
+    const min = BigInt(v.min_amount);
+    const fixed = BigInt(v.fee_fixed);
+    if (min <= 0n) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "min_amount must be greater than zero", path: ["min_amount"] });
+    if (v.max_amount != null) {
+      const max = BigInt(v.max_amount);
+      if (max > MAX_INT8) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "max_amount exceeds the maximum supported amount", path: ["max_amount"] });
+      if (max < min) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "max_amount must be >= min_amount", path: ["max_amount"] });
+    }
+    const feeAtMin = fixed + (min * BigInt(v.fee_bps)) / 10_000n;
+    if (feeAtMin >= min) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "deposit fee must be less than the minimum deposit", path: ["fee_fixed"] });
+  });
+export type DepositPolicyValue = z.infer<typeof zDepositPolicyValue>;
+
+/**
+ * withdrawal_fee write value — per-asset platform fee that can be fixed, percentage,
+ * or combined: fee = fixed + floor(amount * bps / 10000). Accepts the legacy
+ * fixed-only string form ("1000000") for back-compat so an un-migrated row still
+ * validates (normalised to { fixed, bps: 0 } on read).
+ */
+const zWithdrawalFeeEntry = z.union([
+  zCapAmount, // legacy fixed-only
+  z.object({ fixed: zCapAmount, bps: z.number().int().min(0).max(MAX_FEE_BPS) }).strict(),
+]);
+export const zWithdrawalFeeValue = z
+  .record(z.enum(ASSET_CODES), zWithdrawalFeeEntry)
+  .refine((v) => v.USDT_TRC20 !== undefined, "withdrawal_fee must include USDT_TRC20");
+export type WithdrawalFeeValue = z.infer<typeof zWithdrawalFeeValue>;
+
+/**
+ * withdrawal_network_fee write value — a per-asset ESTIMATE of the on-chain (TRON)
+ * network cost, shown to the user before confirming. Informational/display; the
+ * platform absorbs the actual on-chain cost unless the platform fee is set to cover it.
+ */
+export const zWithdrawalNetworkFeeValue = z
+  .record(z.enum(ASSET_CODES), zCapAmount)
+  .refine((v) => v.USDT_TRC20 !== undefined, "withdrawal_network_fee must include USDT_TRC20");
+export type WithdrawalNetworkFeeValue = z.infer<typeof zWithdrawalNetworkFeeValue>;
+
+/**
+ * Promotional fee campaign — time-limited, optionally country-specific, per fee type.
+ * While active it OVERRIDES the fee: for trading, discountBps replaces the rail fee
+ * (0 = free); for deposit/withdrawal an active campaign WAIVES the platform fee.
+ * country = null → all markets. Stored as the promo_campaigns settings array.
+ */
+export const zPromoCampaign = z
+  .object({
+    id: z.string().trim().min(1).max(64),
+    feeType: z.enum(["trading", "deposit", "withdrawal"]),
+    country: z.string().length(2).nullable(), // ISO-3166 alpha-2, or null = all markets
+    startsAt: z.string().datetime(),
+    endsAt: z.string().datetime(),
+    discountBps: z.number().int().min(0).max(MAX_FEE_BPS), // effective trading bps; waiver for deposit/withdrawal
+    note: z.string().max(200).optional(),
+  })
+  .strict()
+  .refine((c) => new Date(c.startsAt).getTime() < new Date(c.endsAt).getTime(), {
+    message: "startsAt must be before endsAt",
+    path: ["endsAt"],
+  });
+export type PromoCampaign = z.infer<typeof zPromoCampaign>;
+
+export const zPromoCampaignsValue = z.array(zPromoCampaign).max(100);
+export type PromoCampaignsValue = z.infer<typeof zPromoCampaignsValue>;
 
 /**
  * Manual ledger adjustment — the ONLY manual money endpoint (Documents/08 §E:
@@ -232,6 +322,9 @@ export const zUpdateSettingRequest = z
   .object({
     key: z.string().min(1).max(120),
     value: z.unknown(),
+    // Mandatory change reason — every fee/settings modification is audit-logged with it
+    // (fee-engine spec: audit & compliance).
+    reason: z.string().trim().min(3).max(1000),
     totpCode: zTotpCode.optional(),
   })
   .strict();

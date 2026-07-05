@@ -1,12 +1,13 @@
 import { sql } from "kysely";
 import { ConfigService } from "@nestjs/config";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { newId } from "../../common/ids";
 import { startTestDb, type TestDb } from "../../../test/helpers/pg";
 import { createUser } from "../../../test/helpers/fixtures";
 import type { Env } from "../../config/env";
 import { LedgerService } from "../ledger/ledger.service";
 import { SettingsService } from "../settings/settings.service";
+import { PromoService } from "../promo/promo.service";
 import { MinioService } from "../../common/storage/minio.service";
 import { EscrowService } from "./escrow.service";
 import { TradesService } from "../trades/trades.service";
@@ -32,6 +33,7 @@ describe("Escrow state machine (Gate 4)", () => {
   let ledger: LedgerService;
   let escrow: EscrowService;
   let trades: TradesService;
+  let settings: SettingsService;
   let externalId: string;
 
   const USDT = 1_000_000n;
@@ -119,7 +121,8 @@ describe("Escrow state machine (Gate 4)", () => {
     t = await startTestDb();
     ledger = new LedgerService(t.db);
     escrow = new EscrowService(t.db, ledger);
-    trades = new TradesService(t.db, ledger, escrow, new SettingsService(t.db), testMinio);
+    settings = new SettingsService(t.db);
+    trades = new TradesService(t.db, ledger, escrow, settings, testMinio, new PromoService(settings));
     externalId = await ledger.getOrCreateAccount(null, "external", "USDT_TRC20");
   });
 
@@ -158,6 +161,58 @@ describe("Escrow state machine (Gate 4)", () => {
     // every transition wrote trade_events in the same tx
     const events = await trades.getEvents(trade.id);
     expect(events.map((e) => e.to_status)).toEqual(["OPENED", "ESCROW_LOCKED", "PAYMENT_SUBMITTED", "COMPLETED"]);
+  });
+
+  describe("per-side seller fee (Phase 2)", () => {
+    // Set the global seller fee and drop the shared cache so it applies immediately.
+    const setSellerFeeBps = async (bps: number) => {
+      await t.db.updateTable("settings").set({ value: JSON.stringify(String(bps)) }).where("key", "=", "seller_fee_bps").execute();
+      settings.invalidate();
+    };
+    afterEach(async () => setSellerFeeBps(0)); // never leak the seller fee into other tests
+
+    it("seller escrows amount + sellerFee; on release treasury gets buyer + seller fees", async () => {
+      await setSellerFeeBps(30); // 0.30%
+      const seller = await fundedUser(100n * USDT);
+      const buyer = await fundedUser(0n);
+      const offer = await createOffer(seller, 100n * USDT);
+      const treasuryBefore = await treasuryBalance();
+
+      const trade = await openTrade(buyer, offer.id, 50n * USDT); // MTN_MOMO buyer 0.5%
+      expect(trade.fee_bps).toBe(50);
+      expect(trade.fee_amount).toBe(250_000n); // buyer 0.5% of 50
+      expect(trade.seller_fee_bps).toBe(30);
+      expect(trade.seller_fee_amount).toBe(150_000n); // seller 0.3% of 50
+
+      // seller locked amount + sellerFee (50.15 USDT), available dropped by the same
+      expect(await balanceOf(seller, "user_escrow")).toBe(50n * USDT + 150_000n);
+      expect(await balanceOf(seller, "user_available")).toBe(100n * USDT - (50n * USDT + 150_000n));
+
+      await submitPayment(trade.id, buyer);
+      await trades.confirmTrade(trade.id, seller, `confirm-${trade.id}`);
+
+      // ESCROW CONSERVATION: everything locked left escrow, nothing stuck.
+      expect(await balanceOf(seller, "user_escrow")).toBe(0n);
+      expect(await balanceOf(buyer, "user_available")).toBe(50n * USDT - 250_000n); // amount − buyerFee
+      expect((await treasuryBalance()) - treasuryBefore).toBe(250_000n + 150_000n); // buyerFee + sellerFee
+    });
+
+    it("a refunded (cancelled) trade returns amount + sellerFee to the seller in full, treasury untouched", async () => {
+      await setSellerFeeBps(40); // 0.40%
+      const seller = await fundedUser(100n * USDT);
+      const buyer = await fundedUser(0n);
+      const offer = await createOffer(seller, 100n * USDT);
+      const treasuryBefore = await treasuryBalance();
+
+      const trade = await openTrade(buyer, offer.id, 40n * USDT);
+      expect(trade.seller_fee_amount).toBe(160_000n); // 0.4% of 40
+      expect(await balanceOf(seller, "user_escrow")).toBe(40n * USDT + 160_000n);
+
+      await trades.cancelTrade(trade.id, buyer, `cancel-${trade.id}`);
+      expect(await balanceOf(seller, "user_escrow")).toBe(0n);
+      expect(await balanceOf(seller, "user_available")).toBe(100n * USDT); // fully restored, no fee
+      expect((await treasuryBalance()) - treasuryBefore).toBe(0n); // no fee on a non-completed trade
+    });
   });
 
   it("double seller-confirm is idempotent — funds move exactly once", async () => {
@@ -441,7 +496,7 @@ describe("Escrow state machine (Gate 4)", () => {
       .where("key", "=", "kill_switches")
       .execute();
     // fresh service → no stale cache
-    const freshTrades = new TradesService(t.db, ledger, escrow, new SettingsService(t.db), testMinio);
+    const freshTrades = new TradesService(t.db, ledger, escrow, new SettingsService(t.db), testMinio, new PromoService(new SettingsService(t.db)));
     await expect(freshTrades.openTrade(buyer, {
       offerId: offer.id,
       amount: (5n * USDT).toString(),
@@ -481,8 +536,9 @@ describe("Escrow state machine (Gate 4)", () => {
     const buyer = await fundedUser(0n);
     const offer = await createOffer(seller, 10n * USDT);
     const trade = await openTrade(buyer, offer.id, 10n * USDT);
-    // A fee-free rail: force fee_amount to 0 before release (CHECK fee_amount < amount holds).
-    await t.db.updateTable("trades").set({ fee_amount: 0n }).where("id", "=", trade.id).execute();
+    // A fully fee-free trade (buyer + seller): force both to 0 so totalFee === 0 and
+    // the release posts the 2-leg (no-treasury) journal (CHECK fee_amount < amount holds).
+    await t.db.updateTable("trades").set({ fee_amount: 0n, seller_fee_amount: 0n }).where("id", "=", trade.id).execute();
     await submitPayment(trade.id, buyer);
 
     const treasuryBefore = await treasuryBalance();
