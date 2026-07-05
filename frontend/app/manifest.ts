@@ -11,8 +11,11 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#0e1416",
     theme_color: "#0e1416",
     icons: [
-      { src: "/assets/favicons/android-icon-192x192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/assets/favicons/ms-icon-310x310.png", sizes: "310x310", type: "image/png", purpose: "any" },
+      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      // Required for Android adaptive icons — the mark sits in the safe zone so the
+      // OS circle/squircle mask never clips it (Lighthouse PWA "maskable icon").
+      { src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

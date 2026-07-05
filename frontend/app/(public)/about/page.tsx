@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Section, SectionHeading } from "@/components/public/marketing";
 import { Reveal } from "@/components/motion/reveal";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand/logo";
 
 export const metadata: Metadata = {
@@ -24,14 +24,10 @@ export default function AboutPage(): React.JSX.Element {
     <>
       <Section narrow>
         <Reveal>
-          <SectionHeading eyebrow={t("eyebrow")} title={t("heroTitle")} />
+          <SectionHeading as="h1" eyebrow={t("eyebrow")} title={t("heroTitle")} />
           <div className="mt-6 space-y-4 text-text-2">
             <p>{t("intro1")}</p>
             <p>{t("intro2")}</p>
-            <p className="rounded-lg border border-dashed border-accent-400/40 bg-accent-400/5 px-3 py-2 text-sm text-text-2">
-              <span className="font-semibold text-accent-400">{t("supplyLabel")}</span>
-              {t("supplyBody")}
-            </p>
           </div>
         </Reveal>
       </Section>
@@ -65,8 +61,8 @@ export default function AboutPage(): React.JSX.Element {
               </Link>
               .
             </p>
-            <Link href="/register">
-              <Button>{t("ctaButton")}</Button>
+            <Link href="/register" className={buttonClassName()}>
+              {t("ctaButton")}
             </Link>
           </div>
         </Reveal>

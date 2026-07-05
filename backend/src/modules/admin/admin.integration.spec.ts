@@ -8,7 +8,7 @@ import { JwtService } from "@nestjs/jwt";
 import * as argon2 from "argon2";
 import { authenticator } from "otplib";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { ADMIN_ROLES, type AdminRole } from "@quatatrade/shared";
+import { ADMIN_ROLES, PAYMENT_METHODS, type AdminRole } from "@quatatrade/shared";
 import { startTestDb, type TestDb } from "../../../test/helpers/pg";
 import { createUser } from "../../../test/helpers/fixtures";
 import { validateEnv, type Env } from "../../config/env";
@@ -515,7 +515,15 @@ describe("admin flows (Testcontainers PG16)", () => {
 
   it("edits only whitelisted settings with valid values and audits old/new", async () => {
     const finance = await makeAdmin("FINANCE_ADMIN");
-    await admin.updateSetting(finance.id, "fee_bps", { QUATAPAY: 40, MTN_MOMO: 60, ORANGE_MONEY: 60 }, code(finance));
+    // fee_bps is a FULL-rail snapshot (every PAYMENT_METHODS rail) so a full-replace
+    // can't silently drop a rail; send all rails, overriding the three we assert.
+    const fullFee = Object.fromEntries(PAYMENT_METHODS.map((m) => [m, 50]));
+    await admin.updateSetting(
+      finance.id,
+      "fee_bps",
+      { ...fullFee, QUATAPAY: 40, MTN_MOMO: 60, ORANGE_MONEY: 60 },
+      code(finance),
+    );
     expect(await settings.feeBps("QUATAPAY")).toBe(40);
 
     await expect(

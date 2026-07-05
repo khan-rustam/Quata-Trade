@@ -23,7 +23,8 @@
   /* text */
   --color-text-1: #e7edeb;
   --color-text-2: #9fb3ae;
-  --color-text-3: #5e706c;
+  /* text-3: bumped so even small muted text clears WCAG 4.5:1 on the dark surfaces */
+  --color-text-3: #869792;
 
   /* semantic (dark values) — always pair with an icon/label, never color alone */
   --color-success: #4ade8c;
@@ -49,9 +50,16 @@
   --color-surface-2: #ffffff;
   --color-surface-3: #eef3f1;
   --color-border: #d8e2df;
+  /* Accent is darkened for light mode: the mint (#2fd4a7) fails WCAG as text/icon
+   * on light surfaces (~1.7:1). This dark teal clears 4.5:1 both as text on white
+   * and as a solid fill under a near-white (text-bg) label. Solid accent fills that
+   * carry a label use `text-bg` so the label flips light↔dark with the theme. */
+  --color-accent-400: #0c7a62;
+  --color-accent-200: #0a6b57;
   --color-text-1: #101614;
   --color-text-2: #5c6b67;
-  --color-text-3: #90a09b;
+  /* text-3: darkened so small muted text clears WCAG 4.5:1 on the light surfaces */
+  --color-text-3: #64736e;
   --color-success: #0e8a4d;
   --color-danger: #c93b3b;
   --color-warning: #b67b0f;

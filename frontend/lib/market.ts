@@ -9,9 +9,6 @@ export const INDICATIVE_RATES: Record<string, number> = {
   XAF: 650,
 };
 
-/** Back-compat: the Cameroon (XAF) indicative rate. Prefer `indicativeRate(currency)`. */
-export const INDICATIVE_XAF_PER_USDT = INDICATIVE_RATES.XAF;
-
 /** Indicative rate for a currency, or null when we don't have one yet (hide the hint). */
 export function indicativeRate(currencyCode: string): number | null {
   return INDICATIVE_RATES[currencyCode] ?? null;

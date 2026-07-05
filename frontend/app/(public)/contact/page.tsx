@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AlertOctagon, Clock, Mail, MapPin, MessageCircle, Scale } from "lucide-react";
+import { AlertOctagon, Mail, MapPin, MessageCircle, Scale } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Section, SectionHeading } from "@/components/public/marketing";
 import { Reveal } from "@/components/motion/reveal";
@@ -18,23 +18,26 @@ export default async function ContactPage(): Promise<React.JSX.Element> {
   const legalValue =
     company.legalName && company.registrationNo
       ? `${company.legalName} · ${company.registrationNo}`
-      : company.legalName || t("legalValue");
+      : company.legalName;
   const address = [company.addressLine, company.city, company.country].filter(Boolean).join(", ");
 
+  // Only render channels backed by real data. Fields the client has not filled in
+  // the admin content panel are omitted rather than shown as `[[placeholder]]`
+  // tokens. Email is always seeded (support@…); hours has no data field yet, so it
+  // is omitted until one exists rather than displaying a bracketed placeholder.
   const channels: { icon: typeof Mail; title: string; value: string; note: string }[] = [
-    { icon: Mail, title: t("emailTitle"), value: company.email || t("emailValue"), note: t("emailNote") },
-    { icon: Clock, title: t("hoursTitle"), value: t("hoursValue"), note: t("hoursNote") },
+    ...(company.email ? [{ icon: Mail, title: t("emailTitle"), value: company.email, note: t("emailNote") }] : []),
     ...(company.whatsapp
       ? [{ icon: MessageCircle, title: t("whatsappTitle"), value: company.whatsapp, note: t("whatsappNote") }]
       : []),
     ...(address ? [{ icon: MapPin, title: t("addressTitle"), value: address, note: t("addressNote") }] : []),
-    { icon: Scale, title: t("legalTitle"), value: legalValue, note: t("legalNote") },
+    ...(legalValue ? [{ icon: Scale, title: t("legalTitle"), value: legalValue, note: t("legalNote") }] : []),
   ];
 
   return (
     <Section narrow>
       <Reveal>
-        <SectionHeading eyebrow={t("eyebrow")} title={t("title")} subtitle={t("subtitle")} />
+        <SectionHeading as="h1" eyebrow={t("eyebrow")} title={t("title")} subtitle={t("subtitle")} />
       </Reveal>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">

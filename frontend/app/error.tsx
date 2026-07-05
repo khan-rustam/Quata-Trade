@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { AlertTriangle, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand/logo";
 
 /** Route-level error boundary. Renders within the root layout, so i18n + theme apply. */
@@ -23,8 +23,8 @@ export default function Error({ reset }: { error: Error & { digest?: string }; r
         <Button onClick={reset}>
           <RotateCcw size={15} /> {tx("tryAgain")}
         </Button>
-        <Link href="/">
-          <Button variant="secondary">{tx("backHome")}</Button>
+        <Link href="/" className={buttonClassName({ variant: "secondary" })}>
+          {tx("backHome")}
         </Link>
       </div>
     </main>

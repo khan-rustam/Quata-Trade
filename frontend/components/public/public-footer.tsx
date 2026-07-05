@@ -65,7 +65,12 @@ export async function PublicFooter(): Promise<React.JSX.Element> {
   const t = await getTranslations("footer");
   const company = await getCompany();
   const year = 2026;
-  const socials = SOCIAL.filter((s) => company.social[s.key]?.trim());
+  // Only render links that are non-empty AND http(s) — belt-and-suspenders against a
+  // non-http scheme (e.g. javascript:) slipping through to an <a href> (see zSocialLinks).
+  const socials = SOCIAL.filter((s) => {
+    const v = company.social[s.key]?.trim();
+    return !!v && /^https?:\/\//i.test(v);
+  });
 
   return (
     <footer className="border-t border-border bg-surface-1">
@@ -79,7 +84,7 @@ export async function PublicFooter(): Promise<React.JSX.Element> {
                 {company.email && (
                   <a
                     href={`mailto:${company.email}`}
-                    className="flex items-center gap-2 text-sm text-text-2 transition-colors hover:text-text-1"
+                    className="flex min-h-6 items-center gap-2 text-sm text-text-2 transition-colors hover:text-text-1"
                   >
                     <Mail size={14} className="text-accent-400" aria-hidden /> {company.email}
                   </a>
@@ -87,7 +92,7 @@ export async function PublicFooter(): Promise<React.JSX.Element> {
                 {company.phone && (
                   <a
                     href={`tel:${company.phone.replace(/\s+/g, "")}`}
-                    className="flex items-center gap-2 text-sm text-text-2 transition-colors hover:text-text-1"
+                    className="flex min-h-6 items-center gap-2 text-sm text-text-2 transition-colors hover:text-text-1"
                   >
                     <Phone size={14} className="text-accent-400" aria-hidden /> {company.phone}
                   </a>
@@ -122,7 +127,10 @@ export async function PublicFooter(): Promise<React.JSX.Element> {
                         {t(`links.${l.key}`)} <span className="text-[10px]">{t("soon")}</span>
                       </span>
                     ) : (
-                      <Link href={l.href} className="text-sm text-text-2 transition-colors hover:text-text-1">
+                      <Link
+                        href={l.href}
+                        className="inline-flex min-h-6 items-center text-sm text-text-2 transition-colors hover:text-text-1"
+                      >
                         {t(`links.${l.key}`)}
                       </Link>
                     )}

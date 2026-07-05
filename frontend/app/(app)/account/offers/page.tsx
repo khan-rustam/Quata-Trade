@@ -14,7 +14,7 @@ import {
 } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Field } from "@/components/ui/field";
 import { Input, Textarea } from "@/components/ui/input";
@@ -89,10 +89,8 @@ export default function MyOffersPage(): React.JSX.Element {
         subtitle={tx("subtitle")}
         backHref="/account"
         action={
-          <Link href="/trade/new">
-            <Button size="sm">
-              <Plus size={16} /> {tx("newOffer")}
-            </Button>
+          <Link href="/trade/new" className={buttonClassName({ size: "sm" })}>
+            <Plus size={16} /> {tx("newOffer")}
           </Link>
         }
       />
@@ -109,8 +107,8 @@ export default function MyOffersPage(): React.JSX.Element {
           title={tx("emptyTitle")}
           description={tx("emptyBody")}
           action={
-            <Link href="/trade/new">
-              <Button size="sm">{tx("newOffer")}</Button>
+            <Link href="/trade/new" className={buttonClassName({ size: "sm" })}>
+              {tx("newOffer")}
             </Link>
           }
         />

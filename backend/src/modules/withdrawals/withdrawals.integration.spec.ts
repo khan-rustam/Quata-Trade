@@ -320,10 +320,10 @@ describe("Withdrawals (Phase 3)", () => {
     // the same admin approving twice is rejected
     await expect(approveAs(wd.id, admin1)).rejects.toBeInstanceOf(DualApprovalError);
 
-    // DB CHECK backstop: raw flip to APPROVED without a second approver fails
+    // DB trigger backstop: raw flip to APPROVED without a second approver fails
     await expect(
       sql`UPDATE withdrawals SET status = 'APPROVED' WHERE id = ${wd.id}`.execute(t.db),
-    ).rejects.toThrow(/big_needs_two/);
+    ).rejects.toThrow(/two distinct approvers/);
 
     // a DIFFERENT admin (COMPLIANCE may 2nd-approve per the RBAC matrix) completes it
     const second = await approveAs(wd.id, admin2, "COMPLIANCE_ADMIN");
@@ -342,6 +342,25 @@ describe("Withdrawals (Phase 3)", () => {
     expect(approved.status).toBe("APPROVED");
     expect(approved.approved_by).toBe(finance);
     expect(approved.second_approver).toBeNull();
+  });
+
+  it("dual_approval_threshold is enforced LIVE by the trigger — raising it lets one admin approve in the new band (B27)", async () => {
+    // Raise the threshold above the (formerly hardcoded) 500M. A 600M withdrawal that
+    // previously needed two approvers must now single-approve WITHOUT the DB rejecting
+    // it — under the old `big_needs_two` CHECK this APPROVE would have thrown 23514.
+    await setSetting("withdrawal_caps", { ...DEFAULT_CAPS, dual_approval_threshold: "700000000" });
+    try {
+      const user = await fundedUser(1000n * USDT);
+      const wd = await request(user, 600n * USDT); // 600M: >= old 500M, < new 700M
+      expect(wd.status).toBe("PENDING_APPROVAL");
+
+      const finance = await createAdmin(t.db, "FINANCE_ADMIN");
+      const approved = await approveAs(wd.id, finance);
+      expect(approved.status).toBe("APPROVED"); // single approval now suffices — DB agrees
+      expect(approved.second_approver).toBeNull();
+    } finally {
+      await setSetting("withdrawal_caps", DEFAULT_CAPS);
+    }
   });
 
   it("reject refunds amount+fee exactly once (idempotent), and a rejected row cannot be approved", async () => {

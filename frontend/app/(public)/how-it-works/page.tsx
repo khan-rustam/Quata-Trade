@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Section, SectionHeading, Step } from "@/components/public/marketing";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 import { Keyhole } from "@/components/brand/keyhole";
 import { Reveal } from "@/components/motion/reveal";
 
@@ -20,7 +20,7 @@ export default function HowItWorksPage(): React.JSX.Element {
     <>
       <Section narrow>
         <Reveal>
-          <SectionHeading eyebrow={t("heroEyebrow")} title={t("heroTitle")} subtitle={t("heroSubtitle")} />
+          <SectionHeading as="h1" eyebrow={t("heroEyebrow")} title={t("heroTitle")} subtitle={t("heroSubtitle")} />
         </Reveal>
       </Section>
 
@@ -74,8 +74,8 @@ export default function HowItWorksPage(): React.JSX.Element {
 
       <Section className="text-center">
         <Reveal>
-          <Link href="/register">
-            <Button size="lg">{t("ctaButton")}</Button>
+          <Link href="/register" className={buttonClassName({ size: "lg" })}>
+            {t("ctaButton")}
           </Link>
         </Reveal>
       </Section>

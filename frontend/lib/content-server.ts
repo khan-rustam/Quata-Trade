@@ -1,4 +1,4 @@
-import type { CompanyInfo, Faq, Review } from "@quatatrade/shared";
+import { zCompanyInfo, zFaqList, zReviewList, type CompanyInfo, type Faq, type Review } from "@quatatrade/shared";
 import { API_BASE_URL } from "./env";
 
 /**
@@ -26,29 +26,32 @@ export const DEFAULT_COMPANY: CompanyInfo = {
   social: { facebook: "", x: "", instagram: "", linkedin: "", telegram: "" },
 };
 
-async function getContent<T>(path: string): Promise<T | null> {
+async function fetchContent(path: string): Promise<unknown> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/v1/content/${path}`, {
       next: { revalidate: REVALIDATE_SECONDS },
     });
-    if (!res.ok) return null;
-    return (await res.json()) as T;
+    return res.ok ? ((await res.json()) as unknown) : null;
   } catch {
     // Never let a content-service hiccup take down a marketing page.
     return null;
   }
 }
 
+// Parse every response with the same shared schema the backend validates against
+// (the FE/BE contract) instead of an unchecked `as T` cast — drift falls back to
+// defaults rather than rendering undefined fields or crashing the SSR page.
 export async function getCompany(): Promise<CompanyInfo> {
-  return (await getContent<CompanyInfo>("company")) ?? DEFAULT_COMPANY;
+  const parsed = zCompanyInfo.safeParse(await fetchContent("company"));
+  return parsed.success ? parsed.data : DEFAULT_COMPANY;
 }
 
 export async function getFaqs(): Promise<Faq[]> {
-  const res = await getContent<{ items: Faq[] }>("faqs");
-  return res?.items ?? [];
+  const parsed = zFaqList.safeParse(await fetchContent("faqs"));
+  return parsed.success ? parsed.data.items : [];
 }
 
 export async function getReviews(): Promise<Review[]> {
-  const res = await getContent<{ items: Review[] }>("reviews");
-  return res?.items ?? [];
+  const parsed = zReviewList.safeParse(await fetchContent("reviews"));
+  return parsed.success ? parsed.data.items : [];
 }

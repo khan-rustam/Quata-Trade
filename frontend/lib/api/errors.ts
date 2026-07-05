@@ -11,7 +11,3 @@ export function apiErrorMessage(err: unknown, fallback = "Something went wrong")
   if (err instanceof Error) return err.message;
   return fallback;
 }
-
-export function isUnauthorized(err: unknown): boolean {
-  return err instanceof ApiClientError && err.status === 401;
-}

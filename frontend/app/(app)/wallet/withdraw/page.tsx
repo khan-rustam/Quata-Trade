@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +21,7 @@ import { SecurityDialog } from "@/components/security/security-dialog";
 import { useToast } from "@/components/ui/toast";
 import { useBalances, useWithdrawalAddresses, withdrawalAddressesKey } from "@/hooks/use-wallet";
 import { api } from "@/lib/api/client";
+import { qk } from "@/lib/api/query-keys";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { shortHash, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -134,6 +135,9 @@ export default function WithdrawPage(): React.JSX.Element {
       });
       setConfirmOpen(false);
       setResult(w);
+      // A withdrawal locks funds → the cached balance and the withdrawals list are stale.
+      void qc.invalidateQueries({ queryKey: qk.balances });
+      void qc.invalidateQueries({ queryKey: ["withdrawals"] });
       toast.success(tx("toastSuccessTitle"), tx("toastSuccessBody"));
     } catch (err) {
       setDialogError(apiErrorMessage(err, tx("withdrawalFailed")));
@@ -163,8 +167,8 @@ export default function WithdrawPage(): React.JSX.Element {
             />
             <Row label={tx("rowStatus")} value={<WithdrawalStatusBadge status={result.status} />} />
           </div>
-          <Link href="/wallet">
-            <Button className="w-full">{tx("backToWallet")}</Button>
+          <Link href="/wallet" className={buttonClassName({ className: "w-full" })}>
+            {tx("backToWallet")}
           </Link>
         </Card>
       </div>

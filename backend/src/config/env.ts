@@ -130,6 +130,19 @@ export function validateEnv(config: Record<string, unknown>): Env {
     if (!parsed.data.ADMIN_2FA_REQUIRED) {
       throw new Error("ADMIN_2FA_REQUIRED must be true in production (admin step-up 2FA on escrow-release/withdrawal actions)");
     }
+    // Critical ops/security alerts (reconciliation mismatch, reserve shortfall, AML
+    // hit, kill-switch) are log-only when this is empty — nobody gets paged.
+    if (parsed.data.ALERT_WEBHOOK_URL.trim() === "") {
+      throw new Error("ALERT_WEBHOOK_URL is required in production (critical ops/security alerts must page on-call, not just log)");
+    }
+    // Reject the published dev credentials from .env.example so a mis-copied prod
+    // deploy cannot boot with attacker-known secrets to the funds ledger / KYC store.
+    if (/dev_only/i.test(parsed.data.DATABASE_URL) || (parsed.data.DATABASE_APP_PASSWORD ?? "").includes("dev_only")) {
+      throw new Error("Dev database password detected in production (DATABASE_URL / DATABASE_APP_PASSWORD)");
+    }
+    if (parsed.data.MINIO_SECRET_KEY.trim() === "" || /dev_only/i.test(parsed.data.MINIO_SECRET_KEY)) {
+      throw new Error("MINIO_SECRET_KEY must be a real (non-dev) secret in production (object store holds KYC/PII)");
+    }
   }
   return parsed.data;
 }

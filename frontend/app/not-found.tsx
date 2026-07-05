@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { LifeBuoy } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand/logo";
 
 export default function NotFound(): React.JSX.Element {
@@ -17,13 +17,11 @@ export default function NotFound(): React.JSX.Element {
         <p className="mt-2 max-w-md text-text-2">{tx("notFoundBody")}</p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-3">
-        <Link href="/">
-          <Button>{tx("backHome")}</Button>
+        <Link href="/" className={buttonClassName()}>
+          {tx("backHome")}
         </Link>
-        <Link href="/help">
-          <Button variant="secondary">
-            <LifeBuoy size={15} /> {tx("getHelp")}
-          </Button>
+        <Link href="/help" className={buttonClassName({ variant: "secondary" })}>
+          <LifeBuoy size={15} /> {tx("getHelp")}
         </Link>
       </div>
     </main>

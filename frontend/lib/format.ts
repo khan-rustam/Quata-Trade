@@ -18,8 +18,15 @@ export function formatXaf(units: string | bigint): string {
  * local-currency units; `currencyCode` defaults to XAF for public/CM surfaces.
  */
 export function formatRate(priceXafPerUnit: string | bigint, currencyCode = "XAF", locale = "en"): string {
-  const n = typeof priceXafPerUnit === "string" ? priceXafPerUnit : priceXafPerUnit.toString();
-  return `${Number(n).toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} ${currencyCode}`;
+  // Prices are whole local-currency units. Group the digit string directly rather
+  // than routing money through Number() — a large price (e.g. high-denomination
+  // currencies) past 2^53 would lose precision under Number().toLocaleString().
+  const raw = (typeof priceXafPerUnit === "string" ? priceXafPerUnit : priceXafPerUnit.toString()).trim();
+  const sign = raw.startsWith("-") ? "-" : "";
+  const digits = raw.replace(/[^\d]/g, "");
+  const sep = locale === "fr" ? " " : ","; // fr groups with a no-break space
+  const grouped = (digits || "0").replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+  return `${sign}${grouped} ${currencyCode}`;
 }
 
 /** Truncate a TRON address / hash for display: TQ12…9fZ. */
@@ -50,12 +57,6 @@ export function timeAgo(iso: string, locale = "en"): string {
   const hr = Math.round(min / 60);
   if (hr < 24) return rtf.format(-hr, "hour");
   return rtf.format(-Math.round(hr / 24), "day");
-}
-
-/** mm:ss countdown from a future ISO deadline; clamps at 0. */
-export function msToDeadline(deadlineIso: string | null): number {
-  if (!deadlineIso) return 0;
-  return Math.max(0, new Date(deadlineIso).getTime() - Date.now());
 }
 
 export function formatClock(ms: number): string {

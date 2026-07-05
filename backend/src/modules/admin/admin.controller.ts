@@ -52,6 +52,7 @@ import { DisputesAdminService, type DisputeQueuePage, type ResolveResult } from 
 import { ConflictingResolutionError, DisputeNotFoundError } from "../disputes/disputes.errors";
 import { IllegalTransitionError, TradeNotFoundError } from "../escrow/escrow.errors";
 import { WithdrawalsService } from "../withdrawals/withdrawals.service";
+import { SettingsService } from "../settings/settings.service";
 import {
   ApprovalNotAllowedError,
   DualApprovalError,
@@ -138,6 +139,7 @@ export class AdminController {
     private readonly disputesAdmin: DisputesAdminService,
     private readonly withdrawals: WithdrawalsService,
     private readonly audit: AuditService,
+    private readonly settings: SettingsService,
   ) {}
 
   private ip(req: AuthenticatedRequest): string | undefined {
@@ -458,6 +460,12 @@ export class AdminController {
   }
 
   // ── settings (SUPER + FINANCE) ────────────────────────────────────────────
+
+  @Roles(...RBAC.editSettings)
+  @Get("settings")
+  async getSettings(): Promise<Awaited<ReturnType<SettingsService["adminSnapshot"]>>> {
+    return this.settings.adminSnapshot();
+  }
 
   @Roles(...RBAC.editSettings)
   @Patch("settings")

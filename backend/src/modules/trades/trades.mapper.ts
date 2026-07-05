@@ -49,6 +49,7 @@ export interface TradeEventRow {
 export interface TradeDetailResponse {
   trade: Trade;
   events: TradeEvent[];
+  disputeId: string | null;
 }
 
 /** first_name when present, otherwise the email local-part masked like "jo***". */
@@ -139,10 +140,12 @@ export function mapTradeDetail(
   parties: ReadonlyMap<string, PartyRow>,
   payment: PaymentRow | null,
   events: readonly TradeEventRow[],
+  disputeId: string | null,
 ): TradeDetailResponse {
   const detail: TradeDetailResponse = {
     trade: mapTrade(row, parties, payment),
     events: events.map(mapTradeEvent),
+    disputeId,
   };
   return VALIDATE_OUTPUT ? zTradeDetailResponse.parse(detail) : detail;
 }

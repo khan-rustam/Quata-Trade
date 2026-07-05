@@ -15,9 +15,13 @@ export const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
+// Money/data face. It never carries above-the-fold marketing copy, so don't
+// preload it — it loads on demand (with a swap fallback) instead of competing
+// with the body + display faces for the first paint's font budget.
 export const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   variable: "--font-plex-mono",
   weight: ["400", "500"],
   display: "swap",
+  preload: false,
 });

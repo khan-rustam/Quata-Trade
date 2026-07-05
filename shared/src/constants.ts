@@ -135,6 +135,14 @@ export const USER_STATUSES = ["active", "frozen", "suspended", "closed"] as cons
 export type UserStatus = (typeof USER_STATUSES)[number];
 
 /**
+ * Maximum admin-settable fee in basis points. Strictly BELOW 10000 (100%): a 100%
+ * fee makes fee_amount === amount, which the trades `fee_amount < amount` CHECK
+ * rejects — bricking every trade on that rail. 9999 = 99.99% is the safe ceiling
+ * (a real platform fee is a fraction of a percent; this is only a fat-finger guard).
+ */
+export const MAX_FEE_BPS = 9999;
+
+/**
  * Default trading fee in basis points per rail (QuataPay 0.3%, everything else 0.5%).
  * These are DEFAULTS/fallbacks — the live values come from the `fee_bps` settings row
  * (seed 0006 + 0016), editable by an admin. Every rail in PAYMENT_METHODS must appear here.

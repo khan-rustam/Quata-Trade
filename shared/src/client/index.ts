@@ -88,13 +88,16 @@ import {
   zAdminUsersResponse,
   zAdminUserDetail,
   zAdminWithdrawalsResponse,
+  zAdminSettingsResponse,
   zAuditLogsResponse,
   zAuditVerifyResponse,
   zKillSwitchState,
+  zLedgerAdjustmentResponse,
   zModerationResult,
   type AdminLoginRequest,
   type ApproveWithdrawalRequest,
   type KillSwitchRequest,
+  type LedgerAdjustmentRequest,
   type RejectWithdrawalRequest,
   type UpdateSettingRequest,
 } from "../schemas/admin.js";
@@ -135,6 +138,20 @@ type Query = Record<string, string | number | boolean | undefined>;
 export class QuataApiClient {
   constructor(private readonly opts: ApiClientOptions) {}
 
+  private async sendOnce(urlStr: string, method: string, body: unknown): Promise<Response> {
+    const token = this.opts.getAccessToken?.();
+    const fetchFn = this.opts.fetchFn ?? fetch;
+    return fetchFn(urlStr, {
+      method,
+      headers: {
+        ...(body !== undefined ? { "content-type": "application/json" } : {}),
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      credentials: "include", // refresh token cookie
+    });
+  }
+
   private async request<S extends z.ZodTypeAny>(
     method: string,
     path: string,
@@ -148,21 +165,20 @@ export class QuataApiClient {
         if (v !== undefined) url.searchParams.set(k, String(v));
       }
     }
-    const token = this.opts.getAccessToken?.();
-    const fetchFn = this.opts.fetchFn ?? fetch;
-    const res = await fetchFn(url.toString(), {
-      method,
-      headers: {
-        ...(body !== undefined ? { "content-type": "application/json" } : {}),
-        ...(token ? { authorization: `Bearer ${token}` } : {}),
-      },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      credentials: "include", // refresh token cookie
-    });
+    const urlStr = url.toString();
 
-    if (res.status === 401) {
-      await this.opts.onUnauthorized?.();
+    let res = await this.sendOnce(urlStr, method, body);
+
+    // On a 401, refresh the access token ONCE and REPLAY the original request with
+    // the new token — otherwise a token that expires mid-request (e.g. a withdrawal)
+    // fails with a spurious error even though the session is still valid. Skip the
+    // auth endpoints themselves (login/refresh/logout) so a failed refresh can't loop.
+    const isAuthPath = path.startsWith("/api/v1/auth/");
+    if (res.status === 401 && !isAuthPath && this.opts.onUnauthorized) {
+      await this.opts.onUnauthorized();
+      res = await this.sendOnce(urlStr, method, body);
     }
+
     const text = await res.text();
     const json: unknown = text.length > 0 ? JSON.parse(text) : null;
     if (!res.ok) {
@@ -267,6 +283,9 @@ export class QuataApiClient {
   dispute = (id: string) => this.request("GET", `/api/v1/disputes/${id}`, zDispute);
   submitEvidence = (id: string, body: SubmitEvidenceRequest) =>
     this.request("POST", `/api/v1/disputes/${id}/evidence`, zDispute, body);
+  /** Upload a dispute evidence file (raw base64, no data: prefix) → object key for submitEvidence.files. */
+  uploadDisputeEvidence = (id: string, file: string) =>
+    this.request("POST", `/api/v1/disputes/${id}/upload`, zUploadKeyResponse, { file });
 
   // ---- chat ----
   messages = (tradeId: string) => this.request("GET", `/api/v1/trades/${tradeId}/messages`, zMessagesResponse);
@@ -345,6 +364,7 @@ export class QuataApiClient {
     this.request("GET", "/api/v1/admin/disputes", zAdminDisputesResponse, undefined, query);
   adminResolveDispute = (id: string, body: ResolveDisputeRequest): Promise<unknown> =>
     this.request("POST", `/api/v1/admin/disputes/${id}/resolve`, zAnyRecord, body);
+  adminSettings = () => this.request("GET", "/api/v1/admin/settings", zAdminSettingsResponse);
   adminKillSwitch = () => this.request("GET", "/api/v1/admin/kill-switch", zKillSwitchState);
   adminSetKillSwitch = (body: KillSwitchRequest) =>
     this.request("POST", "/api/v1/admin/kill-switch", zKillSwitchState, body);
@@ -353,6 +373,8 @@ export class QuataApiClient {
     this.request("POST", `/api/v1/admin/countries/${code}`, zAdminCountriesResponse, body);
   adminUpdateSetting = (body: UpdateSettingRequest): Promise<unknown> =>
     this.request("PATCH", "/api/v1/admin/settings", zAnyRecord, body);
+  adminLedgerAdjustment = (body: LedgerAdjustmentRequest) =>
+    this.request("POST", "/api/v1/admin/ledger/adjustment", zLedgerAdjustmentResponse, body);
   adminAuditLogs = (query?: Query) =>
     this.request("GET", "/api/v1/admin/audit-logs", zAuditLogsResponse, undefined, query);
   adminVerifyAudit = () => this.request("GET", "/api/v1/admin/audit-logs/verify", zAuditVerifyResponse);

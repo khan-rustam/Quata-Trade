@@ -110,10 +110,18 @@ export class AuthController {
     };
   }
 
+  /** Secure on every non-local environment. Keying this on `=== "production"`
+   * left the long-lived refresh cookie without Secure on the HTTPS staging box;
+   * `!== "development"` covers staging + production (both served over HTTPS) while
+   * keeping http://localhost working for local dev. */
+  private cookieSecure(): boolean {
+    return this.config.get("NODE_ENV", { infer: true }) !== "development";
+  }
+
   private setRefreshCookie(reply: CookieReply, tokens: IssuedTokens): void {
     reply.setCookie(REFRESH_COOKIE, tokens.refreshToken, {
       httpOnly: true,
-      secure: this.config.get("NODE_ENV", { infer: true }) === "production",
+      secure: this.cookieSecure(),
       sameSite: "strict",
       path: COOKIE_PATH,
       expires: tokens.refreshExpiresAt,
@@ -121,7 +129,13 @@ export class AuthController {
   }
 
   private clearRefreshCookie(reply: CookieReply): void {
-    reply.clearCookie(REFRESH_COOKIE, { path: COOKIE_PATH });
+    // Match the attributes the cookie was set with so browsers reliably clear it.
+    reply.clearCookie(REFRESH_COOKIE, {
+      httpOnly: true,
+      secure: this.cookieSecure(),
+      sameSite: "strict",
+      path: COOKIE_PATH,
+    });
   }
 
   // ── public endpoints (strict throttle buckets, Documents/06 auth rules) ──

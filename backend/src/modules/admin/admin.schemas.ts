@@ -3,10 +3,12 @@ import {
   ASSET_CODES,
   TRADE_STATUSES,
   WITHDRAWAL_STATUSES,
-  zIdempotencyKey,
+  zFeeBpsValue,
+  zLedgerAdjustmentRequest,
   zPagination,
-  zTotpCode,
   zUuid,
+  zWithdrawalCapsValue,
+  type LedgerAdjustmentRequest,
 } from "@quatatrade/shared";
 
 /**
@@ -49,26 +51,9 @@ export type AdminAuditQuery = z.infer<typeof zAdminAuditQuery>;
 /** Unsigned BIGINT smallest-units string. */
 const zAmountStr = z.string().regex(/^\d{1,30}$/, "must be an integer amount string");
 
-/**
- * The ONLY manual money endpoint (Documents/08 §E: SUPER_ADMIN only +
- * mandatory reason + audit). amount is SIGNED: positive credits the user
- * (external → user_available), negative debits (user_available → external).
- */
-export const zLedgerAdjustmentRequest = z
-  .object({
-    userId: zUuid,
-    accountKind: z.literal("user_available"), // v1: only the user's available balance is adjustable
-    asset: z.enum(ASSET_CODES).default("USDT_TRC20"),
-    amount: z
-      .string()
-      .regex(/^-?\d{1,30}$/, "must be a signed integer amount string")
-      .refine((v) => BigInt(v) !== 0n, "amount must be non-zero"),
-    reason: z.string().trim().min(10).max(1000),
-    idempotencyKey: zIdempotencyKey,
-    totpCode: zTotpCode,
-  })
-  .strict();
-export type LedgerAdjustmentRequest = z.infer<typeof zLedgerAdjustmentRequest>;
+// The manual ledger-adjustment contract now lives in shared/ (FE + BE validate the
+// same schema); re-exported so existing backend imports keep resolving here.
+export { zLedgerAdjustmentRequest, type LedgerAdjustmentRequest };
 
 const zTierLimitValue = z.object({ maxTrade: zAmountStr, dailyWithdrawal: zAmountStr }).strict();
 
@@ -78,22 +63,13 @@ const zTierLimitValue = z.object({ maxTrade: zAmountStr, dailyWithdrawal: zAmoun
  * running app. kill_switches deliberately absent — it has its own endpoint.
  */
 export const SETTING_VALUE_SCHEMAS: Readonly<Record<string, ZodTypeAny>> = {
-  fee_bps: z
-    .object({
-      QUATAPAY: z.number().int().min(0).max(10_000),
-      MTN_MOMO: z.number().int().min(0).max(10_000),
-      ORANGE_MONEY: z.number().int().min(0).max(10_000),
-    })
-    .strict(),
+  // Full 11-rail snapshot, each 0..MAX_FEE_BPS (< 100% so the trades CHECK holds).
+  // Shared with the FE editor so both sides validate identically.
+  fee_bps: zFeeBpsValue,
   trade_payment_window_minutes: z.number().int().min(5).max(1440),
-  withdrawal_caps: z
-    .object({
-      per_tx_max: zAmountStr,
-      daily_max: zAmountStr,
-      dual_approval_threshold: zAmountStr,
-      auto_approve_below: zAmountStr,
-    })
-    .strict(),
+  // Coherent ordering (auto <= dual <= per_tx <= daily, per_tx > 0), BigInt-compared.
+  // The dual-approval threshold is enforced live by the withdrawals DB trigger.
+  withdrawal_caps: zWithdrawalCapsValue,
   withdrawal_fee: z
     .record(z.enum(ASSET_CODES), zAmountStr)
     .refine((v) => typeof v.USDT_TRC20 === "string", "withdrawal_fee must include USDT_TRC20"),

@@ -9,7 +9,7 @@ import { Section } from "@/components/public/marketing";
 import { Reveal } from "@/components/motion/reveal";
 import { Avatar } from "@/components/ui/avatar";
 import { ReputationBadge } from "@/components/ui/reputation-badge";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 
 async function fetchTrader(id: string): Promise<PublicTrader | null> {
   const res = await fetch(`${API_BASE_URL}/api/v1/traders/${id}`, { cache: "no-store" });
@@ -85,8 +85,8 @@ export default async function TraderProfilePage({
       </Reveal>
 
       <Reveal delay={0.08} className="mt-6 flex flex-wrap items-center gap-3">
-        <Link href="/register">
-          <Button size="lg">{t("cta", { name: trader.displayName })}</Button>
+        <Link href="/register" className={buttonClassName({ size: "lg" })}>
+          {t("cta", { name: trader.displayName })}
         </Link>
         <Link href="/how-it-works" className="text-sm text-text-2 hover:text-text-1">
           {t("viewOffers")}

@@ -3,24 +3,27 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Send } from "lucide-react";
 import { fromDisplay, zEmail } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { Usdt } from "@/components/ui/amount";
 import { SecurityDialog } from "@/components/security/security-dialog";
 import { useToast } from "@/components/ui/toast";
 import { useBalances } from "@/hooks/use-wallet";
 import { api } from "@/lib/api/client";
+import { qk } from "@/lib/api/query-keys";
 import { apiErrorMessage } from "@/lib/api/errors";
 
 export default function TransferPage(): React.JSX.Element {
   const tx = useTranslations("walletTransfer");
   const toast = useToast();
+  const qc = useQueryClient();
   const { data: balances } = useBalances();
   const available = balances?.balances.find((b) => b.asset === "USDT_TRC20")?.available ?? "0";
 
@@ -63,6 +66,8 @@ export default function TransferPage(): React.JSX.Element {
       });
       setConfirmOpen(false);
       setDone(true);
+      // Internal transfer debits the sender's available balance → refresh the cache.
+      void qc.invalidateQueries({ queryKey: qk.balances });
       toast.success(tx("toastTitle"), tx("toastDetail", { amount }));
     } catch (err) {
       setDialogError(apiErrorMessage(err, tx("transferFailed")));
@@ -80,8 +85,8 @@ export default function TransferPage(): React.JSX.Element {
           <p className="font-medium">
             <Usdt value={fromDisplay(amount).toString()} /> {tx("sentTo", { email })}
           </p>
-          <Link href="/wallet">
-            <Button>{tx("backToWallet")}</Button>
+          <Link href="/wallet" className={buttonClassName()}>
+            {tx("backToWallet")}
           </Link>
         </Card>
       </div>

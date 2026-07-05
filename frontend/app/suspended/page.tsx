@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 
 export const metadata = { title: "Account suspended — QuataTrade" };
 
@@ -19,8 +19,8 @@ export default function SuspendedPage(): React.JSX.Element {
           review it with you.
         </p>
       </div>
-      <Link href="/contact">
-        <Button>Contact support</Button>
+      <Link href="/contact" className={buttonClassName()}>
+        Contact support
       </Link>
     </main>
   );

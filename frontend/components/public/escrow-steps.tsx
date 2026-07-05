@@ -77,7 +77,7 @@ export function EscrowSteps(): React.JSX.Element {
                     className={cn(
                       "absolute left-1.5 top-6 hidden h-9 w-9 items-center justify-center rounded-full border transition-colors md:flex",
                       isActive
-                        ? "border-accent-400 bg-accent-400 text-[#0e1416]"
+                        ? "border-accent-400 bg-accent-400 text-bg"
                         : "border-border bg-surface-2 text-text-3",
                     )}
                     aria-hidden

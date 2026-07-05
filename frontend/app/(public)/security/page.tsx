@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Fingerprint, KeyRound, Lock, Server, ShieldCheck, Snowflake, type LucideProps } from "lucide-react";
 import { Section, SectionHeading, FeatureCard } from "@/components/public/marketing";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
 
 export const metadata: Metadata = {
@@ -31,6 +31,7 @@ export default function SecurityPage(): React.JSX.Element {
       <Section narrow>
         <Reveal>
           <SectionHeading
+            as="h1"
             eyebrow={t("heroEyebrow")}
             title={t("heroTitle")}
             subtitle={t("heroSubtitle")}
@@ -65,8 +66,8 @@ export default function SecurityPage(): React.JSX.Element {
         </Reveal>
         <Reveal>
           <div className="mt-6 flex items-center gap-3">
-            <Link href="/register">
-              <Button>{t("ctaButton")}</Button>
+            <Link href="/register" className={buttonClassName()}>
+              {t("ctaButton")}
             </Link>
             <Link href="/legal/privacy" className="text-sm text-text-2 hover:text-text-1">
               {t("privacyLink")}

@@ -1,13 +1,16 @@
 import { z } from "zod";
 import {
   ADMIN_ROLES,
+  ASSET_CODES,
   KYC_STATUSES,
+  MAX_FEE_BPS,
   OFFER_SIDES,
+  PAYMENT_METHODS,
   TRADE_STATUSES,
   USER_STATUSES,
   WITHDRAWAL_STATUSES,
 } from "../constants.js";
-import { zAmount, zEmail, zPaginated, zTotpCode, zUuid } from "./common.js";
+import { zAmount, zEmail, zIdempotencyKey, zPaginated, zTotpCode, zUuid } from "./common.js";
 
 export const zAdminLoginRequest = z
   .object({
@@ -75,6 +78,106 @@ export const zKillSwitchState = z.object({
   tradesPaused: z.boolean(),
 });
 export type KillSwitchState = z.infer<typeof zKillSwitchState>;
+
+/** Runtime-tunable business config for the admin settings console (read snapshot).
+ * Amounts are smallest-unit strings. Every field is editable via PATCH /admin/settings
+ * with TOTP step-up; feeBps + withdrawalCaps are validated by the hardened value
+ * schemas below (zFeeBpsValue / zWithdrawalCapsValue). */
+export const zAdminSettingsResponse = z.object({
+  paymentWindowMinutes: z.number().int(),
+  depositPolicy: z.object({ minAmount: zAmount, confirmations: z.number().int() }),
+  feeBps: z.record(z.string(), z.number().int()),
+  withdrawalCaps: z.object({
+    perTxMax: zAmount,
+    dailyMax: zAmount,
+    dualApprovalThreshold: zAmount,
+    autoApproveBelow: zAmount,
+  }),
+});
+export type AdminSettingsResponse = z.infer<typeof zAdminSettingsResponse>;
+
+/**
+ * fee_bps write value — a FULL snapshot of every payment rail (0..MAX_FEE_BPS bps).
+ * Derived from PAYMENT_METHODS so a new rail is covered automatically; requiring every
+ * rail makes the settings full-value REPLACE unable to silently drop a rail's fee, and
+ * rejecting unknown rails keeps the row clean. The FE editor imports this to validate
+ * identically. The write gate (SETTING_VALUE_SCHEMAS) reuses it.
+ */
+const zBpsValue = z.number().int().min(0).max(MAX_FEE_BPS);
+export const zFeeBpsValue = z
+  .record(z.enum(PAYMENT_METHODS), zBpsValue)
+  .refine((v) => PAYMENT_METHODS.every((m) => typeof v[m] === "number"), {
+    message: `fee_bps must include every rail: ${PAYMENT_METHODS.join(", ")}`,
+  });
+export type FeeBpsValue = z.infer<typeof zFeeBpsValue>;
+
+/**
+ * withdrawal_caps write value. Smallest-unit strings with the ordering invariant the
+ * withdrawal service assumes: 0 < per_tx_max, auto_approve_below <= dual_approval_threshold
+ * <= per_tx_max <= daily_max. Compared as BigInt (never Number) so 30-digit values are
+ * exact. The dual-approval threshold is enforced live by a DB trigger (see the
+ * dual-approval migration), so it is freely settable within this coherent range.
+ */
+// Smallest-unit cap amount. Bounded to <= 30 digits so a written value can never
+// exceed what the SettingsService READ schema accepts (an over-long value would pass
+// the write but throw on every read, bricking withdrawals). The superRefine also caps
+// it at the PG int8 max: withdrawal.amount is int8 and the dual-approval trigger casts
+// the threshold to bigint, so a larger value would overflow that cast.
+const zCapAmount = z.string().regex(/^\d{1,30}$/, "cap must be a smallest-unit integer string");
+const MAX_INT8 = 9223372036854775807n;
+export const zWithdrawalCapsValue = z
+  .object({
+    per_tx_max: zCapAmount,
+    daily_max: zCapAmount,
+    dual_approval_threshold: zCapAmount,
+    auto_approve_below: zCapAmount,
+  })
+  .strict()
+  .superRefine((v, ctx) => {
+    const perTx = BigInt(v.per_tx_max);
+    const daily = BigInt(v.daily_max);
+    const dual = BigInt(v.dual_approval_threshold);
+    const auto = BigInt(v.auto_approve_below);
+    if (perTx <= 0n) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "per_tx_max must be greater than zero", path: ["per_tx_max"] });
+    if (daily > MAX_INT8) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "daily_max exceeds the maximum supported amount", path: ["daily_max"] });
+    if (perTx > daily) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "per_tx_max must be <= daily_max", path: ["per_tx_max"] });
+    if (dual > perTx) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "dual_approval_threshold must be <= per_tx_max", path: ["dual_approval_threshold"] });
+    if (auto > dual) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "auto_approve_below must be <= dual_approval_threshold", path: ["auto_approve_below"] });
+  });
+export type WithdrawalCapsValue = z.infer<typeof zWithdrawalCapsValue>;
+
+/**
+ * Manual ledger adjustment — the ONLY manual money endpoint (Documents/08 §E:
+ * SUPER_ADMIN only + mandatory reason + audit). `amount` is a SIGNED smallest-unit
+ * string: positive credits the user (external → user_available), negative debits.
+ * Shared so the admin FE validates the exact same contract the backend enforces.
+ */
+export const zLedgerAdjustmentRequest = z
+  .object({
+    userId: zUuid,
+    accountKind: z.literal("user_available"), // v1: only the user's available balance is adjustable
+    asset: z.enum(ASSET_CODES).default("USDT_TRC20"),
+    // Validate format THEN non-zero in one pass — a bare `.refine(BigInt(v)!==0n)`
+    // after `.regex()` throws on a malformed value (zod still runs the refine).
+    amount: z.string().superRefine((v, ctx) => {
+      if (!/^-?\d{1,30}$/.test(v)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "must be a signed integer amount string" });
+        return;
+      }
+      if (BigInt(v) === 0n) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "amount must be non-zero" });
+    }),
+    reason: z.string().trim().min(10).max(1000),
+    idempotencyKey: zIdempotencyKey,
+    totpCode: zTotpCode,
+  })
+  .strict();
+export type LedgerAdjustmentRequest = z.infer<typeof zLedgerAdjustmentRequest>;
+
+export const zLedgerAdjustmentResponse = z.object({
+  journalId: zUuid,
+  replayed: z.boolean(),
+});
+export type LedgerAdjustmentResponse = z.infer<typeof zLedgerAdjustmentResponse>;
 
 export const zKillSwitchRequest = z
   .object({

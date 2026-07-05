@@ -6,12 +6,26 @@ import { zEmail, zUuid } from "./common.js";
 export const ENQUIRY_STATUSES = ["new", "read", "replied", "archived"] as const;
 export type EnquiryStatus = (typeof ENQUIRY_STATUSES)[number];
 
+/**
+ * A social link is either empty ("" = not set) or an absolute http(s) URL.
+ * Rejecting every other scheme here is what stops a `javascript:`/`data:` URI
+ * from being stored and later rendered as an <a href> (stored XSS). Note that
+ * `z.url()` alone would ACCEPT `javascript:...` — the explicit scheme check is required.
+ */
+const zSocialUrl = z
+  .string()
+  .trim()
+  .max(200)
+  .refine((v) => v === "" || /^https?:\/\/\S+$/i.test(v), {
+    message: "Must be an http(s):// URL",
+  });
+
 export const zSocialLinks = z.object({
-  facebook: z.string(),
-  x: z.string(),
-  instagram: z.string(),
-  linkedin: z.string(),
-  telegram: z.string(),
+  facebook: zSocialUrl,
+  x: zSocialUrl,
+  instagram: zSocialUrl,
+  linkedin: zSocialUrl,
+  telegram: zSocialUrl,
 });
 
 /** Company/contact details — one settings row, reflected across the whole site. */

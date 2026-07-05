@@ -22,7 +22,8 @@
     "dev": "tsup --watch",
     "test": "vitest run",
     "lint": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepare": "tsup"
   },
   "dependencies": {
     "decimal.js": "^10.4.3",

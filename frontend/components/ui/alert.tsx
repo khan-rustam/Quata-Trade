@@ -23,8 +23,12 @@ export function Alert({
   className?: string;
 }): React.JSX.Element {
   const { cls, Icon } = config[tone];
+  // Danger alerts are errors surfaced in response to a user action (failed
+  // withdrawal, wrong PIN, invalid form) — announce them assertively when they
+  // mount. Info/success/warning are advisory and stay silent notes.
+  const role = tone === "danger" ? "alert" : "note";
   return (
-    <div role="note" className={cn("flex gap-3 rounded-xl border px-4 py-3 text-sm", cls, className)}>
+    <div role={role} className={cn("flex gap-3 rounded-xl border px-4 py-3 text-sm", cls, className)}>
       <Icon size={18} aria-hidden className="mt-0.5 shrink-0" />
       <div className="space-y-0.5">
         {title && <p className="font-medium">{title}</p>}

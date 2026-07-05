@@ -2,13 +2,17 @@
  * fees — review priority #1 (Documents/06-backend-modules.md).
  * Pure functions. No I/O, no floats, property-tested exhaustively.
  */
+import { MAX_FEE_BPS } from "@quatatrade/shared";
 
 export class FeeError extends Error {}
 
 /** floor(amount * bps / 10000) using pure bigint math. */
 export function computeFee(amount: bigint, bps: number): bigint {
   if (amount < 0n) throw new FeeError("amount must be non-negative");
-  if (!Number.isInteger(bps) || bps < 0 || bps > 10_000) {
+  // Upper bound is MAX_FEE_BPS (< 10000): a 100% fee makes fee === amount and would
+  // violate the trades `fee_amount < amount` CHECK. Guard here so a bad bps fails
+  // loudly and early rather than at trade-insert time.
+  if (!Number.isInteger(bps) || bps < 0 || bps > MAX_FEE_BPS) {
     throw new FeeError(`bps out of range: ${bps}`);
   }
   // bigint division truncates toward zero == floor for non-negative operands

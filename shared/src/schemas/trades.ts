@@ -101,6 +101,9 @@ export type TradeEvent = z.infer<typeof zTradeEvent>;
 export const zTradeDetailResponse = z.object({
   trade: zTrade,
   events: z.array(zTradeEvent),
+  /** The dispute for this trade, if one was opened — lets a party reload and act on
+   * it after leaving the room. null when the trade has never been disputed. */
+  disputeId: zUuid.nullable(),
 });
 
 /** Payment-proof upload → the stored object key; include in submitPayment.proofFiles. */

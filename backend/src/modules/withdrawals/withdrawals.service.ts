@@ -379,10 +379,10 @@ export class WithdrawalsService {
    * Approve. Dual approval when amount >= dual_approval_threshold: the first
    * call records approved_by (status stays PENDING_APPROVAL), the second call
    * by a DIFFERENT admin records second_approver and moves to APPROVED.
-   * The DB CHECK `big_needs_two` is the last-line backstop.
+   * The `trg_withdrawal_dual_approval` DB trigger reads the LIVE threshold and is
+   * the last-line backstop (migration 0017 — replaced the hardcoded CHECK).
    */
   async approve(withdrawalId: string, adminId: string, adminRole: AdminRole): Promise<WithdrawalRow> {
-    const caps = await this.settings.withdrawalCaps();
     return this.db.transaction().execute(async (trx) => {
       const wd = await trx
         .selectFrom("withdrawals")
@@ -395,6 +395,9 @@ export class WithdrawalsService {
         throw new IllegalWithdrawalStateError(wd.status, "approve");
       }
 
+      // Read the threshold LIVE inside the txn so the single/dual decision matches
+      // exactly what the DB dual-approval trigger will read (no stale-cache divergence).
+      const caps = await this.settings.withdrawalCapsIn(trx);
       const needsDual = wd.amount >= caps.dualApprovalThreshold;
 
       if (!needsDual) {

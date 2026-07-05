@@ -13,7 +13,11 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({
-      trustProxy: true, // behind Nginx
+      // Trust ONLY the loopback proxy (Nginx runs on 127.0.0.1 on the same host).
+      // `true` would trust the attacker-controlled leftmost X-Forwarded-For, which
+      // defeats per-IP rate limiting and forges the source IP in the audit log/risk
+      // engine. "loopback" makes req.ip the real client IP that Nginx set.
+      trustProxy: "loopback",
       bodyLimit: 8_388_608, // 8 MiB — POST /kyc/upload carries ≤7 MiB base64 JSON; Nginx caps other routes tighter at the edge
     }),
     { bufferLogs: true },
@@ -51,7 +55,11 @@ async function bootstrap(): Promise<void> {
   }
 
   const port = config.get("PORT", { infer: true });
-  await app.listen({ port, host: "0.0.0.0" });
+  // In production Nginx is the only intended client (127.0.0.1 upstream), so bind
+  // to loopback — binding 0.0.0.0 on a shared VPS exposes the API off-Nginx,
+  // bypassing TLS/HSTS/edge rate limits. Non-prod keeps 0.0.0.0 for LAN/dev access.
+  const host = config.get("NODE_ENV", { infer: true }) === "production" ? "127.0.0.1" : "0.0.0.0";
+  await app.listen({ port, host });
 }
 
 void bootstrap();

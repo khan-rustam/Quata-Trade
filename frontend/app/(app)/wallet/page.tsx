@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { ArrowDownToLine, ArrowUpFromLine, History, Send } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 import { Usdt } from "@/components/ui/amount";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Segmented } from "@/components/ui/segmented";
@@ -88,8 +88,8 @@ function DepositsList(): React.JSX.Element {
         title={tx("noDepositsTitle")}
         description={tx("noDepositsDescription")}
         action={
-          <Link href="/wallet/deposit">
-            <Button size="sm">{tx("getDepositAddress")}</Button>
+          <Link href="/wallet/deposit" className={buttonClassName({ size: "sm" })}>
+            {tx("getDepositAddress")}
           </Link>
         }
       />

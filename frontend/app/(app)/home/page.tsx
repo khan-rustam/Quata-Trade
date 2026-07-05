@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ArrowDownLeft, ArrowUpRight, Repeat, ShieldCheck, TrendingUp } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Usdt } from "@/components/ui/amount";
@@ -124,8 +124,8 @@ export default function HomePage(): React.JSX.Element {
           <p className="font-medium">{tx("browseOffers")}</p>
           <p className="text-sm text-text-2">{tx("browseOffersBody")}</p>
         </div>
-        <Link href="/trade">
-          <Button size="sm">{tx("explore")}</Button>
+        <Link href="/trade" className={buttonClassName({ size: "sm" })}>
+          {tx("explore")}
         </Link>
       </Card>
     </div>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, Lock, MessageSquare, ShieldCheck, Wallet } from "lucide-react";
 import type { Offer } from "@quatatrade/shared";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 import { Section, SectionHeading, FeatureCard } from "@/components/public/marketing";
 import { BrandMark } from "@/components/brand/logo";
 import { Hero } from "@/components/public/hero";
@@ -118,10 +118,8 @@ export default async function LandingPage(): Promise<React.JSX.Element> {
             <BrandMark size={44} />
             <h2 className="text-balance font-display text-3xl font-bold tracking-tight">{t("cta.title")}</h2>
             <p className="text-text-2">{t("cta.body")}</p>
-            <Link href="/register">
-              <Button size="lg">
-                {t("cta.button")} <ArrowRight size={16} aria-hidden />
-              </Button>
+            <Link href="/register" className={buttonClassName({ size: "lg" })}>
+              {t("cta.button")} <ArrowRight size={16} aria-hidden />
             </Link>
           </Reveal>
         </Section>

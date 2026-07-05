@@ -9,6 +9,7 @@ import {
   ChevronRight,
   FileText,
   LogOut,
+  Receipt,
   ShieldCheck,
   Tags,
   User,
@@ -69,6 +70,7 @@ export default function AccountPage(): React.JSX.Element {
       </Card>
 
       <div className="overflow-hidden rounded-xl border border-border">
+        <MenuLink href="/account/trades" icon={Receipt} label={tx("myTrades")} />
         <MenuLink href="/account/offers" icon={Tags} label={tx("myOffers")} />
         <MenuLink href="/account/payment-methods" icon={Banknote} label={tx("paymentMethods")} />
         <MenuLink href="/account/kyc" icon={BadgeCheck} label={tx("kyc")} />

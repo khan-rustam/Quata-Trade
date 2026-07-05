@@ -186,12 +186,15 @@ export class TradesController {
   ): Promise<TradeDetailResponse> {
     const trade = await this.trades.getTradeForParty(id, userId);
     if (!trade) throw new NotFoundException("trade not found");
-    const [parties, payment, events] = await Promise.all([
+    const [parties, payment, events, dispute] = await Promise.all([
       fetchParties(this.db, [trade.seller_id, trade.buyer_id]),
       this.trades.getPayment(id),
       this.trades.getEvents(id),
+      // disputes.trade_id is UNIQUE — at most one dispute per trade. Surfacing its id
+      // lets a party reload the room and act on the dispute (view + submit evidence).
+      this.db.selectFrom("disputes").select("id").where("trade_id", "=", id).executeTakeFirst(),
     ]);
-    return mapTradeDetail(trade, parties, payment, events);
+    return mapTradeDetail(trade, parties, payment, events, dispute?.id ?? null);
   }
 
   /** Buyer submits off-platform payment proof (service scopes to the buyer). */

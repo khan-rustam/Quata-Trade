@@ -176,8 +176,9 @@ describe("mapTradeDetail — zTradeDetailResponse", () => {
         created_at: deadline,
       },
     ];
-    const detail = mapTradeDetail(tradeRow(), parties(), null, events);
+    const detail = mapTradeDetail(tradeRow(), parties(), null, events, null);
     expect(() => zTradeDetailResponse.parse(detail)).not.toThrow();
+    expect(detail.disputeId).toBeNull();
     expect(detail.events).toHaveLength(2);
     expect(detail.events[1]?.fromStatus).toBe("OPENED");
   });

@@ -1,9 +1,12 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
+import { MAX_FEE_BPS } from "@quatatrade/shared";
 import { computeFee, fiatValueXaf, split } from "./fees";
 
 const arbAmount = fc.bigInt({ min: 0n, max: 10n ** 15n }); // up to 10^9 USDT in units
-const arbBps = fc.constantFrom(30, 50); // QuataPay / MoMo & Orange
+// Exercise the FULL editable bps range (0..MAX_FEE_BPS), not just the seeded 30/50 —
+// an admin can now set any rail's fee, so the invariants must hold across the range.
+const arbBps = fc.integer({ min: 0, max: MAX_FEE_BPS });
 
 describe("computeFee", () => {
   it("is floor(amount*bps/10000) for thousands of random cases", () => {
@@ -18,7 +21,9 @@ describe("computeFee", () => {
     );
   });
 
-  it("fee is strictly less than amount for any positive amount and bps < 10000", () => {
+  it("fee is strictly less than amount for any positive amount and bps <= MAX_FEE_BPS", () => {
+    // Guarantees the trades `fee_amount < amount` CHECK can never be violated by a
+    // configured fee — the whole reason MAX_FEE_BPS is < 10000.
     fc.assert(
       fc.property(fc.bigInt({ min: 1n, max: 10n ** 15n }), arbBps, (amount, bps) => {
         expect(computeFee(amount, bps) < amount).toBe(true);
@@ -32,6 +37,12 @@ describe("computeFee", () => {
     expect(() => computeFee(100n, -1)).toThrow();
     expect(() => computeFee(100n, 10_001)).toThrow();
     expect(() => computeFee(100n, 0.5)).toThrow();
+  });
+
+  it("rejects bps above MAX_FEE_BPS (100% fee would brick the trades CHECK) but accepts the boundary", () => {
+    expect(() => computeFee(100n, 10_000)).toThrow(); // 100% no longer allowed
+    expect(() => computeFee(100n, MAX_FEE_BPS + 1)).toThrow();
+    expect(computeFee(100n, MAX_FEE_BPS)).toBe((100n * BigInt(MAX_FEE_BPS)) / 10_000n);
   });
 
   it("handles exact known values", () => {

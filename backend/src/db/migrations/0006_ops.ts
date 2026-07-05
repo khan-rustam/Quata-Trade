@@ -91,7 +91,9 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     )`.execute(db);
   await sql`CREATE INDEX outbox_pending_idx ON outbox (created_at) WHERE processed_at IS NULL`.execute(db);
 
-  // ---- default runtime settings (tunable in admin; DB CHECKs stay as backstop)
+  // ---- default runtime settings (tunable in admin). Validation is the zod write
+  // gate (SETTING_VALUE_SCHEMAS); the dual-approval threshold additionally has a DB
+  // trigger backstop (migration 0017). The settings table itself has no CHECKs.
   await sql`
     INSERT INTO settings (key, value) VALUES
       ('fee_bps', '{"QUATAPAY":30,"MTN_MOMO":50,"ORANGE_MONEY":50}'),

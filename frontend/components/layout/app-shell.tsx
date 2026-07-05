@@ -180,7 +180,9 @@ export function AppShell({ children }: { children: ReactNode }): React.JSX.Eleme
         </nav>
 
         {/* content */}
-        <main className="min-w-0 flex-1 px-4 py-5 pb-24 md:px-8 md:pb-8">{children}</main>
+        <main id="main-content" className="min-w-0 flex-1 px-4 py-5 pb-24 md:px-8 md:pb-8">
+          {children}
+        </main>
       </div>
 
       {/* mobile bottom nav */}

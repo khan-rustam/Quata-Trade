@@ -27,16 +27,49 @@ export function Dialog({
 
   useEffect(() => {
     if (!open) return;
+    const panel = panelRef.current;
+    // Remember what had focus so we can hand it back when the dialog closes.
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const focusableSelector =
+      'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      // Focus trap: keep Tab / Shift+Tab cycling inside the modal (WCAG 2.4.3 /
+      // 2.1.2) instead of leaking to the page behind the backdrop.
+      if (e.key !== "Tab" || !panel) return;
+      const focusables = Array.from(panel.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+        (el) => el.offsetParent !== null,
+      );
+      if (focusables.length === 0) {
+        e.preventDefault();
+        panel.focus();
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || active === panel)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
+
     document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    panelRef.current?.focus();
+    panel?.focus();
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
+      // Restore focus to the trigger so keyboard/SR context isn't lost on close.
+      previouslyFocused?.focus?.();
     };
   }, [open, onClose]);
 
@@ -54,6 +87,7 @@ export function Dialog({
         role="dialog"
         aria-modal="true"
         aria-label={title}
+        aria-describedby={description ? "qt-dialog-desc" : undefined}
         tabIndex={-1}
         className={cn(
           "w-full max-w-md rounded-t-2xl border border-border bg-surface-1 p-5 outline-none sm:rounded-2xl",
@@ -64,7 +98,11 @@ export function Dialog({
         <div className="mb-4 flex items-start justify-between gap-4">
           <div className="space-y-1">
             <h2 className="font-display text-lg font-medium text-text-1">{title}</h2>
-            {description && <p className="text-sm text-text-2">{description}</p>}
+            {description && (
+              <p id="qt-dialog-desc" className="text-sm text-text-2">
+                {description}
+              </p>
+            )}
           </div>
           <button
             type="button"

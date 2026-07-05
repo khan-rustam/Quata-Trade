@@ -26,10 +26,12 @@ import { Keyhole } from "@/components/brand/keyhole";
 import { useToast } from "@/components/ui/toast";
 import { useMe } from "@/hooks/use-auth";
 import { useMessages, useSendMessage, useTrade } from "@/hooks/use-trade";
+import { useDispute, useSubmitEvidence } from "@/hooks/use-dispute";
 import { qk } from "@/lib/api/query-keys";
 import { api } from "@/lib/api/client";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { timeAgo } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export default function TradeRoomPage(): React.JSX.Element {
   const tx = useTranslations("tradeRoom");
@@ -56,7 +58,12 @@ export default function TradeRoomPage(): React.JSX.Element {
   const isSeller = me?.id === trade.seller.id;
   const isBuyer = me?.id === trade.buyer.id;
   const counterparty = isSeller ? trade.buyer : trade.seller;
-  const refresh = () => void qc.invalidateQueries({ queryKey: qk.trade(id) });
+  const refresh = () => {
+    void qc.invalidateQueries({ queryKey: qk.trade(id) });
+    // Confirm (escrow release → buyer credit) and cancel/refund (→ seller) both move
+    // money, so the cached wallet balance must be re-fetched too.
+    void qc.invalidateQueries({ queryKey: qk.balances });
+  };
 
   const confirmRelease = async (creds: { pin?: string; totpCode?: string }) => {
     setBusy(true);
@@ -170,9 +177,7 @@ export default function TradeRoomPage(): React.JSX.Element {
         </Alert>
       )}
       {trade.status === "DISPUTED" && (
-        <Alert tone="danger" title={tx("inDisputeTitle")}>
-          {tx("inDisputeBody")}
-        </Alert>
+        <DisputePanel tradeId={id} disputeId={data.disputeId} meId={me?.id} />
       )}
 
       {/* secondary actions */}
@@ -442,9 +447,196 @@ function DisputeDialog({
   );
 }
 
+const EVIDENCE_KINDS = ["payment_proof", "chat_screenshot", "bank_statement", "other"] as const;
+type EvidenceKind = (typeof EVIDENCE_KINDS)[number];
+
+/**
+ * The DISPUTED-state panel: view the dispute (reason, status, both parties' evidence
+ * timeline) and submit new evidence (kind + note + uploaded files). Previously the
+ * room only showed a static "in dispute" alert — the dispute could be opened but never
+ * viewed or evidenced. Loads via the disputeId now surfaced on the trade detail.
+ */
+function DisputePanel({
+  tradeId,
+  disputeId,
+  meId,
+}: {
+  tradeId: string;
+  disputeId: string | null;
+  meId?: string;
+}): React.JSX.Element {
+  const tx = useTranslations("tradeRoom");
+  const toast = useToast();
+  const { data: dispute, isLoading } = useDispute(disputeId);
+  const submitEvidence = useSubmitEvidence(disputeId ?? "", tradeId);
+
+  const [kind, setKind] = useState<EvidenceKind>("payment_proof");
+  const [note, setNote] = useState("");
+  const [files, setFiles] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onPickFiles = async (picked: FileList | null) => {
+    if (!picked || picked.length === 0 || !disputeId) return;
+    setError(null);
+    setUploading(true);
+    try {
+      for (const file of Array.from(picked).slice(0, 10 - files.length)) {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const base64 = dataUrl.split(",")[1] ?? "";
+        const { key } = await api.uploadDisputeEvidence(disputeId, base64);
+        setFiles((prev) => [...prev, key]);
+      }
+    } catch (err) {
+      setError(apiErrorMessage(err, tx("evidenceUploadError")));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const submit = () => {
+    if (!disputeId) return;
+    setError(null);
+    submitEvidence.mutate(
+      { kind, note: note.trim() || undefined, files },
+      {
+        onSuccess: () => {
+          toast.success(tx("evidenceSubmittedTitle"), tx("evidenceSubmittedBody"));
+          setNote("");
+          setFiles([]);
+          setKind("payment_proof");
+        },
+        onError: (err) => setError(apiErrorMessage(err, tx("evidenceSubmitError"))),
+      },
+    );
+  };
+
+  const resolved = Boolean(dispute?.resolvedAt);
+  const canSubmit = !submitEvidence.isPending && !uploading && (note.trim() !== "" || files.length > 0);
+
+  return (
+    <div className="space-y-3">
+      <Alert tone="danger" title={tx("inDisputeTitle")}>
+        {tx("inDisputeBody")}
+      </Alert>
+
+      <Card className="space-y-4">
+        {isLoading || !dispute ? (
+          <Skeleton className="h-24 w-full rounded-xl" />
+        ) : (
+          <>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-medium">{tx("disputeReasonLabel")}</span>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-xs",
+                  resolved ? "bg-success/15 text-success" : "bg-warning/15 text-warning",
+                )}
+              >
+                {resolved ? tx("disputeResolved") : tx("disputeUnderReview")}
+              </span>
+            </div>
+            <p className="rounded-lg border border-border bg-surface-1 p-3 text-sm text-text-2">{dispute.reason}</p>
+
+            <div>
+              <p className="mb-2 text-sm font-medium">{tx("evidenceHeading")}</p>
+              {dispute.evidence.length === 0 ? (
+                <p className="text-sm text-text-3">{tx("evidenceEmpty")}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {dispute.evidence.map((e) => (
+                    <li key={e.id} className="rounded-lg border border-border bg-surface-1 p-3 text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium">{tx(`kind_${e.kind}` as `kind_${EvidenceKind}`)}</span>
+                        <span className="text-xs text-text-3">
+                          {e.submittedBy === meId ? tx("youLabel") : tx("otherPartyLabel")} · {timeAgo(e.createdAt)}
+                        </span>
+                      </div>
+                      {e.note && <p className="mt-1 text-text-2">{e.note}</p>}
+                      {e.files.length > 0 && (
+                        <p className="mt-1 flex items-center gap-1 text-xs text-text-3">
+                          <Paperclip size={12} /> {tx("filesCount", { count: e.files.length })}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {!resolved && (
+              <div className="space-y-3 border-t border-border pt-4">
+                <p className="text-sm font-medium">{tx("addEvidenceTitle")}</p>
+                {error && <Alert tone="danger">{error}</Alert>}
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-text-2">{tx("evidenceKindLabel")}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {EVIDENCE_KINDS.map((k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setKind(k)}
+                        aria-pressed={kind === k}
+                        className={cn(
+                          "rounded-full border px-3 py-1 text-xs transition-colors",
+                          kind === k ? "border-accent-400 text-text-1" : "border-border text-text-2 hover:text-text-1",
+                        )}
+                      >
+                        {tx(`kind_${k}`)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <Field label={tx("evidenceNoteLabel")}>
+                  {(p) => (
+                    <Textarea
+                      {...p}
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder={tx("evidenceNotePlaceholder")}
+                      maxLength={2000}
+                      rows={3}
+                    />
+                  )}
+                </Field>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-text-2 transition-colors hover:text-text-1">
+                    <Paperclip size={15} /> {tx("attachFiles")}
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,application/pdf"
+                      className="hidden"
+                      onChange={(e) => onPickFiles(e.target.files)}
+                    />
+                  </label>
+                  {uploading && <Spinner />}
+                  {files.length > 0 && (
+                    <span className="text-xs text-text-3">{tx("filesCount", { count: files.length })}</span>
+                  )}
+                </div>
+                <div className="flex justify-end">
+                  <Button variant="danger" onClick={submit} disabled={!canSubmit}>
+                    {submitEvidence.isPending ? <Spinner /> : tx("submitEvidenceBtn")}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 function ChatPanel({ tradeId, meId, disabled }: { tradeId: string; meId?: string; disabled: boolean }): React.JSX.Element {
   const tx = useTranslations("tradeRoom");
-  const { data } = useMessages(tradeId);
+  const { data } = useMessages(tradeId, !disabled);
   const send = useSendMessage(tradeId);
   const [text, setText] = useState("");
 
@@ -458,7 +650,13 @@ function ChatPanel({ tradeId, meId, disabled }: { tradeId: string; meId?: string
   return (
     <Card className="flex flex-col">
       <p className="mb-3 font-medium">{tx("chat")}</p>
-      <div className="flex max-h-72 min-h-24 flex-col gap-2 overflow-y-auto">
+      <div
+        className="flex max-h-72 min-h-24 flex-col gap-2 overflow-y-auto"
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+        aria-label={tx("chat")}
+      >
         {!data || data.messages.length === 0 ? (
           <p className="py-6 text-center text-sm text-text-3">{tx("noMessages")}</p>
         ) : (

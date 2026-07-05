@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useQueryClient } from "@tanstack/react-query";
 import { fromDisplay, type CreateOfferRequest, type OfferSide, type PaymentMethod } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
 import { useUserMarket } from "@/hooks/use-user-market";
@@ -16,12 +17,14 @@ import { Spinner } from "@/components/ui/spinner";
 import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api/client";
+import { qk } from "@/lib/api/query-keys";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 
 export default function NewOfferPage(): React.JSX.Element {
   const router = useRouter();
   const toast = useToast();
+  const qc = useQueryClient();
   const tx = useTranslations("tradeNew");
   const market = useUserMarket();
   const [side, setSide] = useState<OfferSide>("SELL");
@@ -43,7 +46,10 @@ export default function NewOfferPage(): React.JSX.Element {
       const body: CreateOfferRequest = {
         side,
         asset: "USDT_TRC20",
-        priceXafPerUnit: BigInt(Math.round(Number(price || "0"))).toString(),
+        // `price` is a digit-only string — send it straight to bigint. The old
+        // Number()/Math.round() hop lost precision above 2^53 (a real risk for
+        // high-price currencies) and violated the no-float-for-money rule.
+        priceXafPerUnit: BigInt(price || "0").toString(),
         minTrade: fromDisplay(minTrade || "0").toString(),
         maxTrade: fromDisplay(maxTrade || "0").toString(),
         totalAmount: fromDisplay(total || "0").toString(),
@@ -53,6 +59,9 @@ export default function NewOfferPage(): React.JSX.Element {
       if (methods.length === 0) throw new Error(tx("selectPaymentMethod"));
       setBusy(true);
       await api.createOffer(body);
+      // A new offer must appear in the marketplace + My Offers immediately.
+      void qc.invalidateQueries({ queryKey: qk.myOffers });
+      void qc.invalidateQueries({ queryKey: ["offers"] });
       toast.success(tx("offerPublishedTitle"), tx("offerPublishedBody"));
       router.replace("/trade");
     } catch (err) {

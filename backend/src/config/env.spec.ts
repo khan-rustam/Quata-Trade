@@ -23,6 +23,9 @@ const prod = (overrides: Record<string, unknown> = {}): Record<string, unknown> 
     TRON_NETWORK: "mainnet",
     STORAGE_SSE_ENABLED: "true",
     ADMIN_2FA_REQUIRED: "true",
+    ALERT_WEBHOOK_URL: "https://hooks.example.com/incident",
+    MINIO_ACCESS_KEY: "prod-minio-access",
+    MINIO_SECRET_KEY: "prod-minio-secret",
     ...overrides,
   });
 
@@ -57,6 +60,23 @@ describe("validateEnv", () => {
 
   it("requires ADMIN_2FA_REQUIRED (admin step-up 2FA) in production", () => {
     expect(() => validateEnv(prod({ ADMIN_2FA_REQUIRED: "false" }))).toThrow(/ADMIN_2FA_REQUIRED/);
+  });
+
+  it("requires ALERT_WEBHOOK_URL (critical alerts must page, not just log) in production", () => {
+    expect(() => validateEnv(prod({ ALERT_WEBHOOK_URL: "" }))).toThrow(/ALERT_WEBHOOK_URL/);
+    expect(() => validateEnv(prod({ ALERT_WEBHOOK_URL: "   " }))).toThrow(/ALERT_WEBHOOK_URL/);
+  });
+
+  it("rejects the published dev database password in production", () => {
+    expect(() => validateEnv(prod({ DATABASE_URL: "postgres://quatatrade_app:app_dev_only@host:5432/db" }))).toThrow(
+      /database password/,
+    );
+    expect(() => validateEnv(prod({ DATABASE_APP_PASSWORD: "app_dev_only" }))).toThrow(/database password/);
+  });
+
+  it("requires a real (non-dev, non-empty) MINIO_SECRET_KEY in production", () => {
+    expect(() => validateEnv(prod({ MINIO_SECRET_KEY: "" }))).toThrow(/MINIO_SECRET_KEY/);
+    expect(() => validateEnv(prod({ MINIO_SECRET_KEY: "quatatrade_dev_only" }))).toThrow(/MINIO_SECRET_KEY/);
   });
 
   it("keeps the existing production hard-stops (mock signer, dev JWT, swagger)", () => {

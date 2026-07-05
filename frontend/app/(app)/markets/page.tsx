@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { ArrowDownRight, ArrowUpRight, TrendingUp } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useUserMarket } from "@/hooks/use-user-market";
 import { indicativeRate } from "@/lib/market";
@@ -64,15 +64,11 @@ export default function MarketsPage(): React.JSX.Element {
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-2">
-          <Link href="/trade?side=BUY">
-            <Button className="w-full">
-              <ArrowDownRight size={16} /> {tx("buyUsdt")}
-            </Button>
+          <Link href="/trade?side=BUY" className={buttonClassName({ className: "w-full" })}>
+            <ArrowDownRight size={16} /> {tx("buyUsdt")}
           </Link>
-          <Link href="/trade?side=SELL">
-            <Button variant="secondary" className="w-full">
-              <ArrowUpRight size={16} /> {tx("sellUsdt")}
-            </Button>
+          <Link href="/trade?side=SELL" className={buttonClassName({ variant: "secondary", className: "w-full" })}>
+            <ArrowUpRight size={16} /> {tx("sellUsdt")}
           </Link>
         </div>
       </Card>

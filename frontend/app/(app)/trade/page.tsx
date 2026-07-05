@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { Plus, ShieldCheck, Star } from "lucide-react";
 import type { OfferSide, PaymentMethod } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Segmented } from "@/components/ui/segmented";
 import { Select } from "@/components/ui/select";
@@ -42,10 +42,8 @@ function TradeBrowser(): React.JSX.Element {
         title={tx("title")}
         subtitle={tx("subtitle")}
         action={
-          <Link href="/trade/new">
-            <Button size="sm">
-              <Plus size={16} /> {tx("newOffer")}
-            </Button>
+          <Link href="/trade/new" className={buttonClassName({ size: "sm" })}>
+            <Plus size={16} /> {tx("newOffer")}
           </Link>
         }
       />
@@ -88,8 +86,8 @@ function TradeBrowser(): React.JSX.Element {
           title={tx("emptyTitle")}
           description={side === "BUY" ? tx("emptyDescriptionBuy") : tx("emptyDescriptionSell")}
           action={
-            <Link href="/trade/new">
-              <Button size="sm">{tx("createOffer")}</Button>
+            <Link href="/trade/new" className={buttonClassName({ size: "sm" })}>
+              {tx("createOffer")}
             </Link>
           }
         />

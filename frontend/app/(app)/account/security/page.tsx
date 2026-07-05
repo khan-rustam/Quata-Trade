@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { KeyRound, Lock, Monitor, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -76,10 +76,8 @@ export default function SecurityPage(): React.JSX.Element {
             <p className="text-sm text-text-2">{tx("passwordDesc")}</p>
           </div>
         </div>
-        <Link href="/forgot">
-          <Button size="sm" variant="secondary">
-            {tx("reset")}
-          </Button>
+        <Link href="/forgot" className={buttonClassName({ size: "sm", variant: "secondary" })}>
+          {tx("reset")}
         </Link>
       </Card>
 

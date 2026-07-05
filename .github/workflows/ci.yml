@@ -44,13 +44,15 @@ jobs:
       - name: Lint (any-ban on money paths is a hard failure)
         run: pnpm --filter @quatatrade/backend lint
 
-      - name: Unit + property tests
-        run: |
-          pnpm --filter @quatatrade/shared test
-          pnpm --filter @quatatrade/backend test
+      - name: Shared contract tests
+        run: pnpm --filter @quatatrade/shared test
 
-      - name: Integration tests (Testcontainers PG16)
-        run: pnpm --filter @quatatrade/backend test:integration
+      # Runs the unit + property + Testcontainers-integration projects together
+      # under v8 coverage, ENFORCING the 100%-branch gate on ledger/escrow/fees
+      # (Documents/09). escrow.service.ts is exercised by the integration project,
+      # so coverage must span both projects — hence one combined `vitest run --coverage`.
+      - name: Backend tests + money-path coverage gate (Testcontainers PG16)
+        run: pnpm --filter @quatatrade/backend test:coverage
 
       - name: Build backend + frontend
         run: pnpm build

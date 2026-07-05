@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Lock, MessageSquare, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
 import { Aurora } from "@/components/motion/aurora";
 import { AnimatedKeyhole } from "@/components/brand/animated-keyhole";
@@ -63,15 +63,11 @@ export function Hero(): React.JSX.Element {
             className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center md:justify-start"
             {...rise(0.18)}
           >
-            <Link href="/register">
-              <Button size="lg">
-                {t("ctaPrimary")} <ArrowRight size={16} aria-hidden />
-              </Button>
+            <Link href="/register" className={buttonClassName({ size: "lg" })}>
+              {t("ctaPrimary")} <ArrowRight size={16} aria-hidden />
             </Link>
-            <Link href="/how-it-works">
-              <Button size="lg" variant="secondary">
-                {t("ctaHow")}
-              </Button>
+            <Link href="/how-it-works" className={buttonClassName({ size: "lg", variant: "secondary" })}>
+              {t("ctaHow")}
             </Link>
           </motion.div>
 

@@ -1,9 +1,12 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { OffersQuery, OpenTradeRequest, UpdateOfferRequest } from "@quatatrade/shared";
+import type { OffersQuery, OpenTradeRequest, TradesQuery, UpdateOfferRequest } from "@quatatrade/shared";
 import { api } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
+
+/** Once a trade reaches one of these, nothing more changes — stop polling it. */
+const TERMINAL_STATUSES = ["COMPLETED", "CANCELLED", "EXPIRED", "RESOLVED_RELEASE", "RESOLVED_REFUND"];
 
 export function useOffers(query: OffersQuery) {
   return useQuery({ queryKey: qk.offers(query), queryFn: () => api.offers(query) });
@@ -46,12 +49,23 @@ export function useDeleteOffer() {
   return useOfferMutation((id: string) => api.deleteOffer(id));
 }
 
+/** The signed-in user's trades (as buyer or seller), paginated, for the history page. */
+export function useTrades(query: TradesQuery) {
+  return useQuery({ queryKey: qk.trades(query), queryFn: () => api.trades(query) });
+}
+
 export function useTrade(id: string, live = false) {
   return useQuery({
     queryKey: qk.trade(id),
     queryFn: () => api.trade(id),
     enabled: Boolean(id),
-    refetchInterval: live ? 5000 : false,
+    // Poll only while the trade is still moving; a terminal trade never changes,
+    // so keep the room open without hammering the API forever.
+    refetchInterval: (query) => {
+      if (!live) return false;
+      const status = query.state.data?.trade.status;
+      return status && TERMINAL_STATUSES.includes(status) ? false : 5000;
+    },
   });
 }
 
@@ -59,12 +73,13 @@ export function useOpenTrade() {
   return useMutation({ mutationFn: (body: OpenTradeRequest) => api.openTrade(body) });
 }
 
-export function useMessages(tradeId: string) {
+export function useMessages(tradeId: string, live = true) {
   return useQuery({
     queryKey: qk.messages(tradeId),
     queryFn: () => api.messages(tradeId),
     enabled: Boolean(tradeId),
-    refetchInterval: 4000,
+    // Chat is frozen once the trade is terminal — load history once, stop polling.
+    refetchInterval: live ? 4000 : false,
   });
 }
 

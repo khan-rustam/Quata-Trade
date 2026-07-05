@@ -37,7 +37,7 @@ export function StatusStepper({ status }: { status: TradeStatus }): React.JSX.El
                 className={cn(
                   "flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold transition-colors",
                   done
-                    ? "border-accent-400 bg-accent-400 text-[#101614]"
+                    ? "border-accent-400 bg-accent-400 text-bg"
                     : current
                       ? "border-accent-400 text-accent-400"
                       : "border-border text-text-3",

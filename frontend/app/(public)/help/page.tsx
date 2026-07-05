@@ -57,7 +57,7 @@ export default async function HelpPage(): Promise<React.JSX.Element> {
     <>
       <Section narrow>
         <Reveal>
-          <SectionHeading eyebrow={t("heroEyebrow")} title={t("heroTitle")} subtitle={t("heroSubtitle")} />
+          <SectionHeading as="h1" eyebrow={t("heroEyebrow")} title={t("heroTitle")} subtitle={t("heroSubtitle")} />
         </Reveal>
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
           {CATEGORIES.map((c, i) => (
@@ -74,12 +74,6 @@ export default async function HelpPage(): Promise<React.JSX.Element> {
             </Reveal>
           ))}
         </div>
-        <Reveal>
-          <p className="mt-4 rounded-lg border border-dashed border-accent-400/40 bg-accent-400/5 px-3 py-2 text-sm text-text-2">
-            <span className="font-semibold text-accent-400">{t("noteLabel")}</span>
-            {t("noteBody")}
-          </p>
-        </Reveal>
       </Section>
 
       <div className="border-t border-border bg-surface-1">
@@ -97,7 +91,7 @@ export default async function HelpPage(): Promise<React.JSX.Element> {
                 <div key={group.category || "general"}>
                   {group.category && (
                     <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-3">
-                      {group.category}
+                      {group.category.replace(/[_-]+/g, " ")}
                     </h3>
                   )}
                   <div className="space-y-3">

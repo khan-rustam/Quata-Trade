@@ -15,6 +15,7 @@ export const RBAC = {
   manageCountries: ["SUPER_ADMIN", "FINANCE_ADMIN"],
   editSettings: ["SUPER_ADMIN", "FINANCE_ADMIN"],
   viewAudit: ["SUPER_ADMIN", "COMPLIANCE_ADMIN", "AUDITOR"],
+  ledgerAdjustment: ["SUPER_ADMIN"], // the only manual money endpoint — SUPER only
 } satisfies Record<string, AdminRole[]>;
 
 export function can(role: AdminRole | undefined, action: keyof typeof RBAC): boolean {

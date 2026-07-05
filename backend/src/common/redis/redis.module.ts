@@ -5,7 +5,7 @@ import type { Env } from "../../config/env";
 
 export const REDIS = Symbol("REDIS_CLIENT");
 
-/** Shared ioredis client: rate limits, velocity counters, socket adapter, BullMQ. */
+/** Shared ioredis client: rate limits, velocity counters, health checks. */
 @Global()
 @Module({
   providers: [

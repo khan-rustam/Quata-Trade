@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { LanguageToggle } from "@/components/layout/language-toggle";
 
@@ -44,13 +44,14 @@ export function PublicHeader(): React.JSX.Element {
             <LanguageToggle />
             <ThemeToggle />
           </div>
-          <Link href="/login" className="hidden md:block">
-            <Button variant="ghost" size="sm">
-              {t("login")}
-            </Button>
+          <Link
+            href="/login"
+            className={buttonClassName({ variant: "ghost", size: "sm", className: "max-md:hidden" })}
+          >
+            {t("login")}
           </Link>
-          <Link href="/register" className="hidden md:block">
-            <Button size="sm">{t("register")}</Button>
+          <Link href="/register" className={buttonClassName({ size: "sm", className: "max-md:hidden" })}>
+            {t("register")}
           </Link>
           <button
             type="button"
@@ -78,15 +79,19 @@ export function PublicHeader(): React.JSX.Element {
               </Link>
             ))}
             <div className="mt-2 flex items-center gap-2">
-              <Link href="/login" className="flex-1" onClick={() => setOpen(false)}>
-                <Button variant="secondary" className="w-full" size="sm">
-                  {t("login")}
-                </Button>
+              <Link
+                href="/login"
+                onClick={() => setOpen(false)}
+                className={buttonClassName({ variant: "secondary", size: "sm", className: "flex-1" })}
+              >
+                {t("login")}
               </Link>
-              <Link href="/register" className="flex-1" onClick={() => setOpen(false)}>
-                <Button className="w-full" size="sm">
-                  {t("register")}
-                </Button>
+              <Link
+                href="/register"
+                onClick={() => setOpen(false)}
+                className={buttonClassName({ size: "sm", className: "flex-1" })}
+              >
+                {t("register")}
               </Link>
             </div>
             <div className="mt-2 flex">

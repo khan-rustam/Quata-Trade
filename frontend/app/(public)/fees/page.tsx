@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Check } from "lucide-react";
 import { Section, SectionHeading } from "@/components/public/marketing";
-import { Button } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
 import { Reveal } from "@/components/motion/reveal";
 
@@ -20,7 +20,7 @@ export default function FeesPage(): React.JSX.Element {
     <>
       <Section narrow>
         <Reveal>
-          <SectionHeading eyebrow={t("eyebrow")} title={t("title")} subtitle={t("subtitle")} />
+          <SectionHeading as="h1" eyebrow={t("eyebrow")} title={t("title")} subtitle={t("subtitle")} />
         </Reveal>
 
         <Reveal className="mt-8 overflow-hidden rounded-xl border border-border">
@@ -79,8 +79,8 @@ export default function FeesPage(): React.JSX.Element {
         </Reveal>
 
         <Reveal className="mt-8 flex items-center gap-3">
-          <Link href="/register">
-            <Button>{t("ctaStart")}</Button>
+          <Link href="/register" className={buttonClassName()}>
+            {t("ctaStart")}
           </Link>
           <Link href="/legal/terms" className="text-sm text-text-2 hover:text-text-1">
             {t("ctaTerms")}

@@ -9,7 +9,9 @@ export default function PublicLayout({ children }: { children: ReactNode }): Rea
     <div className="flex min-h-screen flex-col">
       <PublicHeader />
       <Breadcrumbs contained />
-      <div className="flex-1">{children}</div>
+      <main id="main-content" className="flex-1">
+        {children}
+      </main>
       <PublicFooter />
     </div>
   );

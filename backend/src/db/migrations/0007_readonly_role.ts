@@ -7,7 +7,17 @@ import { sql, type Kysely } from "kysely";
  * SELECT-only; no INSERT/UPDATE/DELETE/DDL anywhere.
  */
 export async function up(db: Kysely<unknown>): Promise<void> {
-  const password = (process.env.QT_MCP_DB_PASSWORD ?? "readonly_dev_only").replace(/'/g, "''");
+  const raw = process.env.QT_MCP_DB_PASSWORD ?? "readonly_dev_only";
+  // This role can LOGIN and SELECT every table (incl. KYC/PII, ledger, session
+  // hashes). On a real deployment it must never be created with the published dev
+  // password. Enforced on staging/production; dev/test/CI stay permissive.
+  const enforced = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging";
+  if (enforced && (raw === "readonly_dev_only" || raw.includes("dev_only"))) {
+    throw new Error(
+      "QT_MCP_DB_PASSWORD must be a real secret on staging/production (migration 0007 read-only role has SELECT on all tables including KYC/PII).",
+    );
+  }
+  const password = raw.replace(/'/g, "''");
   await sql.raw(`
     DO $$
     BEGIN
