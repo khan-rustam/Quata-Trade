@@ -4,6 +4,7 @@ import { ArrowRight, Lock, MessageSquare, ShieldCheck, Wallet } from "lucide-rea
 import type { Offer } from "@quatatrade/shared";
 import { buttonClassName } from "@/components/ui/button";
 import { Section, SectionHeading, FeatureCard } from "@/components/public/marketing";
+import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/brand/logo";
 import { Hero } from "@/components/public/hero";
 import { EscrowSteps } from "@/components/public/escrow-steps";
@@ -11,6 +12,7 @@ import { OfferPreviewCard } from "@/components/public/offer-preview-card";
 import { ReviewsSection } from "@/components/public/reviews-section";
 import { Reveal } from "@/components/motion/reveal";
 import { getReviews } from "@/lib/content-server";
+import { EscrowSimulator } from "@/components/public/escrow-simulator";
 
 /**
  * Illustrative offers for the "know who you trade with" band. Clearly labelled as
@@ -74,6 +76,23 @@ export default async function LandingPage(): Promise<React.JSX.Element> {
       <Hero />
       <EscrowSteps />
 
+      {/* Interactive Simulator Section */}
+      <Section className="border-t border-border">
+        <div className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr] lg:items-center">
+          <Reveal>
+            <EscrowSimulator />
+          </Reveal>
+          <Reveal delay={0.1} className="hidden lg:block relative rounded-2xl overflow-hidden border border-border bg-surface-1 shadow-2xl">
+            <img 
+              src="/images/escrow_vault_illustration.jpg" 
+              alt="Secured Crypto Escrow Vault" 
+              className="w-full h-auto object-cover aspect-[4/3] opacity-80"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent pointer-events-none" />
+          </Reveal>
+        </div>
+      </Section>
+
       {/* Know who you trade with — the trust triple */}
       <div className="border-y border-border bg-surface-1/40">
         <Section>
@@ -112,15 +131,33 @@ export default async function LandingPage(): Promise<React.JSX.Element> {
       <ReviewsSection reviews={reviews} eyebrow={t("reviews.eyebrow")} title={t("reviews.title")} />
 
       {/* CTA */}
-      <div className="border-t border-border">
-        <Section className="text-center">
-          <Reveal className="mx-auto flex max-w-xl flex-col items-center gap-5">
-            <BrandMark size={44} />
-            <h2 className="text-balance font-display text-3xl font-bold tracking-tight">{t("cta.title")}</h2>
-            <p className="text-text-2">{t("cta.body")}</p>
-            <Link href="/register" className={buttonClassName({ size: "lg" })}>
-              {t("cta.button")} <ArrowRight size={16} aria-hidden />
-            </Link>
+      <div className="border-t border-border/80">
+        <Section className="py-20 md:py-28">
+          <Reveal className="mx-auto max-w-4xl rounded-3xl border border-accent-400/25 bg-surface-1/40 p-8 md:p-14 text-center relative overflow-hidden backdrop-blur-md">
+            {/* Background accents */}
+            <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
+            <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 h-64 w-64 rounded-full bg-accent-400/5 blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col items-center gap-6">
+              <BrandMark size={48} className="text-accent-400 animate-pulse" />
+              <h2 className="text-balance font-display text-3xl font-extrabold tracking-tight md:text-4xl text-text-1">
+                {t("cta.title")}
+              </h2>
+              <p className="max-w-md text-text-2 text-sm md:text-base leading-relaxed">
+                {t("cta.body")}
+              </p>
+              <div className="mt-4">
+                <Link 
+                  href="/register" 
+                  className={cn(
+                    buttonClassName({ size: "lg" }),
+                    "shadow-[0_4px_25px_rgba(47,212,167,0.25)] hover:shadow-[0_4px_35px_rgba(47,212,167,0.4)] transition-all duration-300 transform hover:-translate-y-0.5"
+                  )}
+                >
+                  {t("cta.button")} <ArrowRight size={16} className="ml-1" aria-hidden />
+                </Link>
+              </div>
+            </div>
           </Reveal>
         </Section>
       </div>

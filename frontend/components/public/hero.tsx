@@ -3,17 +3,12 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowRight, Lock, MessageSquare, ShieldCheck } from "lucide-react";
+import { ArrowRight, Lock, MessageSquare, ShieldCheck, Sparkles } from "lucide-react";
 import { buttonClassName } from "@/components/ui/button";
 import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
 import { Aurora } from "@/components/motion/aurora";
-import { AnimatedKeyhole } from "@/components/brand/animated-keyhole";
+import { cn } from "@/lib/utils";
 
-/**
- * Landing hero — leads with escrow + safety (not scale). The keyhole lock draws
- * closed inside a glowing "vault" with floating trust chips; the Quata Flow
- * gradient (Aurora) is only allowed here (Documents/11 §11.7).
- */
 export function Hero(): React.JSX.Element {
   const t = useTranslations("landing");
   const reduce = useReducedMotion();
@@ -22,61 +17,94 @@ export function Hero(): React.JSX.Element {
     reduce
       ? {}
       : {
-          initial: { opacity: 0, y: 16 },
+          initial: { opacity: 0, y: 20 },
           animate: { opacity: 1, y: 0 },
-          transition: { duration: 0.55, ease: [0.2, 0.7, 0.2, 1] as const, delay },
+          transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const, delay },
         };
+
   const trust = [
     { icon: Lock, label: t("trust.f1Title") },
     { icon: ShieldCheck, label: t("trust.f2Title") },
     { icon: MessageSquare, label: t("trust.f3Title") },
   ];
-  const chips = [
-    { icon: Lock, label: t("chip1"), className: "-left-4 top-10" },
-    { icon: ShieldCheck, label: t("chip2"), className: "-right-4 top-24" },
-    { icon: MessageSquare, label: t("chip3"), className: "-bottom-4 left-10" },
-  ];
 
   return (
-    <section className="relative overflow-hidden border-b border-border">
+    <section className="relative overflow-hidden border-b border-border bg-bg/85 py-16 md:py-24">
+      {/* Aurora Breathing Ambient Glow */}
       <Aurora />
-      <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:grid-cols-2 md:gap-10 md:px-6 md:py-24">
-        {/* left */}
-        <div className="text-center md:text-left">
-          <motion.p
-            className="mb-5 inline-flex items-center gap-2 rounded-chip border border-border bg-surface-1/70 px-3 py-1 text-xs font-medium text-text-2 backdrop-blur"
+
+      {/* Grid Blueprint overlay */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-[0.15] pointer-events-none -z-10" />
+
+      <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 md:grid-cols-2 md:gap-14 md:px-6">
+        
+        {/* Left Column: Copy & Actions */}
+        <div className="text-center md:text-left space-y-6">
+          
+          {/* Stylized Glowing Badge */}
+          <motion.div
+            className="inline-flex items-center gap-2 rounded-full border border-accent-400/25 bg-accent-400/5 px-3.5 py-1.5 text-xs font-semibold text-accent-400 shadow-sm backdrop-blur"
             {...rise(0)}
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-accent-400" aria-hidden />
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-400"></span>
+            </span>
             {t("badge")}
-          </motion.p>
+          </motion.div>
+
+          {/* Heading with text gradient highlight */}
           <motion.h1
-            className="text-balance font-display text-4xl font-bold leading-[1.06] tracking-tight md:text-6xl"
+            className="text-balance font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-text-1 md:text-6xl"
             {...rise(0.06)}
           >
-            {t("heroTitle")}
+            Crypto to cash. <br />
+            <span className="bg-gradient-to-r from-accent-400 via-accent-200 to-accent-400 bg-clip-text text-transparent">
+              Protected.
+            </span>
           </motion.h1>
-          <motion.p className="mx-auto mt-5 max-w-xl text-lg text-text-2 md:mx-0" {...rise(0.12)}>
+
+          <motion.p 
+            className="mx-auto max-w-xl text-base md:text-lg text-text-2 leading-relaxed md:mx-0" 
+            {...rise(0.12)}
+          >
             {t("heroSubtitle")}
           </motion.p>
+
+          {/* Action Buttons with glowing shadow */}
           <motion.div
-            className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center md:justify-start"
+            className="flex flex-col items-center gap-3.5 sm:flex-row sm:justify-center md:justify-start"
             {...rise(0.18)}
           >
-            <Link href="/register" className={buttonClassName({ size: "lg" })}>
-              {t("ctaPrimary")} <ArrowRight size={16} aria-hidden />
+            <Link 
+              href="/register" 
+              className={cn(
+                buttonClassName({ size: "lg" }),
+                "w-full sm:w-auto shadow-[0_4px_20px_rgba(47,212,167,0.25)] hover:shadow-[0_4px_30px_rgba(47,212,167,0.4)] transition-all duration-300"
+              )}
+            >
+              {t("ctaPrimary")} <ArrowRight size={16} className="ml-1" aria-hidden />
             </Link>
-            <Link href="/how-it-works" className={buttonClassName({ size: "lg", variant: "secondary" })}>
+            <Link 
+              href="/how-it-works" 
+              className={cn(
+                buttonClassName({ size: "lg", variant: "secondary" }),
+                "w-full sm:w-auto hover:bg-surface-2 transition-colors border border-border"
+              )}
+            >
               {t("ctaHow")}
             </Link>
           </motion.div>
 
-          {/* Pay-with card */}
+          {/* Styled Pay-With Glassmorphic Card */}
           <motion.div
-            className="mt-8 inline-flex flex-col gap-2.5 rounded-card border border-border bg-surface-1/70 p-4 text-left backdrop-blur"
+            className="relative overflow-hidden rounded-2xl border border-border/80 bg-surface-1/40 p-5 text-left backdrop-blur-md max-w-sm mx-auto md:mx-0 shadow-lg group hover:border-accent-400/35 transition-colors duration-300"
             {...rise(0.24)}
           >
-            <span className="text-xs font-medium uppercase tracking-wide text-text-3">{t("payWith")}</span>
+            <div className="absolute -right-16 -top-16 h-28 w-28 rounded-full bg-accent-400/5 blur-xl group-hover:bg-accent-400/10 transition-all pointer-events-none" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-3 block mb-3">
+              {t("payWith")}
+            </span>
             <div className="flex flex-wrap gap-2">
               <PaymentMethodChip method="MTN_MOMO" />
               <PaymentMethodChip method="ORANGE_MONEY" />
@@ -84,60 +112,67 @@ export function Hero(): React.JSX.Element {
             </div>
           </motion.div>
 
-          {/* trust strip */}
+          {/* Trust Strip */}
           <motion.ul
-            className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 md:justify-start"
-            {...rise(0.3)}
+            className="flex flex-wrap justify-center gap-x-6 gap-y-2 md:justify-start pt-2"
+            {...rise(0.30)}
           >
             {trust.map((it, i) => {
               const Icon = it.icon;
               return (
-                <li key={i} className="inline-flex items-center gap-1.5 text-xs text-text-2">
-                  <Icon size={14} className="text-accent-400" aria-hidden /> {it.label}
+                <li key={i} className="inline-flex items-center gap-2 text-xs font-semibold text-text-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent-400/10 text-accent-400">
+                    <Icon size={12} />
+                  </span>
+                  {it.label}
                 </li>
               );
             })}
           </motion.ul>
         </div>
 
-        {/* right — the vault */}
+        {/* Right Column: Premium Illustration Frame */}
         <div className="flex justify-center">
           <motion.div
-            className="relative rounded-[2rem] border border-border bg-surface-1/40 px-10 py-12 backdrop-blur"
+            className="relative w-full max-w-[460px] rounded-3xl border border-accent-400/25 bg-surface-1/50 p-2.5 shadow-2xl shadow-accent-400/5 backdrop-blur-md overflow-hidden group"
             {...rise(0.2)}
           >
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 -z-10 rounded-[2rem]"
-              style={{ background: "radial-gradient(58% 58% at 50% 42%, rgba(47,212,167,0.16), transparent 70%)" }}
-            />
-            <AnimatedKeyhole size={216} />
-            <div className="mt-4 flex flex-col items-center gap-1">
-              <span className="font-money text-xl font-semibold tabular-nums text-text-1">
-                150.00 <span className="text-sm font-normal text-text-3">USDT</span>
-              </span>
-              <span className="text-xs text-text-3">{t("protectedDemo")}</span>
+            {/* Blueprint Grid Overlay */}
+            <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent z-10 pointer-events-none" />
+
+            {/* Glowing spot overlay */}
+            <div className="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-accent-400/10 blur-3xl opacity-75 group-hover:opacity-100 transition-opacity" />
+
+            {/* Illustration */}
+            <div className="relative rounded-2xl overflow-hidden border border-border/80 aspect-[16/10] shadow-inner bg-bg/50">
+              <img
+                src="/images/escrow_vault_illustration.jpg"
+                alt="Quata P2P Escrow Vault Protection"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
             </div>
 
-            {chips.map((c, i) => {
-              const Icon = c.icon;
-              return (
-                <motion.div
-                  key={i}
-                  className={`absolute ${c.className} flex items-center gap-1.5 rounded-chip border border-border bg-surface-1 px-2.5 py-1 text-[11px] font-medium text-text-1 shadow-lg shadow-black/25`}
-                  animate={reduce ? undefined : { y: [0, -8, 0] }}
-                  transition={
-                    reduce
-                      ? undefined
-                      : { duration: 4, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay: i * 0.8 }
-                  }
-                >
-                  <Icon size={12} className="text-accent-400" aria-hidden /> {c.label}
-                </motion.div>
-              );
-            })}
+            {/* Overlaid Float Status Badge */}
+            <div className="absolute bottom-6 left-6 right-6 z-20 flex justify-between items-center bg-surface-2/85 backdrop-blur-md border border-accent-400/35 rounded-xl p-3.5 shadow-lg">
+              <div className="flex items-center gap-2.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-400"></span>
+                </span>
+                <span className="text-[11px] font-bold tracking-wider text-text-1 uppercase">ESCROW ACTIVE</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-accent-200 font-bold font-money">
+                <Sparkles size={13} className="text-accent-400" />
+                <span>100% SECURED</span>
+              </div>
+            </div>
+
+            {/* Glowing borders */}
+            <div className="absolute -inset-px -z-10 bg-gradient-to-r from-accent-400/20 via-transparent to-accent-400/20 opacity-0 group-hover:opacity-100 blur transition-all duration-500 rounded-3xl" />
           </motion.div>
         </div>
+
       </div>
     </section>
   );

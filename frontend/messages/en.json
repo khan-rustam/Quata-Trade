@@ -43,7 +43,25 @@
       "s2Title": "You pay off-platform",
       "s2Body": "The buyer pays the seller with MoMo, Orange Money, or QuataPay, then submits proof in the trade room.",
       "s3Title": "Escrow releases",
-      "s3Body": "Once the seller confirms the money landed, escrow releases the crypto to the buyer — minus a small fee."
+      "s3Body": "Once the seller confirms the money landed, escrow releases the crypto to the buyer — minus a small fee.",
+      "flow": {
+        "seller": "Seller",
+        "vault": "Escrow",
+        "buyer": "Buyer",
+        "cash": "Cash · off-platform"
+      },
+      "console": {
+        "label": "Ledger protection console",
+        "state": "State",
+        "asset": "Asset",
+        "phase": "Phase",
+        "state1": "Custody locked",
+        "state2": "Awaiting payment",
+        "state3": "Funds released",
+        "msg1": "Escrow contract initialized — seller's USDT reserved.",
+        "msg2": "Waiting for the buyer's MoMo, Orange Money, or QuataPay payment.",
+        "msg3": "Payment confirmed — escrow released to the buyer's wallet."
+      }
     },
     "offers": {
       "eyebrow": "Know who you trade with",
@@ -71,6 +89,25 @@
     "reviews": {
       "eyebrow": "Trader stories",
       "title": "Trusted by traders across Cameroon"
+    },
+    "simulator": {
+      "title": "Interactive Escrow Simulator",
+      "subtitle": "See exactly how QuataTrade keeps your trade safe before you commit.",
+      "labelAmount": "Enter USDT amount",
+      "selectMethod": "Choose payment method",
+      "methodMoMo": "MTN Mobile Money",
+      "methodOrange": "Orange Money",
+      "methodQuataPay": "QuataPay (Internal)",
+      "feeRate": "Trading fee",
+      "youReceive": "You receive in cash",
+      "youPay": "You pay in cash",
+      "savings": "QuataPay savings!",
+      "step1Title": "1. Escrow Locked",
+      "step1Desc": "USDT is locked securely in the escrow ledger. The seller cannot flee with it.",
+      "step2Title": "2. Send Cash",
+      "step2Desc": "You send cash directly to the seller via {method} off-platform.",
+      "step3Title": "3. Release USDT",
+      "step3Desc": "Once payment is verified, the escrow releases the USDT to your wallet."
     }
   },
   "status": {

@@ -5,6 +5,7 @@ import { Section, SectionHeading } from "@/components/public/marketing";
 import { Reveal } from "@/components/motion/reveal";
 import { buttonClassName } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand/logo";
+import { CameroonMap } from "@/components/public/cameroon-map";
 
 export const metadata: Metadata = {
   title: "About — QuataTrade",
@@ -61,6 +62,12 @@ export default function AboutPage(): React.JSX.Element {
           </div>
         </Section>
       </div>
+
+      <Section className="border-b border-border">
+        <Reveal>
+          <CameroonMap />
+        </Reveal>
+      </Section>
 
       <Section className="text-center">
         <Reveal>

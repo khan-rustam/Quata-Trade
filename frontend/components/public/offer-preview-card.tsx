@@ -27,10 +27,13 @@ export function OfferPreviewCard({
   return (
     <div
       className={cn(
-        "group flex flex-col gap-4 rounded-card border border-border bg-surface-1 p-5 transition-colors hover:border-accent-400/50",
+        "group flex flex-col gap-4 rounded-card border border-border/80 bg-surface-1/40 p-5 transition-all duration-300 hover:border-accent-400/50 hover:bg-surface-2/65 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(47,212,167,0.12)] relative overflow-hidden backdrop-blur-md",
         className,
       )}
     >
+      {/* Light gradient highlight on hover */}
+      <div className="absolute -right-12 -top-12 h-24 w-24 rounded-full bg-accent-400/0 blur-xl group-hover:bg-accent-400/10 transition-all duration-500 pointer-events-none" />
+      <div className="relative z-10 flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <span
           className={cn(
@@ -77,6 +80,7 @@ export function OfferPreviewCard({
         <Link href={href} className="inline-flex items-center gap-1 font-medium text-accent-400 group-hover:gap-1.5">
           Trade <ArrowRight size={13} aria-hidden />
         </Link>
+      </div>
       </div>
     </div>
   );

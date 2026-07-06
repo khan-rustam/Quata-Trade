@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 import { Section, SectionHeading } from "@/components/public/marketing";
 import { buttonClassName } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
+import { FeeCalculator } from "@/components/public/fee-calculator";
 
 export const metadata: Metadata = {
   title: "Fees — QuataTrade",
@@ -52,9 +53,9 @@ export default function FeesPage(): React.JSX.Element {
           <h2 className="font-display text-lg font-semibold">{t("examplesTitle")}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             {EXAMPLES.map((k) => (
-              <div key={k} className="rounded-xl border border-border bg-surface-1 p-4">
-                <p className="text-sm font-medium">{t(`${k}Title`)}</p>
-                <p className="mt-2 text-sm leading-relaxed text-text-2">{t(`${k}Body`)}</p>
+              <div key={k} className="group rounded-2xl border border-border/80 bg-surface-1/40 p-5 backdrop-blur-md hover:-translate-y-1 hover:border-accent-400/40 hover:bg-surface-2/65 transition-all duration-300 shadow-md hover:shadow-accent-400/5 relative overflow-hidden">
+                <p className="font-display text-sm font-bold text-text-1 group-hover:text-accent-400 transition-colors duration-300">{t(`${k}Title`)}</p>
+                <p className="mt-2 text-xs leading-relaxed text-text-2">{t(`${k}Body`)}</p>
               </div>
             ))}
           </div>
@@ -78,6 +79,12 @@ export default function FeesPage(): React.JSX.Element {
           <Link href="/legal/terms" className="text-sm text-text-2 hover:text-text-1">
             {t("ctaTerms")}
           </Link>
+        </Reveal>
+      </Section>
+
+      <Section className="border-t border-border">
+        <Reveal>
+          <FeeCalculator />
         </Reveal>
       </Section>
     </>

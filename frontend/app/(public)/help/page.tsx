@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   ShoppingCart,
   Tag,
+  ChevronDown,
 } from "lucide-react";
 import type { Faq } from "@quatatrade/shared";
 import { Section, SectionHeading } from "@/components/public/marketing";
@@ -59,16 +60,16 @@ export default async function HelpPage(): Promise<React.JSX.Element> {
         <Reveal>
           <SectionHeading as="h1" eyebrow={t("heroEyebrow")} title={t("heroTitle")} subtitle={t("heroSubtitle")} />
         </Reveal>
-        <div className="mt-8 grid gap-3 sm:grid-cols-2">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {CATEGORIES.map((c, i) => (
             <Reveal key={c.key} delay={i * 0.05}>
-              <div className="flex items-start gap-3 rounded-xl border border-border bg-surface-1 p-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-400/15 text-accent-400">
+              <div className="group flex items-start gap-4 rounded-2xl border border-border/80 bg-surface-1/40 p-5 backdrop-blur-md hover:-translate-y-0.5 hover:border-accent-400/40 hover:bg-surface-2/65 transition-all duration-300 relative overflow-hidden shadow-md">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-400/10 text-accent-400 border border-accent-400/20 group-hover:scale-105 transition-transform duration-300">
                   <c.icon size={18} aria-hidden />
                 </div>
                 <div>
-                  <p className="font-medium">{t(`${c.key}Title`)}</p>
-                  <p className="mt-0.5 text-sm text-text-2">{t(`${c.key}Desc`)}</p>
+                  <p className="font-display font-semibold text-text-1 group-hover:text-accent-400 transition-colors duration-300">{t(`${c.key}Title`)}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-text-2">{t(`${c.key}Desc`)}</p>
                 </div>
               </div>
             </Reveal>
@@ -97,11 +98,12 @@ export default async function HelpPage(): Promise<React.JSX.Element> {
                   <div className="space-y-3">
                     {group.items.map((faq, i) => (
                       <Reveal key={faq.id} delay={i * 0.04}>
-                        <details className="group rounded-xl border border-border bg-bg p-4">
-                          <summary className="cursor-pointer list-none font-medium text-text-1 [&::-webkit-details-marker]:hidden">
-                            {faq.question}
+                        <details className="group rounded-xl border border-border bg-surface-1/30 p-4 transition-all duration-300 hover:border-accent-400/30 hover:bg-surface-1/65">
+                          <summary className="flex items-center justify-between cursor-pointer list-none font-semibold text-text-1 [&::-webkit-details-marker]:hidden">
+                            <span>{faq.question}</span>
+                            <ChevronDown size={16} className="text-text-3 group-open:rotate-180 group-hover:text-accent-400 transition-all duration-300" />
                           </summary>
-                          <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-text-2">{faq.answer}</p>
+                          <p className="mt-3 border-t border-border/40 pt-3 whitespace-pre-line text-xs leading-relaxed text-text-2">{faq.answer}</p>
                         </details>
                       </Reveal>
                     ))}

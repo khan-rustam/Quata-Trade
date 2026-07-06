@@ -43,7 +43,25 @@
       "s2Title": "Vous payez hors plateforme",
       "s2Body": "L'acheteur paie le vendeur via MoMo, Orange Money ou QuataPay, puis soumet une preuve dans la salle d'échange.",
       "s3Title": "Le séquestre est libéré",
-      "s3Body": "Une fois que le vendeur confirme la réception, le séquestre libère la crypto à l'acheteur — moins une petite commission."
+      "s3Body": "Une fois que le vendeur confirme la réception, le séquestre libère la crypto à l'acheteur — moins une petite commission.",
+      "flow": {
+        "seller": "Vendeur",
+        "vault": "Séquestre",
+        "buyer": "Acheteur",
+        "cash": "Espèces · hors plateforme"
+      },
+      "console": {
+        "label": "Console de protection du registre",
+        "state": "État",
+        "asset": "Actif",
+        "phase": "Phase",
+        "state1": "Fonds bloqués",
+        "state2": "Paiement en attente",
+        "state3": "Fonds libérés",
+        "msg1": "Contrat de séquestre initialisé — USDT du vendeur réservés.",
+        "msg2": "En attente du paiement MoMo, Orange Money ou QuataPay de l'acheteur.",
+        "msg3": "Paiement confirmé — séquestre libéré vers le portefeuille de l'acheteur."
+      }
     },
     "offers": {
       "eyebrow": "Sachez avec qui vous échangez",
@@ -71,6 +89,25 @@
     "reviews": {
       "eyebrow": "Témoignages",
       "title": "La confiance des traders au Cameroun"
+    },
+    "simulator": {
+      "title": "Simulateur d'Escrow Interactif",
+      "subtitle": "Voyez exactement comment QuataTrade sécurise votre transaction avant de commencer.",
+      "labelAmount": "Entrez le montant en USDT",
+      "selectMethod": "Choisissez le moyen de paiement",
+      "methodMoMo": "MTN Mobile Money",
+      "methodOrange": "Orange Money",
+      "methodQuataPay": "QuataPay (Interne)",
+      "feeRate": "Frais de transaction",
+      "youReceive": "Vous recevez en cash",
+      "youPay": "Vous payez en cash",
+      "savings": "Économie QuataPay !",
+      "step1Title": "1. Escrow Verrouillé",
+      "step1Desc": "L'USDT est bloqué en toute sécurité dans l'escrow. Le vendeur ne peut pas s'enfuir avec.",
+      "step2Title": "2. Envoi du Cash",
+      "step2Desc": "Vous envoyez le cash au vendeur via {method} hors plateforme.",
+      "step3Title": "3. Libération de l'USDT",
+      "step3Desc": "Une fois le paiement confirmé, l'escrow libère l'USDT vers votre portefeuille."
     }
   },
   "status": {
