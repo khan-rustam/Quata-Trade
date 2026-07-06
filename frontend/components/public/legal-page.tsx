@@ -9,20 +9,25 @@ import type { LegalDoc } from "@/lib/legal-content";
  * Cameroon-qualified lawyer reviews it (Documents/14 §13.B).
  */
 export function LegalPage({ doc }: { doc: LegalDoc }): React.JSX.Element {
+  const isFinal = doc.status === "final";
   return (
     <article className="mx-auto max-w-3xl px-4 py-10 md:px-6">
-      <div className="mb-5 flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning">
-        <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden />
-        <p>
-          <strong>Draft — pending legal review.</strong> This page describes how QuataTrade works and
-          marks (in mint) every detail the operator and a Cameroon-qualified lawyer must confirm. It is
-          not yet legally binding and must not ship to production until reviewed and localized (EN + FR).
-        </p>
-      </div>
+      {!isFinal && (
+        <div className="mb-5 flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning">
+          <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden />
+          <p>
+            <strong>Draft — pending legal review.</strong> This page describes how QuataTrade works and
+            marks (in mint) every detail the operator and a Cameroon-qualified lawyer must confirm. It is
+            not yet legally binding and must not ship to production until reviewed and localized (EN + FR).
+          </p>
+        </div>
+      )}
 
       <h1 className="font-display text-3xl font-bold tracking-tight">{doc.title}</h1>
       <p className="mt-1 text-sm text-text-3">
-        Last updated: <span className="font-medium">{doc.lastUpdated}</span> · Version {doc.version} (draft)
+        {isFinal ? "Effective" : "Last updated"}:{" "}
+        <span className="font-medium">{doc.lastUpdated}</span> · Version {doc.version}
+        {isFinal ? "" : " (draft)"}
       </p>
       {doc.summary && <p className="mt-4 text-text-2">{doc.summary}</p>}
 
@@ -35,6 +40,12 @@ export function LegalPage({ doc }: { doc: LegalDoc }): React.JSX.Element {
             <div className="mt-3 space-y-3">
               {section.blocks.map((block, j) => {
                 if (block.type === "p") return <p key={j} className="leading-relaxed text-text-2">{withMarks(block.text)}</p>;
+                if (block.type === "subheading")
+                  return (
+                    <h3 key={j} className="pt-1 font-display text-base font-semibold text-text-1">
+                      {withMarks(block.text)}
+                    </h3>
+                  );
                 if (block.type === "list")
                   return (
                     <ul key={j} className="ml-1 space-y-1.5">

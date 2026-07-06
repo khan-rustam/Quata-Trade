@@ -21,7 +21,7 @@ const CARDS: { icon: ComponentType<LucideProps>; titleKey: string; bodyKey: stri
   { icon: Server, titleKey: "card6Title", bodyKey: "card6Body" },
 ];
 
-const STAY_SAFE = ["staySafe1", "staySafe2", "staySafe3", "staySafe4"] as const;
+const STAY_SAFE = ["staySafe1", "staySafe2", "staySafe3", "staySafe4", "staySafe5", "staySafe6"] as const;
 
 export default function SecurityPage(): React.JSX.Element {
   const t = useTranslations("security");
@@ -62,6 +62,18 @@ export default function SecurityPage(): React.JSX.Element {
                 <li key={key}>• {t(key)}</li>
               ))}
             </ul>
+          </div>
+        </Reveal>
+        <Reveal>
+          <div className="mt-6 rounded-xl border border-accent-400/30 bg-accent-400/5 p-5">
+            <h3 className="font-display text-lg font-medium">{t("reportTitle")}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-text-2">{t("reportBody")}</p>
+            <a
+              href="mailto:support@quatatrade.com"
+              className="mt-2 inline-block text-sm font-medium text-accent-400 hover:underline"
+            >
+              support@quatatrade.com
+            </a>
           </div>
         </Reveal>
         <Reveal>

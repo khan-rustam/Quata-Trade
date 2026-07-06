@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Facebook, Instagram, Linkedin, Mail, Phone, Send, Twitter } from "lucide-react";
+import { ArrowUpRight, Facebook, Instagram, Linkedin, Mail, Phone, Send, Twitter } from "lucide-react";
 import type { ComponentType } from "react";
 import type { LucideProps } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
@@ -79,6 +79,15 @@ export async function PublicFooter(): Promise<React.JSX.Element> {
           <div className="lg:col-span-1">
             <Logo size={18} />
             <p className="mt-3 max-w-xs text-sm text-text-2">{company.tagline || t("tagline")}</p>
+            <a
+              href="https://quatadigital.com"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="mt-3 inline-flex items-center gap-1 text-xs text-text-3 transition-colors hover:text-accent-400"
+            >
+              {t("productOf")}
+              <ArrowUpRight size={12} aria-hidden />
+            </a>
             {(company.email || company.phone) && (
               <div className="mt-4 space-y-1.5">
                 {company.email && (

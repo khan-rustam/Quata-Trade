@@ -28,6 +28,18 @@ export default function AboutPage(): React.JSX.Element {
           <div className="mt-6 space-y-4 text-text-2">
             <p>{t("intro1")}</p>
             <p>{t("intro2")}</p>
+            <p>
+              {t("intro3")}{" "}
+              <a
+                href="https://quatadigital.com"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-accent-400 hover:underline"
+              >
+                quatadigital.com
+              </a>
+              .
+            </p>
           </div>
         </Reveal>
       </Section>

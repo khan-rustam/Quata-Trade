@@ -4,17 +4,20 @@ import { useTranslations } from "next-intl";
 import { Check } from "lucide-react";
 import { Section, SectionHeading } from "@/components/public/marketing";
 import { buttonClassName } from "@/components/ui/button";
-import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
 import { Reveal } from "@/components/motion/reveal";
 
 export const metadata: Metadata = {
   title: "Fees — QuataTrade",
-  description: "QuataTrade's trading fees per payment method, with worked examples. No hidden fees.",
+  description:
+    "QuataTrade's launch fee structure: 0% trading for buyers and sellers, a low flat deposit fee, and no platform withdrawal fee. No hidden fees.",
 };
+
+const ROWS = ["buyerFee", "sellerFee", "depositFee", "withdrawalFee", "adFee", "disputeFee"] as const;
+const EXAMPLES = ["example1", "example2", "example3"] as const;
+const NOTES = ["note1", "note2", "note3", "note4"] as const;
 
 export default function FeesPage(): React.JSX.Element {
   const t = useTranslations("fees");
-  const bulletKeys = ["bullet1", "bullet2", "bullet3", "bullet4"];
 
   return (
     <>
@@ -23,55 +26,45 @@ export default function FeesPage(): React.JSX.Element {
           <SectionHeading as="h1" eyebrow={t("eyebrow")} title={t("title")} subtitle={t("subtitle")} />
         </Reveal>
 
-        <Reveal className="mt-8 overflow-hidden rounded-xl border border-border">
+        <Reveal className="mt-8 rounded-xl border border-accent-400/30 bg-accent-400/5 p-4 text-sm leading-relaxed text-text-2">
+          {t("promoNote")}
+        </Reveal>
+
+        <Reveal className="mt-6 overflow-hidden rounded-xl border border-border">
           <table className="w-full text-sm">
-            <thead className="border-b border-border bg-surface-2 text-left text-xs uppercase tracking-wide text-text-3">
-              <tr>
-                <th className="px-4 py-3">{t("tableHeadMethod")}</th>
-                <th className="px-4 py-3 text-right">{t("tableHeadFee")}</th>
-              </tr>
-            </thead>
             <tbody className="divide-y divide-border">
-              <tr>
-                <td className="px-4 py-4">
-                  <PaymentMethodChip method="QUATAPAY" />
-                </td>
-                <td className="px-4 py-4 text-right font-money text-base font-semibold">{t("feeQuatapay")}</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-4">
-                  <PaymentMethodChip method="MTN_MOMO" />
-                </td>
-                <td className="px-4 py-4 text-right font-money text-base font-semibold">{t("feeMomo")}</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-4">
-                  <PaymentMethodChip method="ORANGE_MONEY" />
-                </td>
-                <td className="px-4 py-4 text-right font-money text-base font-semibold">{t("feeOrange")}</td>
-              </tr>
+              {ROWS.map((k) => (
+                <tr key={k}>
+                  <td className="px-4 py-4">
+                    <p className="font-medium text-text-1">{t(`${k}Label`)}</p>
+                    <p className="mt-0.5 text-xs text-text-3">{t(`${k}Note`)}</p>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-4 text-right font-money text-base font-semibold text-accent-400">
+                    {t(`${k}Value`)}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </Reveal>
 
-        <Reveal className="mt-6 rounded-xl border border-border bg-surface-1 p-5">
-          <p className="text-sm font-medium">{t("workedExampleTitle")}</p>
-          <p className="mt-2 text-sm leading-relaxed text-text-2">
-            {t("exampleBuy")}{" "}
-            <span className="font-money">{t("exampleAmount1")}</span>{" "}
-            {t("exampleMid1")}{" "}
-            <span className="font-money">{t("exampleAmount2")}</span>
-            {t("exampleMid2")}{" "}
-            <span className="font-money text-accent-400">{t("exampleAmount3")}</span>{" "}
-            {t("exampleEnd")}
-          </p>
+        <Reveal className="mt-8">
+          <h2 className="font-display text-lg font-semibold">{t("examplesTitle")}</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            {EXAMPLES.map((k) => (
+              <div key={k} className="rounded-xl border border-border bg-surface-1 p-4">
+                <p className="text-sm font-medium">{t(`${k}Title`)}</p>
+                <p className="mt-2 text-sm leading-relaxed text-text-2">{t(`${k}Body`)}</p>
+              </div>
+            ))}
+          </div>
         </Reveal>
 
         <Reveal>
-          <ul className="mt-6 space-y-2 text-sm text-text-2">
-            {bulletKeys.map((k) => (
+          <ul className="mt-8 space-y-2 text-sm text-text-2">
+            {NOTES.map((k) => (
               <li key={k} className="flex gap-2">
-                <Check size={16} className="mt-0.5 shrink-0 text-success" />
+                <Check size={16} className="mt-0.5 shrink-0 text-success" aria-hidden />
                 {t(k)}
               </li>
             ))}

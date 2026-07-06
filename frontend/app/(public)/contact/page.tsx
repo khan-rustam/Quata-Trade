@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AlertOctagon, Mail, MapPin, MessageCircle, Scale } from "lucide-react";
+import { AlertOctagon, Clock, Mail, MapPin, MessageCircle, Scale } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Section, SectionHeading } from "@/components/public/marketing";
 import { Reveal } from "@/components/motion/reveal";
@@ -27,9 +27,11 @@ export default async function ContactPage(): Promise<React.JSX.Element> {
   // is omitted until one exists rather than displaying a bracketed placeholder.
   const channels: { icon: typeof Mail; title: string; value: string; note: string }[] = [
     ...(company.email ? [{ icon: Mail, title: t("emailTitle"), value: company.email, note: t("emailNote") }] : []),
+    { icon: Mail, title: t("generalTitle"), value: "info@quatatrade.com", note: t("generalNote") },
     ...(company.whatsapp
       ? [{ icon: MessageCircle, title: t("whatsappTitle"), value: company.whatsapp, note: t("whatsappNote") }]
       : []),
+    { icon: Clock, title: t("hoursTitle"), value: t("hoursValue"), note: t("hoursNote") },
     ...(address ? [{ icon: MapPin, title: t("addressTitle"), value: address, note: t("addressNote") }] : []),
     ...(legalValue ? [{ icon: Scale, title: t("legalTitle"), value: legalValue, note: t("legalNote") }] : []),
   ];
