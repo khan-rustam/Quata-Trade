@@ -28,6 +28,9 @@ import {
   zUpdateCountryRequest,
   zUpdateSettingRequest,
   zActivateWalletConfigRequest,
+  zCreateAdminRequest,
+  zUpdateAdminRequest,
+  zResetAdminTotpRequest,
   zAdminMetricsQuery,
   zUuid,
   type AdminCountriesResponse,
@@ -45,6 +48,11 @@ import {
   type ActivateWalletConfigRequest,
   type AdminWalletConfigResponse,
   type SystemHealthResponse,
+  type AdminAccountsResponse,
+  type AdminAccount,
+  type CreateAdminRequest,
+  type UpdateAdminRequest,
+  type ResetAdminTotpRequest,
 } from "@quatatrade/shared";
 import { ZodPipe } from "../../common/zod.pipe";
 import { CurrentAdminId, CurrentAuth, Roles } from "../../common/auth/decorators";
@@ -69,6 +77,7 @@ import { InsufficientFundsError, SerializationRetryExhaustedError } from "../led
 import { AdminAuthService } from "./admin-auth.service";
 import { AdminService, type AdjustmentResult, type UserModerationAction } from "./admin.service";
 import { SystemHealthService } from "./system-health.service";
+import { AdminTeamService } from "./admin-team.service";
 import { RBAC } from "./admin.rbac";
 import {
   zAdminAuditQuery,
@@ -84,6 +93,9 @@ import {
   type LedgerAdjustmentRequest,
 } from "./admin.schemas";
 import {
+  AdminAccountNotFoundError,
+  AdminEmailExistsError,
+  AdminManagementError,
   AdminNotFoundError,
   AdminVerificationError,
   CountryNotFoundError,
@@ -115,6 +127,9 @@ function mapAdminError(err: unknown): Error {
   if (err instanceof SettingKeyNotAllowedError) return new BadRequestException(err.message);
   if (err instanceof InvalidSettingValueError) return new BadRequestException(err.message);
   if (err instanceof CountryNotFoundError) return new NotFoundException(err.message);
+  if (err instanceof AdminAccountNotFoundError) return new NotFoundException(err.message);
+  if (err instanceof AdminEmailExistsError) return new ConflictException(err.message);
+  if (err instanceof AdminManagementError) return new ConflictException(err.message);
   if (err instanceof WalletConfigInvalidXpubError) return new BadRequestException(err.message);
   if (err instanceof WalletConfigRotationBlockedError) return new ConflictException(err.message);
   if (err instanceof SubmissionNotFoundError) return new NotFoundException("submission not found");
@@ -149,6 +164,7 @@ export class AdminController {
     private readonly withdrawals: WithdrawalsService,
     private readonly walletConfig: WalletConfigService,
     private readonly systemHealth: SystemHealthService,
+    private readonly team: AdminTeamService,
     private readonly audit: AuditService,
     private readonly settings: SettingsService,
   ) {}
@@ -513,6 +529,63 @@ export class AdminController {
       // Step-up: the admin's OWN TOTP before rotating the custodial key (§08 E).
       await this.adminAuth.verifyTotp(adminId, dto.totpCode, "wallet.config_activate", this.ip(req));
       return await this.walletConfig.activate(adminId, dto, this.ip(req));
+    } catch (err) {
+      throw mapAdminError(err);
+    }
+  }
+
+  // ── team / admin-account management (SUPER only, TOTP step-up) ────────────
+
+  @Roles(...RBAC.manageAdmins)
+  @Get("team")
+  async teamList(): Promise<AdminAccountsResponse> {
+    return { admins: await this.team.list() };
+  }
+
+  @Roles(...RBAC.manageAdmins)
+  @Post("team")
+  @HttpCode(HttpStatus.OK)
+  async teamCreate(
+    @CurrentAdminId() adminId: string,
+    @Body(new ZodPipe(zCreateAdminRequest)) dto: CreateAdminRequest,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AdminAccount> {
+    try {
+      await this.adminAuth.verifyTotp(adminId, dto.totpCode, "admin.account_create", this.ip(req));
+      return await this.team.create(adminId, dto, this.ip(req));
+    } catch (err) {
+      throw mapAdminError(err);
+    }
+  }
+
+  @Roles(...RBAC.manageAdmins)
+  @Patch("team/:id")
+  async teamUpdate(
+    @CurrentAdminId() adminId: string,
+    @Param("id", new ZodPipe(zUuid)) id: string,
+    @Body(new ZodPipe(zUpdateAdminRequest)) dto: UpdateAdminRequest,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AdminAccount> {
+    try {
+      await this.adminAuth.verifyTotp(adminId, dto.totpCode, "admin.account_update", this.ip(req));
+      return await this.team.update(adminId, id, dto, this.ip(req));
+    } catch (err) {
+      throw mapAdminError(err);
+    }
+  }
+
+  @Roles(...RBAC.manageAdmins)
+  @Post("team/:id/reset-2fa")
+  @HttpCode(HttpStatus.OK)
+  async teamResetTotp(
+    @CurrentAdminId() adminId: string,
+    @Param("id", new ZodPipe(zUuid)) id: string,
+    @Body(new ZodPipe(zResetAdminTotpRequest)) dto: ResetAdminTotpRequest,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AdminAccount> {
+    try {
+      await this.adminAuth.verifyTotp(adminId, dto.totpCode, "admin.account_reset_2fa", this.ip(req));
+      return await this.team.resetTotp(adminId, id, this.ip(req));
     } catch (err) {
       throw mapAdminError(err);
     }

@@ -90,12 +90,17 @@ import {
   zAdminWithdrawalsResponse,
   zAdminSettingsResponse,
   zAdminWalletConfigResponse,
+  zAdminAccount,
+  zAdminAccountsResponse,
   zAuditLogsResponse,
   zAuditVerifyResponse,
   zKillSwitchState,
   zLedgerAdjustmentResponse,
   zModerationResult,
   type ActivateWalletConfigRequest,
+  type CreateAdminRequest,
+  type UpdateAdminRequest,
+  type ResetAdminTotpRequest,
   type AdminLoginRequest,
   type ApproveWithdrawalRequest,
   type KillSwitchRequest,
@@ -384,6 +389,12 @@ export class QuataApiClient {
   adminRevenue = () => this.request("GET", "/api/v1/admin/revenue", zAdminRevenueResponse);
   adminTreasury = () => this.request("GET", "/api/v1/admin/treasury/balances", zAdminTreasuryResponse);
   adminSystemHealth = () => this.request("GET", "/api/v1/admin/system/health", zSystemHealthResponse);
+  adminTeam = () => this.request("GET", "/api/v1/admin/team", zAdminAccountsResponse);
+  adminCreateAdmin = (body: CreateAdminRequest) => this.request("POST", "/api/v1/admin/team", zAdminAccount, body);
+  adminUpdateAdmin = (id: string, body: UpdateAdminRequest) =>
+    this.request("PATCH", `/api/v1/admin/team/${id}`, zAdminAccount, body);
+  adminResetAdminTotp = (id: string, body: ResetAdminTotpRequest) =>
+    this.request("POST", `/api/v1/admin/team/${id}/reset-2fa`, zAdminAccount, body);
   adminWalletConfig = () => this.request("GET", "/api/v1/admin/wallet-config", zAdminWalletConfigResponse);
   adminActivateWalletConfig = (body: ActivateWalletConfigRequest) =>
     this.request("POST", "/api/v1/admin/wallet-config/activate", zAdminWalletConfigResponse, body);

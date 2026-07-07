@@ -57,3 +57,25 @@ export class CountryNotFoundError extends AdminError {
     super(`country not found: ${code}`);
   }
 }
+
+// ---- team / admin-account management ----
+
+/** Create with an email that already belongs to an admin. */
+export class AdminEmailExistsError extends AdminError {
+  constructor() {
+    super("an admin with this email already exists");
+  }
+}
+
+/** The targeted admin account does not exist. */
+export class AdminAccountNotFoundError extends AdminError {
+  constructor() {
+    super("admin account not found");
+  }
+}
+
+/**
+ * A guard rejected the change: acting on your OWN account (self-deactivate /
+ * self-demote), or removing the LAST active super admin. Prevents lock-out.
+ */
+export class AdminManagementError extends AdminError {}

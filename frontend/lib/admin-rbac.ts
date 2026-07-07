@@ -17,6 +17,7 @@ export const RBAC = {
   viewAudit: ["SUPER_ADMIN", "COMPLIANCE_ADMIN", "AUDITOR"],
   ledgerAdjustment: ["SUPER_ADMIN"], // the only manual money endpoint — SUPER only
   manageWalletConfig: ["SUPER_ADMIN"], // custodial wallet public key (key ceremony) — SUPER only
+  manageAdmins: ["SUPER_ADMIN"], // team / admin-account management — SUPER only
 } satisfies Record<string, AdminRole[]>;
 
 export function can(role: AdminRole | undefined, action: keyof typeof RBAC): boolean {

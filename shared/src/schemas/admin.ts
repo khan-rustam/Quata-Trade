@@ -10,7 +10,7 @@ import {
   USER_STATUSES,
   WITHDRAWAL_STATUSES,
 } from "../constants.js";
-import { zAmount, zEmail, zIdempotencyKey, zPaginated, zTotpCode, zUuid } from "./common.js";
+import { zAmount, zEmail, zIdempotencyKey, zPassword, zPaginated, zTotpCode, zUuid } from "./common.js";
 
 export const zAdminLoginRequest = z
   .object({
@@ -380,6 +380,44 @@ export const zActivateWalletConfigRequest = z
   })
   .strict();
 export type ActivateWalletConfigRequest = z.infer<typeof zActivateWalletConfigRequest>;
+
+// ---- team / admin-account management (SUPER only, Documents/06 RBAC) ----
+export const zAdminAccount = z.object({
+  id: zUuid,
+  email: z.string(),
+  role: z.enum(ADMIN_ROLES),
+  active: z.boolean(),
+  totpEnabled: z.boolean(),
+  createdAt: z.string(),
+});
+export type AdminAccount = z.infer<typeof zAdminAccount>;
+
+export const zAdminAccountsResponse = z.object({ admins: z.array(zAdminAccount) });
+export type AdminAccountsResponse = z.infer<typeof zAdminAccountsResponse>;
+
+export const zCreateAdminRequest = z
+  .object({
+    email: zEmail,
+    role: z.enum(ADMIN_ROLES),
+    // Initial password; the new admin enables their own 2FA on first login.
+    password: zPassword,
+    totpCode: zTotpCode.optional(),
+  })
+  .strict();
+export type CreateAdminRequest = z.infer<typeof zCreateAdminRequest>;
+
+export const zUpdateAdminRequest = z
+  .object({
+    role: z.enum(ADMIN_ROLES).optional(),
+    active: z.boolean().optional(),
+    totpCode: zTotpCode.optional(),
+  })
+  .strict()
+  .refine((d) => d.role !== undefined || d.active !== undefined, { message: "nothing to update" });
+export type UpdateAdminRequest = z.infer<typeof zUpdateAdminRequest>;
+
+export const zResetAdminTotpRequest = z.object({ totpCode: zTotpCode.optional() }).strict();
+export type ResetAdminTotpRequest = z.infer<typeof zResetAdminTotpRequest>;
 
 // ---- KYC review queue ----
 export const zAdminKycQueueRow = z.object({
