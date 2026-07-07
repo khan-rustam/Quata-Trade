@@ -72,7 +72,7 @@ const TEMPLATE_SOURCES: Record<TemplateName, TemplateSource> = {
   },
   trade_completed: {
     subject: "Trade {{shortRef}} completed",
-    body: "Trade {{shortRef}} is complete. The escrowed crypto has been released.",
+    body: "Trade {{shortRef}} is complete. The escrowed crypto has been released. Funds in your QuataTrade wallet can be withdrawn to an external wallet at any time.",
   },
   trade_expired: {
     subject: "Trade {{shortRef}} expired",
@@ -184,7 +184,9 @@ const EMAIL_CONTENT: Record<TemplateName, (ctx: Record<string, string>, appUrl: 
   trade_completed: (ctx, appUrl) => ({
     preheader: "Your trade is complete",
     heading: "Trade completed",
-    paragraphs: ["This trade is complete — the escrowed crypto has been released. Thanks for trading on QuataTrade."],
+    paragraphs: [
+      "This trade is complete — the escrowed crypto has been released. Any funds in your QuataTrade wallet can be withdrawn to an external wallet whenever you like. Thanks for trading on QuataTrade.",
+    ],
     facts: [...tradeFact(ctx), ...amountFact(ctx)],
     button: button(appUrl, "/trade", "View trade"),
   }),

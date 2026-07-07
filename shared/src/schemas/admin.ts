@@ -330,6 +330,57 @@ export const zUpdateSettingRequest = z
   .strict();
 export type UpdateSettingRequest = z.infer<typeof zUpdateSettingRequest>;
 
+// ---- wallet configuration (key ceremony — PUBLIC xpub only, Documents/10 D29) ----
+/**
+ * One configured production/dev wallet. `xpub` is an account-level extended
+ * PUBLIC key — the backend never holds/returns any private key material.
+ * `sampleAddress` is the deposit address at index 0, for the admin to eyeball
+ * against the hardware wallet during the key ceremony.
+ */
+export const zWalletConfigSummary = z.object({
+  id: zUuid,
+  network: z.string(),
+  xpub: z.string(),
+  derivationPath: z.string(),
+  label: z.string().nullable(),
+  source: z.enum(["env", "ceremony"]),
+  sampleAddress: z.string(),
+  active: z.boolean(),
+  activatedBy: zUuid.nullable(),
+  createdAt: z.string(),
+});
+export type WalletConfigSummary = z.infer<typeof zWalletConfigSummary>;
+
+export const zAdminWalletConfigResponse = z.object({
+  network: z.string(),
+  /** null while still on the env fallback (no DB config activated yet). */
+  activeXpub: z.string().nullable(),
+  usingEnvFallback: z.boolean(),
+  configs: z.array(zWalletConfigSummary),
+});
+export type AdminWalletConfigResponse = z.infer<typeof zAdminWalletConfigResponse>;
+
+export const zActivateWalletConfigRequest = z
+  .object({
+    network: z.enum(["tron"]).default("tron"),
+    /**
+     * Account-level extended PUBLIC key (xpub, m/44'/195'/0'). The backend
+     * REJECTS any extended private key (xprv) — validated via watch-only
+     * derivation. Never submit a seed, mnemonic, or private key here.
+     */
+    xpub: z.string().trim().min(20).max(256),
+    label: z.string().trim().max(120).optional(),
+    /**
+     * Required to rotate the key once deposit addresses already exist — guards
+     * against silently orphaning custody of already-derived addresses.
+     */
+    acknowledgeReset: z.boolean().optional(),
+    reason: z.string().trim().min(3).max(1000),
+    totpCode: zTotpCode.optional(),
+  })
+  .strict();
+export type ActivateWalletConfigRequest = z.infer<typeof zActivateWalletConfigRequest>;
+
 // ---- KYC review queue ----
 export const zAdminKycQueueRow = z.object({
   id: zUuid,

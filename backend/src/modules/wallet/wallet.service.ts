@@ -8,6 +8,7 @@ import type { Database, DepositAddressesTable, DepositsTable } from "../../db/ty
 import { newId } from "../../common/ids";
 import { LedgerService } from "../ledger/ledger.service";
 import { deriveTronAddress } from "./derivation";
+import { WalletConfigService } from "./wallet-config.service";
 import {
   AccountRestrictedError,
   PinServiceUnavailableError,
@@ -50,7 +51,15 @@ export class WalletService {
     private readonly ledger: LedgerService,
     @Inject(WALLET_XPUB) private readonly xpub: string,
     @Optional() @Inject(PIN_SERVICE) private readonly pinService?: PinVerifier,
+    // When present (production wiring), the DB-active production xpub takes
+    // precedence over the env value. Absent in unit tests → env xpub is used.
+    @Optional() private readonly walletConfig?: WalletConfigService,
   ) {}
+
+  /** The xpub to derive from: DB-active config when wired, else the env value. */
+  private async resolveXpub(): Promise<string> {
+    return this.walletConfig ? this.walletConfig.getActiveXpub() : this.xpub;
+  }
 
   /** Ledger-derived balances (user_available + user_escrow) per asset. */
   async getBalances(userId: string): Promise<AssetBalance[]> {
@@ -76,7 +85,8 @@ export class WalletService {
   async getOrCreateDepositAddress(userId: string, asset: AssetCode): Promise<DepositAddressRow> {
     const existing = await this.findAddress(userId, asset);
     if (existing) return existing;
-    if (this.xpub.length === 0) throw new XpubNotConfiguredError();
+    const xpub = await this.resolveXpub();
+    if (xpub.length === 0) throw new XpubNotConfiguredError();
 
     try {
       return await this.db.transaction().execute(async (trx) => {
@@ -98,7 +108,7 @@ export class WalletService {
           .executeTakeFirst();
         const nextIndex = (maxRow?.max ?? -1) + 1;
 
-        const derived = deriveTronAddress(this.xpub, nextIndex);
+        const derived = deriveTronAddress(xpub, nextIndex);
         return trx
           .insertInto("deposit_addresses")
           .values({

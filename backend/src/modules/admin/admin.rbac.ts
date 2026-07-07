@@ -34,6 +34,8 @@ export const RBAC = {
   /** Enable/disable a market (phased country rollout) — same tier as the kill switch. */
   manageCountries: ["SUPER_ADMIN", "FINANCE_ADMIN"] as const,
   ledgerAdjustment: ["SUPER_ADMIN"] as const,
+  /** Configure the custodial wallet public key (key ceremony) — SUPER only, like ledger adjustment. */
+  manageWalletConfig: ["SUPER_ADMIN"] as const,
   viewDashboards: ADMIN_ROLES,
   editSettings: ["SUPER_ADMIN", "FINANCE_ADMIN"] as const,
   viewAuditLogs: ["SUPER_ADMIN", "COMPLIANCE_ADMIN", "AUDITOR"] as const,

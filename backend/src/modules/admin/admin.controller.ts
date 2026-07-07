@@ -27,6 +27,7 @@ import {
   zResolveDisputeRequest,
   zUpdateCountryRequest,
   zUpdateSettingRequest,
+  zActivateWalletConfigRequest,
   zAdminMetricsQuery,
   zUuid,
   type AdminCountriesResponse,
@@ -41,6 +42,8 @@ import {
   type Pagination,
   type ResolveDisputeRequest,
   type UpdateCountryRequest,
+  type ActivateWalletConfigRequest,
+  type AdminWalletConfigResponse,
 } from "@quatatrade/shared";
 import { ZodPipe } from "../../common/zod.pipe";
 import { CurrentAdminId, CurrentAuth, Roles } from "../../common/auth/decorators";
@@ -52,6 +55,8 @@ import { DisputesAdminService, type DisputeQueuePage, type ResolveResult } from 
 import { ConflictingResolutionError, DisputeNotFoundError } from "../disputes/disputes.errors";
 import { IllegalTransitionError, TradeNotFoundError } from "../escrow/escrow.errors";
 import { WithdrawalsService } from "../withdrawals/withdrawals.service";
+import { WalletConfigService } from "../wallet/wallet-config.service";
+import { WalletConfigInvalidXpubError, WalletConfigRotationBlockedError } from "../wallet/wallet.errors";
 import { SettingsService } from "../settings/settings.service";
 import {
   ApprovalNotAllowedError,
@@ -108,6 +113,8 @@ function mapAdminError(err: unknown): Error {
   if (err instanceof SettingKeyNotAllowedError) return new BadRequestException(err.message);
   if (err instanceof InvalidSettingValueError) return new BadRequestException(err.message);
   if (err instanceof CountryNotFoundError) return new NotFoundException(err.message);
+  if (err instanceof WalletConfigInvalidXpubError) return new BadRequestException(err.message);
+  if (err instanceof WalletConfigRotationBlockedError) return new ConflictException(err.message);
   if (err instanceof SubmissionNotFoundError) return new NotFoundException("submission not found");
   if (err instanceof ReviewNotAllowedError) return new ConflictException(err.message);
   if (err instanceof DisputeNotFoundError) return new NotFoundException(err.message);
@@ -138,6 +145,7 @@ export class AdminController {
     private readonly kycAdmin: KycAdminService,
     private readonly disputesAdmin: DisputesAdminService,
     private readonly withdrawals: WithdrawalsService,
+    private readonly walletConfig: WalletConfigService,
     private readonly audit: AuditService,
     private readonly settings: SettingsService,
   ) {}
@@ -477,6 +485,31 @@ export class AdminController {
     try {
       await this.admin.updateSetting(adminId, dto.key, dto.value, dto.reason, dto.totpCode, this.ip(req));
       return { ok: true };
+    } catch (err) {
+      throw mapAdminError(err);
+    }
+  }
+
+  // ── custodial wallet config (key ceremony — SUPER only, PUBLIC xpub) ──────
+
+  @Roles(...RBAC.manageWalletConfig)
+  @Get("wallet-config")
+  async walletConfigView(): Promise<AdminWalletConfigResponse> {
+    return this.walletConfig.view();
+  }
+
+  @Roles(...RBAC.manageWalletConfig)
+  @Post("wallet-config/activate")
+  @HttpCode(HttpStatus.OK)
+  async walletConfigActivate(
+    @CurrentAdminId() adminId: string,
+    @Body(new ZodPipe(zActivateWalletConfigRequest)) dto: ActivateWalletConfigRequest,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AdminWalletConfigResponse> {
+    try {
+      // Step-up: the admin's OWN TOTP before rotating the custodial key (§08 E).
+      await this.adminAuth.verifyTotp(adminId, dto.totpCode, "wallet.config_activate", this.ip(req));
+      return await this.walletConfig.activate(adminId, dto, this.ip(req));
     } catch (err) {
       throw mapAdminError(err);
     }

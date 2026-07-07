@@ -42,3 +42,26 @@ export class PinServiceUnavailableError extends WalletError {
     super("PIN verification is unavailable");
   }
 }
+
+/**
+ * The submitted extended key is not a valid account-level PUBLIC xpub (or is an
+ * xprv). Message stays generic — never echo key material (Documents/08 §D).
+ */
+export class WalletConfigInvalidXpubError extends WalletError {
+  constructor() {
+    super("invalid wallet public key — expected an account-level xpub (never a private key)");
+  }
+}
+
+/**
+ * Refusing to rotate the active xpub because deposit addresses were already
+ * derived from it: changing the key would orphan custody of those addresses.
+ * The admin must pass acknowledgeReset to proceed (audited).
+ */
+export class WalletConfigRotationBlockedError extends WalletError {
+  constructor(public readonly derivedAddressCount: number) {
+    super(
+      `refusing to rotate wallet key: ${derivedAddressCount} deposit address(es) were already derived from the current key — pass acknowledgeReset to override`,
+    );
+  }
+}

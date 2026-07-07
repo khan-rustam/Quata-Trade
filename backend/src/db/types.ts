@@ -436,6 +436,22 @@ export interface CountriesTable {
   updated_at: ColumnType<Date, Date | string | undefined, Date | string>;
 }
 
+/**
+ * Admin-configurable production wallet — key ceremony (migration 0023, Documents/10 D29).
+ * PUBLIC xpub only; one active row per network. NEVER stores private key material.
+ */
+export interface WalletConfigsTable {
+  id: string;
+  network: string;
+  xpub: string;
+  derivation_path: string;
+  label: string | null;
+  source: Generated<string>;
+  active: Generated<boolean>;
+  activated_by: string | null;
+  created_at: Timestamp;
+}
+
 export interface Database {
   users: UsersTable;
   countries: CountriesTable;
@@ -450,6 +466,7 @@ export interface Database {
   deposits: DepositsTable;
   withdrawals: WithdrawalsTable;
   withdrawal_addresses: WithdrawalAddressesTable;
+  wallet_configs: WalletConfigsTable;
   blocked_addresses: BlockedAddressesTable;
   offers: OffersTable;
   trades: TradesTable;

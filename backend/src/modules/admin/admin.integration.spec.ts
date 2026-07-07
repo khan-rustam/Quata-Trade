@@ -202,6 +202,18 @@ describe("admin RBAC matrix (RolesGuard x route metadata)", () => {
       handler: AdminController.prototype.ledgerAdjustment,
       allowed: ["SUPER_ADMIN"],
     },
+    {
+      name: "GET /admin/wallet-config",
+      cls: AdminController,
+      handler: AdminController.prototype.walletConfigView,
+      allowed: ["SUPER_ADMIN"],
+    },
+    {
+      name: "POST /admin/wallet-config/activate",
+      cls: AdminController,
+      handler: AdminController.prototype.walletConfigActivate,
+      allowed: ["SUPER_ADMIN"],
+    },
   ];
 
   it("enforces allow AND deny for every route x every role", () => {

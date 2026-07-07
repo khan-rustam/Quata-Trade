@@ -5,6 +5,7 @@ import { SettingsModule } from "../settings/settings.module";
 import { KycModule } from "../kyc/kyc.module";
 import { DisputesModule } from "../disputes/disputes.module";
 import { WithdrawalsModule } from "../withdrawals/withdrawals.module";
+import { WalletModule } from "../wallet/wallet.module";
 import { AdminAuthService } from "./admin-auth.service";
 import { AdminService } from "./admin.service";
 import { AdminAuthController } from "./admin-auth.controller";
@@ -18,7 +19,7 @@ import { AdminController } from "./admin.controller";
  * keep DI working regardless of registration order.
  */
 @Module({
-  imports: [AuditModule, SettingsModule, LedgerModule, KycModule, DisputesModule, WithdrawalsModule],
+  imports: [AuditModule, SettingsModule, LedgerModule, KycModule, DisputesModule, WithdrawalsModule, WalletModule],
   controllers: [AdminAuthController, AdminController],
   providers: [AdminAuthService, AdminService],
   exports: [AdminAuthService, AdminService],
