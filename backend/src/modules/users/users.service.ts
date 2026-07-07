@@ -16,6 +16,7 @@ import { DB } from "../../db/database.module";
 import type { Database, UsersTable } from "../../db/types";
 import { AuditService } from "../../common/audit/audit.service";
 import { MAILER, type Mailer } from "../notify/notify.mailer";
+import { renderEmailHtml } from "../notify/notify.layout";
 import { fetchTraders, type TraderStats } from "../offers/offers.mapper";
 import { displayNameOf } from "../trades/trades.mapper";
 import {
@@ -236,6 +237,13 @@ export class UsersService {
         newEmail,
         "Confirm your new QuataTrade email",
         `Your email change confirmation code is:\n\n    ${otp}\n\nEnter it in the app within 15 minutes to finish changing your email. If you didn't request this, you can ignore this message.`,
+        renderEmailHtml({
+          preheader: "Confirm your new QuataTrade email",
+          heading: "Confirm your new email",
+          paragraphs: ["Enter this code in the app within 15 minutes to finish updating your email address:"],
+          code: otp,
+          note: "If you didn't request this change, you can ignore this email — your email won't change.",
+        }),
       );
     } catch (err) {
       this.logger.warn(`email-change code send failed: ${err instanceof Error ? err.message : "unknown error"}`);

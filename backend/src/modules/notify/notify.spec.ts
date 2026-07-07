@@ -47,6 +47,22 @@ describe("renderTemplate", () => {
     expect(body).toContain("Your deposit");
     expect(body).not.toContain("undefined");
   });
+
+  it("renders a branded HTML part for every template — non-empty, no leftover handlebars", () => {
+    for (const name of TEMPLATE_NAMES) {
+      const { html } = renderTemplate(name, FULL_CONTEXT, "https://app.quatatrade.test");
+      expect(html.length, name).toBeGreaterThan(0);
+      expect(html, name).not.toContain("{{");
+      expect(html, name).toMatch(/^<!doctype html>/i);
+      expect(html, name).toContain("QuataTrade");
+    }
+  });
+
+  it("HTML-escapes interpolated values — no markup injection", () => {
+    const { html } = renderTemplate("dispute_resolved", { shortRef: "<script>x</script>" }, "");
+    expect(html).not.toContain("<script>x</script>");
+    expect(html).toContain("&lt;script&gt;");
+  });
 });
 
 /* ------------------------------------------------------------------ */
@@ -115,6 +131,10 @@ describe("safeContext whitelist", () => {
     expect(safeContext({ to: "COMPLETED" })["status"]).toBe("COMPLETED");
     expect(safeContext({ tier: 2 })["tier"]).toBe("2");
   });
+
+  it("maps a KYC review 'decision' onto status", () => {
+    expect(safeContext({ decision: "APPROVED" })["status"]).toBe("APPROVED");
+  });
 });
 
 /* ------------------------------------------------------------------ */
@@ -176,12 +196,12 @@ class MemoryStore implements NotifyStore {
 }
 
 class MockMailer implements Mailer {
-  sent: Array<{ to: string; subject: string; text: string }> = [];
+  sent: Array<{ to: string; subject: string; text: string; html?: string }> = [];
   failWith: Error | null = null;
 
-  async send(to: string, subject: string, text: string): Promise<void> {
+  async send(to: string, subject: string, text: string, html?: string): Promise<void> {
     if (this.failWith) throw this.failWith;
-    this.sent.push({ to, subject, text });
+    this.sent.push({ to, subject, text, html });
   }
 }
 
@@ -198,7 +218,7 @@ function makeService(): { service: NotifyService; store: MemoryStore; mailer: Mo
     amount: 12_500_000n,
   });
   const alerts = { fromEvent: async () => undefined } as unknown as AlertsService;
-  return { service: new NotifyService(store, mailer, alerts), store, mailer };
+  return { service: new NotifyService(store, mailer, alerts, "https://app.quatatrade.test"), store, mailer };
 }
 
 describe("NotifyService.dispatch", () => {
@@ -261,6 +281,7 @@ describe("NotifyService.dispatch", () => {
       expect(JSON.stringify(row.payload)).not.toContain("123456");
     }
     expect(mailer.sent[0]?.text).not.toContain("123456");
+    expect(mailer.sent[0]?.html).not.toContain("123456");
   });
 
   it("recipient without an email address leaves the email row queued", async () => {

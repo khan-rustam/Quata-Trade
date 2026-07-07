@@ -79,7 +79,9 @@ export function safeContext(payload: Record<string, unknown>): Record<string, st
     }
   }
 
-  const status = payload["status"] ?? payload["to"];
+  // `to` = a trade transition target; `decision` = a KYC review outcome — both
+  // surface to the user as the human-readable "status" line in their email.
+  const status = payload["status"] ?? payload["to"] ?? payload["decision"];
   if (typeof status === "string" && status.length > 0 && status.length <= MAX_VALUE_LENGTH) {
     context["status"] = status;
   }

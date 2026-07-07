@@ -47,9 +47,9 @@ export class EmailSendJob {
           await this.store.recordEmailFailure(row.id);
           continue;
         }
-        const message = renderTemplate(row.template, this.contextFor(row.template, row.payload));
+        const message = renderTemplate(row.template, this.contextFor(row.template, row.payload), this.webOrigin);
         try {
-          await this.mailer.send(to, message.subject, message.body);
+          await this.mailer.send(to, message.subject, message.body, message.html);
           await this.store.markEmailDelivered(row.id);
         } catch (err) {
           await this.store.recordEmailFailure(row.id);

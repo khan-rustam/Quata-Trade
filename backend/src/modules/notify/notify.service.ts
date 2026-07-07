@@ -7,6 +7,9 @@ import { planDispatch, safeContext } from "./notify.plan";
 import { NOTIFY_STORE, type NotificationListItem, type NotifyStore } from "./notify.store";
 import { renderTemplate } from "./notify.templates";
 
+/** WEB_ORIGIN, injected so email templates can build absolute in-app links. */
+export const NOTIFY_APP_URL = Symbol("NOTIFY_APP_URL");
+
 /**
  * notify — domain events → per-user notifications (Documents/06 "notify").
  * For every recipient: an in_app row (delivered immediately) AND an email row
@@ -23,6 +26,7 @@ export class NotifyService {
     @Inject(NOTIFY_STORE) private readonly store: NotifyStore,
     @Inject(MAILER) private readonly mailer: Mailer,
     private readonly alerts: AlertsService,
+    @Inject(NOTIFY_APP_URL) private readonly appUrl: string,
   ) {}
 
   /**
@@ -83,9 +87,9 @@ export class NotifyService {
         continue;
       }
 
-      const message = renderTemplate(plan.template, context);
+      const message = renderTemplate(plan.template, context, this.appUrl);
       try {
-        await this.mailer.send(to, message.subject, message.body);
+        await this.mailer.send(to, message.subject, message.body, message.html);
         await this.store.markEmailDelivered(emailId);
       } catch (err) {
         await this.store.recordEmailFailure(emailId);

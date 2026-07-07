@@ -3,7 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import type { Env } from "../../config/env";
 import { NotifyController } from "./notify.controller";
 import { createSmtpMailer, MAILER } from "./notify.mailer";
-import { NotifyService } from "./notify.service";
+import { NotifyService, NOTIFY_APP_URL } from "./notify.service";
 import { KyselyNotifyStore, NOTIFY_STORE } from "./notify.store";
 
 /**
@@ -15,6 +15,11 @@ import { KyselyNotifyStore, NOTIFY_STORE } from "./notify.store";
   providers: [
     NotifyService,
     { provide: NOTIFY_STORE, useClass: KyselyNotifyStore },
+    {
+      provide: NOTIFY_APP_URL,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<Env, true>) => config.get("WEB_ORIGIN", { infer: true }),
+    },
     {
       provide: MAILER,
       inject: [ConfigService],

@@ -435,7 +435,12 @@
     "network": "Network",
     "minDeposit": "Minimum deposit",
     "creditedAfter": "Credited after",
-    "confirmations": "{count} confirmations"
+    "confirmations": "{count} confirmations",
+    "unavailableTitle": "Deposit address temporarily unavailable",
+    "unavailableBody": "We couldn't generate your deposit address just now. This isn't a verification issue — you don't need to verify your ID to receive a deposit. Please try again in a moment.",
+    "errorTitle": "Couldn't load your address",
+    "errorBody": "Something went wrong loading your deposit address. Please try again.",
+    "retry": "Try again"
   },
   "walletWithdraw": {
     "addressError": "Enter a valid TRON (TRC20) address",

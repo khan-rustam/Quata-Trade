@@ -8,7 +8,8 @@ import { createTransport } from "nodemailer";
 export const MAILER = Symbol("MAILER");
 
 export interface Mailer {
-  send(to: string, subject: string, text: string): Promise<void>;
+  /** `html` is the branded part; `text` is the always-present multipart fallback. */
+  send(to: string, subject: string, text: string, html?: string): Promise<void>;
 }
 
 export interface SmtpConfig {
@@ -28,8 +29,8 @@ export function createSmtpMailer(config: SmtpConfig): Mailer {
     auth: config.user !== "" ? { user: config.user, pass: config.pass } : undefined,
   });
   return {
-    async send(to: string, subject: string, text: string): Promise<void> {
-      await transport.sendMail({ from: config.from, to, subject, text });
+    async send(to: string, subject: string, text: string, html?: string): Promise<void> {
+      await transport.sendMail({ from: config.from, to, subject, text, html });
     },
   };
 }

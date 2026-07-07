@@ -435,7 +435,12 @@
     "network": "Réseau",
     "minDeposit": "Dépôt minimum",
     "creditedAfter": "Crédité après",
-    "confirmations": "{count} confirmations"
+    "confirmations": "{count} confirmations",
+    "unavailableTitle": "Adresse de dépôt temporairement indisponible",
+    "unavailableBody": "Nous n'avons pas pu générer votre adresse de dépôt pour le moment. Ce n'est pas un problème de vérification — vous n'avez pas besoin de vérifier votre identité pour recevoir un dépôt. Veuillez réessayer dans un instant.",
+    "errorTitle": "Impossible de charger votre adresse",
+    "errorBody": "Une erreur s'est produite lors du chargement de votre adresse de dépôt. Veuillez réessayer.",
+    "retry": "Réessayer"
   },
   "walletWithdraw": {
     "addressError": "Entrez une adresse TRON (TRC20) valide",
