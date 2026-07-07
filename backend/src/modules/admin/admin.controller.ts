@@ -44,6 +44,7 @@ import {
   type UpdateCountryRequest,
   type ActivateWalletConfigRequest,
   type AdminWalletConfigResponse,
+  type SystemHealthResponse,
 } from "@quatatrade/shared";
 import { ZodPipe } from "../../common/zod.pipe";
 import { CurrentAdminId, CurrentAuth, Roles } from "../../common/auth/decorators";
@@ -67,6 +68,7 @@ import {
 import { InsufficientFundsError, SerializationRetryExhaustedError } from "../ledger/ledger.errors";
 import { AdminAuthService } from "./admin-auth.service";
 import { AdminService, type AdjustmentResult, type UserModerationAction } from "./admin.service";
+import { SystemHealthService } from "./system-health.service";
 import { RBAC } from "./admin.rbac";
 import {
   zAdminAuditQuery,
@@ -146,6 +148,7 @@ export class AdminController {
     private readonly disputesAdmin: DisputesAdminService,
     private readonly withdrawals: WithdrawalsService,
     private readonly walletConfig: WalletConfigService,
+    private readonly systemHealth: SystemHealthService,
     private readonly audit: AuditService,
     private readonly settings: SettingsService,
   ) {}
@@ -513,6 +516,14 @@ export class AdminController {
     } catch (err) {
       throw mapAdminError(err);
     }
+  }
+
+  // ── system health (all admin roles can monitor) ──────────────────────────
+
+  @Roles(...RBAC.viewDashboards)
+  @Get("system/health")
+  async systemHealthSnapshot(): Promise<SystemHealthResponse> {
+    return this.systemHealth.snapshot();
   }
 
   // ── audit logs (SUPER / COMPLIANCE / AUDITOR) ─────────────────────────────

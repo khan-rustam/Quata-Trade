@@ -8,6 +8,7 @@ import { WithdrawalsModule } from "../withdrawals/withdrawals.module";
 import { WalletModule } from "../wallet/wallet.module";
 import { AdminAuthService } from "./admin-auth.service";
 import { AdminService } from "./admin.service";
+import { SystemHealthService } from "./system-health.service";
 import { AdminAuthController } from "./admin-auth.controller";
 import { AdminController } from "./admin.controller";
 
@@ -21,7 +22,7 @@ import { AdminController } from "./admin.controller";
 @Module({
   imports: [AuditModule, SettingsModule, LedgerModule, KycModule, DisputesModule, WithdrawalsModule, WalletModule],
   controllers: [AdminAuthController, AdminController],
-  providers: [AdminAuthService, AdminService],
+  providers: [AdminAuthService, AdminService, SystemHealthService],
   exports: [AdminAuthService, AdminService],
 })
 export class AdminModule {}

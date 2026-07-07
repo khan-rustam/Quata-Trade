@@ -103,6 +103,7 @@ import {
   type RejectWithdrawalRequest,
   type UpdateSettingRequest,
 } from "../schemas/admin.js";
+import { zSystemHealthResponse } from "../schemas/system.js";
 import {
   zBlockedAddress,
   zBlockedAddressesResponse,
@@ -382,6 +383,7 @@ export class QuataApiClient {
   adminVerifyAudit = () => this.request("GET", "/api/v1/admin/audit-logs/verify", zAuditVerifyResponse);
   adminRevenue = () => this.request("GET", "/api/v1/admin/revenue", zAdminRevenueResponse);
   adminTreasury = () => this.request("GET", "/api/v1/admin/treasury/balances", zAdminTreasuryResponse);
+  adminSystemHealth = () => this.request("GET", "/api/v1/admin/system/health", zSystemHealthResponse);
   adminWalletConfig = () => this.request("GET", "/api/v1/admin/wallet-config", zAdminWalletConfigResponse);
   adminActivateWalletConfig = (body: ActivateWalletConfigRequest) =>
     this.request("POST", "/api/v1/admin/wallet-config/activate", zAdminWalletConfigResponse, body);

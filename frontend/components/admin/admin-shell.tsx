@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, type ReactNode, type ComponentType } from "react";
 import {
+  Activity,
   ArrowUpFromLine,
   BadgeCheck,
   BarChart3,
@@ -46,6 +47,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { href: "/admin", labelKey: "navDashboard", icon: Gauge },
+  { href: "/admin/system", labelKey: "navSystem", icon: Activity },
   { href: "/admin/reports", labelKey: "navReports", icon: BarChart3 },
   { href: "/admin/withdrawals", labelKey: "navWithdrawals", icon: ArrowUpFromLine, gate: "approveWithdrawal" },
   { href: "/admin/disputes", labelKey: "navDisputes", icon: ShieldAlert, gate: "resolveDispute" },

@@ -214,6 +214,12 @@ describe("admin RBAC matrix (RolesGuard x route metadata)", () => {
       handler: AdminController.prototype.walletConfigActivate,
       allowed: ["SUPER_ADMIN"],
     },
+    {
+      name: "GET /admin/system/health",
+      cls: AdminController,
+      handler: AdminController.prototype.systemHealthSnapshot,
+      allowed: ALL7,
+    },
   ];
 
   it("enforces allow AND deny for every route x every role", () => {

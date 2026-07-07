@@ -17,5 +17,6 @@ export * from "./schemas/chat.js";
 export * from "./schemas/notifications.js";
 export * from "./schemas/admin.js";
 export * from "./schemas/screening.js";
+export * from "./schemas/system.js";
 
 export * from "./client/index.js";
