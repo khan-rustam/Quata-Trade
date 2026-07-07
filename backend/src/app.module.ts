@@ -34,6 +34,7 @@ import { NotifyModule } from "./modules/notify/notify.module";
 import { AdminModule } from "./modules/admin/admin.module";
 import { TreasuryModule } from "./modules/treasury/treasury.module";
 import { ContentModule } from "./modules/content/content.module";
+import { MarketsModule } from "./modules/markets/markets.module";
 
 @Module({
   imports: [
@@ -103,6 +104,7 @@ import { ContentModule } from "./modules/content/content.module";
     AdminModule,
     TreasuryModule,
     ContentModule,
+    MarketsModule,
     // DepositsModule + SignerModule run ONLY in the worker process (crons)
   ],
   providers: [

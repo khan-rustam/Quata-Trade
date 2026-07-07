@@ -18,7 +18,7 @@ const COLUMNS: { titleKey: string; links: FooterLink[] }[] = [
       { key: "howItWorks", href: "/how-it-works" },
       { key: "fees", href: "/fees" },
       { key: "security", href: "/security" },
-      { key: "markets", href: "/markets", soon: true },
+      { key: "markets", href: "/markets" },
     ],
   },
   {

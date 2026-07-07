@@ -19,5 +19,6 @@ export * from "./schemas/admin.js";
 export * from "./schemas/screening.js";
 export * from "./schemas/system.js";
 export * from "./schemas/alerts.js";
+export * from "./schemas/markets.js";
 
 export * from "./client/index.js";

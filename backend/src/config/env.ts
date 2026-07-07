@@ -87,6 +87,12 @@ export const envSchema = z.object({
   // Comma-separated email recipients for CRITICAL alerts (ops/on-call). Empty = email disabled.
   ALERT_EMAIL_TO: z.string().default(""),
 
+  // Market data (informational Markets page). CoinGecko primary; CoinCap failover.
+  // Free tiers work with no key; a key raises rate limits. Responses are Redis-cached.
+  COINGECKO_API_URL: z.string().url().default("https://api.coingecko.com/api/v3"),
+  COINGECKO_API_KEY: z.string().default(""),
+  MARKETS_CACHE_TTL_SECONDS: z.coerce.number().int().min(10).max(600).default(45),
+
   SWAGGER_ENABLED: z
     .string()
     .default("false")
