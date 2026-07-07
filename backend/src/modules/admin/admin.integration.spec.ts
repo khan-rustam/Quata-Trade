@@ -229,6 +229,13 @@ describe("admin RBAC matrix (RolesGuard x route metadata)", () => {
       handler: AdminController.prototype.teamResetTotp,
       allowed: ["SUPER_ADMIN"],
     },
+    { name: "GET /admin/alerts", cls: AdminController, handler: AdminController.prototype.alertsList, allowed: ALL7 },
+    {
+      name: "POST /admin/alerts/:id/ack",
+      cls: AdminController,
+      handler: AdminController.prototype.alertAcknowledge,
+      allowed: ALL7,
+    },
   ];
 
   it("enforces allow AND deny for every route x every role", () => {

@@ -84,6 +84,8 @@ export const envSchema = z.object({
 
   // Ops/security alert webhook (Slack/Discord/generic "text" payload). Empty = disabled (log-only).
   ALERT_WEBHOOK_URL: z.string().default(""),
+  // Comma-separated email recipients for CRITICAL alerts (ops/on-call). Empty = email disabled.
+  ALERT_EMAIL_TO: z.string().default(""),
 
   SWAGGER_ENABLED: z
     .string()

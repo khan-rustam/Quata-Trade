@@ -31,6 +31,7 @@ import {
   zCreateAdminRequest,
   zUpdateAdminRequest,
   zResetAdminTotpRequest,
+  zAlertsQuery,
   zAdminMetricsQuery,
   zUuid,
   type AdminCountriesResponse,
@@ -53,6 +54,9 @@ import {
   type CreateAdminRequest,
   type UpdateAdminRequest,
   type ResetAdminTotpRequest,
+  type AlertsQuery,
+  type AlertsResponse,
+  type AlertItem,
 } from "@quatatrade/shared";
 import { ZodPipe } from "../../common/zod.pipe";
 import { CurrentAdminId, CurrentAuth, Roles } from "../../common/auth/decorators";
@@ -78,6 +82,7 @@ import { AdminAuthService } from "./admin-auth.service";
 import { AdminService, type AdjustmentResult, type UserModerationAction } from "./admin.service";
 import { SystemHealthService } from "./system-health.service";
 import { AdminTeamService } from "./admin-team.service";
+import { AlertsAdminService } from "./alerts-admin.service";
 import { RBAC } from "./admin.rbac";
 import {
   zAdminAuditQuery,
@@ -96,6 +101,7 @@ import {
   AdminAccountNotFoundError,
   AdminEmailExistsError,
   AdminManagementError,
+  AlertNotFoundError,
   AdminNotFoundError,
   AdminVerificationError,
   CountryNotFoundError,
@@ -128,6 +134,7 @@ function mapAdminError(err: unknown): Error {
   if (err instanceof InvalidSettingValueError) return new BadRequestException(err.message);
   if (err instanceof CountryNotFoundError) return new NotFoundException(err.message);
   if (err instanceof AdminAccountNotFoundError) return new NotFoundException(err.message);
+  if (err instanceof AlertNotFoundError) return new NotFoundException(err.message);
   if (err instanceof AdminEmailExistsError) return new ConflictException(err.message);
   if (err instanceof AdminManagementError) return new ConflictException(err.message);
   if (err instanceof WalletConfigInvalidXpubError) return new BadRequestException(err.message);
@@ -165,6 +172,7 @@ export class AdminController {
     private readonly walletConfig: WalletConfigService,
     private readonly systemHealth: SystemHealthService,
     private readonly team: AdminTeamService,
+    private readonly alerts: AlertsAdminService,
     private readonly audit: AuditService,
     private readonly settings: SettingsService,
   ) {}
@@ -597,6 +605,28 @@ export class AdminController {
   @Get("system/health")
   async systemHealthSnapshot(): Promise<SystemHealthResponse> {
     return this.systemHealth.snapshot();
+  }
+
+  // ── alerts feed (all admin roles view + acknowledge) ─────────────────────
+
+  @Roles(...RBAC.viewDashboards)
+  @Get("alerts")
+  async alertsList(@Query(new ZodPipe(zAlertsQuery)) query: AlertsQuery): Promise<AlertsResponse> {
+    return this.alerts.list(query);
+  }
+
+  @Roles(...RBAC.viewDashboards)
+  @Post("alerts/:id/ack")
+  @HttpCode(HttpStatus.OK)
+  async alertAcknowledge(
+    @CurrentAdminId() adminId: string,
+    @Param("id", new ZodPipe(zUuid)) id: string,
+  ): Promise<AlertItem> {
+    try {
+      return await this.alerts.acknowledge(adminId, id);
+    } catch (err) {
+      throw mapAdminError(err);
+    }
   }
 
   // ── audit logs (SUPER / COMPLIANCE / AUDITOR) ─────────────────────────────

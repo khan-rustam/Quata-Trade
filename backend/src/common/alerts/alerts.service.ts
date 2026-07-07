@@ -1,6 +1,11 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { Kysely } from "kysely";
 import type { Env } from "../../config/env";
+import { DB } from "../../db/database.module";
+import type { Database } from "../../db/types";
+import { newId } from "../ids";
+import { MAILER, type Mailer } from "../../modules/notify/notify.mailer";
 
 type Severity = "info" | "warning" | "critical";
 
@@ -37,9 +42,17 @@ function safeJson(meta: Record<string, unknown>): string {
 export class AlertsService {
   private readonly logger = new Logger(AlertsService.name);
   private readonly webhookUrl: string;
+  private readonly emailTo: string;
 
-  constructor(config: ConfigService<Env, true>) {
+  constructor(
+    config: ConfigService<Env, true>,
+    // Optional so the unit test can construct with config alone; production wires
+    // both. DB persists the alert (admin Alerts page); MAILER emails criticals.
+    @Optional() @Inject(DB) private readonly db?: Kysely<Database>,
+    @Optional() @Inject(MAILER) private readonly mailer?: Mailer,
+  ) {
     this.webhookUrl = config.get("ALERT_WEBHOOK_URL", { infer: true });
+    this.emailTo = config.get("ALERT_EMAIL_TO", { infer: true });
   }
 
   /** Route a domain event (from the outbox relay) to the alert channel if security-relevant. */
@@ -55,6 +68,11 @@ export class AlertsService {
     if (severity === "critical") this.logger.error(line);
     else this.logger.warn(line);
 
+    // Persist for the admin Alerts page + email criticals. Both are best-effort:
+    // alerting must never break the flow it observes.
+    await this.persist(severity, title, meta);
+    if (severity === "critical") await this.emailCritical(title, meta);
+
     if (this.webhookUrl.trim() === "") return;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 5_000);
@@ -69,6 +87,30 @@ export class AlertsService {
       this.logger.warn(`alert webhook failed: ${err instanceof Error ? err.message : "unknown error"}`);
     } finally {
       clearTimeout(timer);
+    }
+  }
+
+  /** Store the alert so it shows on the admin Alerts page. Never throws. */
+  private async persist(severity: Severity, title: string, meta: Record<string, unknown>): Promise<void> {
+    if (!this.db) return;
+    const eventType = typeof meta["event"] === "string" ? (meta["event"] as string) : "direct";
+    try {
+      await this.db
+        .insertInto("alerts")
+        .values({ id: newId(), severity, event_type: eventType, title, metadata: JSON.stringify(meta) })
+        .execute();
+    } catch (err) {
+      this.logger.warn(`alert persist failed: ${err instanceof Error ? err.message : "unknown error"}`);
+    }
+  }
+
+  /** Email a CRITICAL alert to the ops recipients (ALERT_EMAIL_TO). Never throws. */
+  private async emailCritical(title: string, meta: Record<string, unknown>): Promise<void> {
+    if (!this.mailer || this.emailTo.trim() === "") return;
+    try {
+      await this.mailer.send(this.emailTo, `[CRITICAL] ${title}`, `${title}\n\n${safeJson(meta)}`);
+    } catch (err) {
+      this.logger.warn(`alert email failed: ${err instanceof Error ? err.message : "unknown error"}`);
     }
   }
 }

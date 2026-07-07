@@ -10,6 +10,7 @@ import {
   ArrowUpFromLine,
   BadgeCheck,
   BarChart3,
+  BellRing,
   Coins,
   FileText,
   Gauge,
@@ -49,6 +50,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { href: "/admin", labelKey: "navDashboard", icon: Gauge },
   { href: "/admin/system", labelKey: "navSystem", icon: Activity },
+  { href: "/admin/alerts", labelKey: "navAlerts", icon: BellRing },
   { href: "/admin/reports", labelKey: "navReports", icon: BarChart3 },
   { href: "/admin/withdrawals", labelKey: "navWithdrawals", icon: ArrowUpFromLine, gate: "approveWithdrawal" },
   { href: "/admin/disputes", labelKey: "navDisputes", icon: ShieldAlert, gate: "resolveDispute" },

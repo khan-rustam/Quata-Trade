@@ -79,3 +79,10 @@ export class AdminAccountNotFoundError extends AdminError {
  * self-demote), or removing the LAST active super admin. Prevents lock-out.
  */
 export class AdminManagementError extends AdminError {}
+
+/** Acknowledge of an unknown alert id. */
+export class AlertNotFoundError extends AdminError {
+  constructor() {
+    super("alert not found");
+  }
+}

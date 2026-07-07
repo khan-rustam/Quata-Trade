@@ -109,6 +109,7 @@ import {
   type UpdateSettingRequest,
 } from "../schemas/admin.js";
 import { zSystemHealthResponse } from "../schemas/system.js";
+import { zAlertItem, zAlertsResponse } from "../schemas/alerts.js";
 import {
   zBlockedAddress,
   zBlockedAddressesResponse,
@@ -389,6 +390,8 @@ export class QuataApiClient {
   adminRevenue = () => this.request("GET", "/api/v1/admin/revenue", zAdminRevenueResponse);
   adminTreasury = () => this.request("GET", "/api/v1/admin/treasury/balances", zAdminTreasuryResponse);
   adminSystemHealth = () => this.request("GET", "/api/v1/admin/system/health", zSystemHealthResponse);
+  adminAlerts = (query?: Query) => this.request("GET", "/api/v1/admin/alerts", zAlertsResponse, undefined, query);
+  adminAckAlert = (id: string) => this.request("POST", `/api/v1/admin/alerts/${id}/ack`, zAlertItem);
   adminTeam = () => this.request("GET", "/api/v1/admin/team", zAdminAccountsResponse);
   adminCreateAdmin = (body: CreateAdminRequest) => this.request("POST", "/api/v1/admin/team", zAdminAccount, body);
   adminUpdateAdmin = (id: string, body: UpdateAdminRequest) =>

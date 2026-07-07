@@ -452,6 +452,18 @@ export interface WalletConfigsTable {
   created_at: Timestamp;
 }
 
+/** Persisted ops/security alerts (migration 0024). Written by AlertsService. */
+export interface AlertsTable {
+  id: string;
+  severity: string;
+  event_type: string;
+  title: string;
+  metadata: Json<Record<string, unknown>> | null;
+  acknowledged_at: ColumnType<Date | null, Date | null | undefined, Date | null>;
+  acknowledged_by: string | null;
+  created_at: Timestamp;
+}
+
 export interface Database {
   users: UsersTable;
   countries: CountriesTable;
@@ -467,6 +479,7 @@ export interface Database {
   withdrawals: WithdrawalsTable;
   withdrawal_addresses: WithdrawalAddressesTable;
   wallet_configs: WalletConfigsTable;
+  alerts: AlertsTable;
   blocked_addresses: BlockedAddressesTable;
   offers: OffersTable;
   trades: TradesTable;
