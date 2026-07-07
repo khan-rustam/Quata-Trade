@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, ServiceUnavailableException } from "@nestjs/common";
+import { Controller, Delete, Get, Param, Put, Query, ServiceUnavailableException } from "@nestjs/common";
 import { z } from "zod";
 import {
   zMarketCoinsQuery,
@@ -9,10 +9,12 @@ import {
   type MarketCoinsQuery,
   type MarketCoinsResponse,
   type MarketGlobal,
+  type WatchlistResponse,
 } from "@quatatrade/shared";
-import { Public } from "../../common/auth/decorators";
+import { CurrentUserId, Public } from "../../common/auth/decorators";
 import { ZodPipe } from "../../common/zod.pipe";
 import { MarketsService, MarketDataUnavailableError } from "./markets.service";
+import { WatchlistService } from "./watchlist.service";
 
 /** Coin ids from CoinGecko are lowercase slugs (e.g. "bitcoin", "tron"). */
 const zCoinId = z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/);
@@ -24,7 +26,29 @@ const zCoinId = z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/);
  */
 @Controller("markets")
 export class MarketsController {
-  constructor(private readonly markets: MarketsService) {}
+  constructor(
+    private readonly markets: MarketsService,
+    private readonly watchlist: WatchlistService,
+  ) {}
+
+  // ── watchlist (authenticated user — NOT @Public) ─────────────────────────
+  @Get("watchlist")
+  async watchlistList(@CurrentUserId() userId: string): Promise<WatchlistResponse> {
+    return { coinIds: await this.watchlist.list(userId) };
+  }
+
+  @Put("watchlist/:id")
+  async watchlistAdd(@CurrentUserId() userId: string, @Param("id", new ZodPipe(zCoinId)) id: string): Promise<WatchlistResponse> {
+    return { coinIds: await this.watchlist.add(userId, id) };
+  }
+
+  @Delete("watchlist/:id")
+  async watchlistRemove(
+    @CurrentUserId() userId: string,
+    @Param("id", new ZodPipe(zCoinId)) id: string,
+  ): Promise<WatchlistResponse> {
+    return { coinIds: await this.watchlist.remove(userId, id) };
+  }
 
   @Public()
   @Get("global")

@@ -452,6 +452,14 @@ export interface WalletConfigsTable {
   created_at: Timestamp;
 }
 
+/** Personal market watchlist (migration 0025). One row per (user, coin id). */
+export interface WatchlistsTable {
+  id: string;
+  user_id: string;
+  coin_id: string;
+  created_at: Timestamp;
+}
+
 /** Persisted ops/security alerts (migration 0024). Written by AlertsService. */
 export interface AlertsTable {
   id: string;
@@ -480,6 +488,7 @@ export interface Database {
   withdrawal_addresses: WithdrawalAddressesTable;
   wallet_configs: WalletConfigsTable;
   alerts: AlertsTable;
+  watchlists: WatchlistsTable;
   blocked_addresses: BlockedAddressesTable;
   offers: OffersTable;
   trades: TradesTable;

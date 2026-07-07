@@ -110,7 +110,13 @@ import {
 } from "../schemas/admin.js";
 import { zSystemHealthResponse } from "../schemas/system.js";
 import { zAlertItem, zAlertsResponse } from "../schemas/alerts.js";
-import { zMarketGlobal, zMarketCoinsResponse, zMarketCoinDetail, zMarketChart } from "../schemas/markets.js";
+import {
+  zMarketGlobal,
+  zMarketCoinsResponse,
+  zMarketCoinDetail,
+  zMarketChart,
+  zWatchlistResponse,
+} from "../schemas/markets.js";
 import {
   zBlockedAddress,
   zBlockedAddressesResponse,
@@ -245,6 +251,9 @@ export class QuataApiClient {
   marketsCoin = (id: string) => this.request("GET", `/api/v1/markets/coins/${id}`, zMarketCoinDetail);
   marketsChart = (id: string, query?: Query) =>
     this.request("GET", `/api/v1/markets/coins/${id}/chart`, zMarketChart, undefined, query);
+  watchlist = () => this.request("GET", "/api/v1/markets/watchlist", zWatchlistResponse);
+  watchlistAdd = (id: string) => this.request("PUT", `/api/v1/markets/watchlist/${id}`, zWatchlistResponse);
+  watchlistRemove = (id: string) => this.request("DELETE", `/api/v1/markets/watchlist/${id}`, zWatchlistResponse);
 
   // ---- wallet ----
   balances = () => this.request("GET", "/api/v1/wallet/balances", zBalancesResponse);

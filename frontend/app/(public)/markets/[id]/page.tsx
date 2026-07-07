@@ -13,6 +13,8 @@ import { Button, buttonClassName } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PriceChart } from "@/components/markets/price-chart";
+import { StarButton } from "@/components/markets/star-button";
+import { useWatchlist } from "@/hooks/use-watchlist";
 import { api } from "@/lib/api/client";
 
 const REFRESH_MS = 60_000;
@@ -30,6 +32,7 @@ export default function MarketDetailPage(): React.JSX.Element {
   const params = useParams<{ id: string }>();
   const id = params.id;
 
+  const { authed, ids, toggle } = useWatchlist();
   const [range, setRange] = useState<ChartRange>("7d");
   const [kind, setKind] = useState<"line" | "candlestick">("line");
   const [showFull, setShowFull] = useState(false);
@@ -67,6 +70,7 @@ export default function MarketDetailPage(): React.JSX.Element {
                   <h1 className="font-display text-xl font-bold">{c.name}</h1>
                   <span className="text-sm text-text-3">{c.symbol}</span>
                   {c.rank !== null && <Badge tone="neutral">#{c.rank}</Badge>}
+                  {authed && <StarButton active={ids.has(c.id)} onToggle={() => toggle(c.id)} size={18} />}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-money text-2xl font-bold tabular-nums">{price(c.price)}</span>

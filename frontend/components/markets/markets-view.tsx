@@ -10,8 +10,11 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonClassName } from "@/components/ui/button";
+import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkline } from "./sparkline";
+import { StarButton } from "./star-button";
+import { useWatchlist } from "@/hooks/use-watchlist";
 import { api } from "@/lib/api/client";
 
 const REFRESH_MS = 60_000;
@@ -38,8 +41,10 @@ type SortKey = "rank" | "price" | "change1h" | "change24h" | "change7d" | "marke
 
 export function MarketsView(): React.JSX.Element {
   const tx = useTranslations("markets");
+  const { authed, ids, toggle } = useWatchlist();
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
+  const [wlOnly, setWlOnly] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "rank", dir: "asc" });
 
   const global = useQuery({ queryKey: ["markets", "global"], queryFn: () => api.marketsGlobal(), refetchInterval: REFRESH_MS });
@@ -53,6 +58,7 @@ export function MarketsView(): React.JSX.Element {
     let list = coins.data?.items ?? [];
     const term = q.trim().toLowerCase();
     if (term) list = list.filter((c) => c.name.toLowerCase().includes(term) || c.symbol.toLowerCase().includes(term));
+    if (wlOnly) list = list.filter((c) => ids.has(c.id));
     const dir = sort.dir === "asc" ? 1 : -1;
     return [...list].sort((a, b) => {
       const av = a[sort.key];
@@ -61,7 +67,7 @@ export function MarketsView(): React.JSX.Element {
       if (bv === null) return -1;
       return (av - bv) * dir;
     });
-  }, [coins.data, q, sort]);
+  }, [coins.data, q, sort, wlOnly, ids]);
 
   const featured = coins.data?.items.slice(0, 8) ?? [];
 
@@ -95,9 +101,16 @@ export function MarketsView(): React.JSX.Element {
           {coins.isLoading
             ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)
             : featured.map((c) => (
-                <Link key={c.id} href={`/markets/${c.id}`} className="block">
-                  <FeaturedCard c={c} />
-                </Link>
+                <div key={c.id} className="relative">
+                  <Link href={`/markets/${c.id}`} className="block">
+                    <FeaturedCard c={c} />
+                  </Link>
+                  {authed && (
+                    <div className="absolute right-3 top-3">
+                      <StarButton active={ids.has(c.id)} onToggle={() => toggle(c.id)} />
+                    </div>
+                  )}
+                </div>
               ))}
         </div>
       </section>
@@ -127,9 +140,22 @@ export function MarketsView(): React.JSX.Element {
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-medium">{tx("allCoins")}</h2>
-          <div className="relative">
-            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-3" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("searchPlaceholder")} className="w-64 pl-9" />
+          <div className="flex flex-wrap items-center gap-2">
+            {authed && (
+              <Segmented
+                value={wlOnly ? "watch" : "all"}
+                onChange={(v) => setWlOnly(v === "watch")}
+                aria-label={tx("filterLabel")}
+                options={[
+                  { value: "all", label: tx("filterAll") },
+                  { value: "watch", label: tx("filterWatch") },
+                ]}
+              />
+            )}
+            <div className="relative">
+              <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-3" />
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("searchPlaceholder")} className="w-64 pl-9" />
+            </div>
           </div>
         </div>
 
@@ -172,12 +198,15 @@ export function MarketsView(): React.JSX.Element {
                   <tr key={c.id} className="hover:bg-surface-2">
                     <td className="px-3 py-2.5 text-text-3">{c.rank ?? "—"}</td>
                     <td className="px-3 py-2.5">
-                      <Link href={`/markets/${c.id}`} className="flex items-center gap-2 hover:text-accent-400">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={c.image} alt="" width={22} height={22} loading="lazy" className="rounded-full" />
-                        <span className="font-medium">{c.name}</span>
-                        <span className="text-xs text-text-3">{c.symbol}</span>
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        {authed && <StarButton active={ids.has(c.id)} onToggle={() => toggle(c.id)} size={14} />}
+                        <Link href={`/markets/${c.id}`} className="flex items-center gap-2 hover:text-accent-400">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={c.image} alt="" width={22} height={22} loading="lazy" className="rounded-full" />
+                          <span className="font-medium">{c.name}</span>
+                          <span className="text-xs text-text-3">{c.symbol}</span>
+                        </Link>
+                      </div>
                     </td>
                     <td className="px-3 py-2.5 text-right font-money tabular-nums">{price(c.price)}</td>
                     <td className="px-3 py-2.5 text-right"><Change value={c.change1h} /></td>

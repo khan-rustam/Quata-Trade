@@ -86,3 +86,7 @@ export const zMarketChart = z.object({
   candles: z.array(z.object({ t: z.number(), o: z.number(), h: z.number(), l: z.number(), c: z.number() })),
 });
 export type MarketChart = z.infer<typeof zMarketChart>;
+
+// ---- watchlist (Phase C, authenticated) ----
+export const zWatchlistResponse = z.object({ coinIds: z.array(z.string()) });
+export type WatchlistResponse = z.infer<typeof zWatchlistResponse>;
