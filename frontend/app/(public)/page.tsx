@@ -86,9 +86,9 @@ export default async function LandingPage(): Promise<React.JSX.Element> {
             <img 
               src="/images/escrow_vault_illustration.jpg" 
               alt="Secured Crypto Escrow Vault" 
-              className="w-full h-auto object-cover aspect-[4/3] opacity-80"
+              className="w-full h-auto object-cover aspect-4/3 opacity-80"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-t from-bg via-transparent to-transparent pointer-events-none" />
           </Reveal>
         </div>
       </Section>
@@ -136,7 +136,7 @@ export default async function LandingPage(): Promise<React.JSX.Element> {
           <Reveal className="mx-auto max-w-4xl rounded-3xl border border-accent-400/25 bg-surface-1/40 p-8 md:p-14 text-center relative overflow-hidden backdrop-blur-md">
             {/* Background accents */}
             <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
-            <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 h-64 w-64 rounded-full bg-accent-400/5 blur-3xl pointer-events-none" />
+            <div className="absolute -top-25 left-1/2 -translate-x-1/2 h-64 w-64 rounded-full bg-accent-400/5 blur-3xl pointer-events-none" />
 
             <div className="relative z-10 flex flex-col items-center gap-6">
               <BrandMark size={48} className="text-accent-400 animate-pulse" />
