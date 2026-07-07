@@ -423,7 +423,28 @@
     "noDepositsDescription": "Deposit USDT (TRC20) to start trading.",
     "getDepositAddress": "Get deposit address",
     "noWithdrawalsTitle": "No withdrawals yet",
-    "noWithdrawalsDescription": "Your withdrawal history will appear here."
+    "noWithdrawalsDescription": "Your withdrawal history will appear here.",
+    "viewReceipt": "View receipt"
+  },
+  "walletReceipt": {
+    "titleDeposit": "Deposit receipt",
+    "titleWithdrawal": "Withdrawal receipt",
+    "subtitle": "A permanent record of this transaction and every fee applied.",
+    "type": "Type",
+    "deposit": "Deposit",
+    "withdrawal": "Withdrawal",
+    "amount": "Amount",
+    "platformFee": "Platform fee",
+    "networkFee": "Network fee (est.)",
+    "netCredited": "Net credited",
+    "totalDebited": "Total debited",
+    "destination": "Destination",
+    "status": "Status",
+    "confirmations": "Confirmations",
+    "txId": "Transaction ID",
+    "date": "Date",
+    "pending": "Pending",
+    "failure": "Failure reason"
   },
   "walletDeposit": {
     "title": "Deposit USDT",

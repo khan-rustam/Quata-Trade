@@ -423,7 +423,28 @@
     "noDepositsDescription": "Déposez des USDT (TRC20) pour commencer à échanger.",
     "getDepositAddress": "Obtenir une adresse de dépôt",
     "noWithdrawalsTitle": "Aucun retrait pour le moment",
-    "noWithdrawalsDescription": "Votre historique de retraits apparaîtra ici."
+    "noWithdrawalsDescription": "Votre historique de retraits apparaîtra ici.",
+    "viewReceipt": "Voir le reçu"
+  },
+  "walletReceipt": {
+    "titleDeposit": "Reçu de dépôt",
+    "titleWithdrawal": "Reçu de retrait",
+    "subtitle": "Un enregistrement permanent de cette transaction et de tous les frais appliqués.",
+    "type": "Type",
+    "deposit": "Dépôt",
+    "withdrawal": "Retrait",
+    "amount": "Montant",
+    "platformFee": "Frais de plateforme",
+    "networkFee": "Frais réseau (est.)",
+    "netCredited": "Net crédité",
+    "totalDebited": "Total débité",
+    "destination": "Destination",
+    "status": "Statut",
+    "confirmations": "Confirmations",
+    "txId": "ID de transaction",
+    "date": "Date",
+    "pending": "En attente",
+    "failure": "Motif de l'échec"
   },
   "walletDeposit": {
     "title": "Déposer des USDT",

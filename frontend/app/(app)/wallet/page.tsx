@@ -14,8 +14,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { DepositStatusBadge, WithdrawalStatusBadge } from "@/components/ui/status-badge";
 import { Keyhole } from "@/components/brand/keyhole";
 import { shortHash, formatDateTime } from "@/lib/format";
-import { toDisplay } from "@quatatrade/shared";
+import { toDisplay, type Deposit, type Withdrawal } from "@quatatrade/shared";
 import { useBalances, useDeposits, useWithdrawals } from "@/hooks/use-wallet";
+import { TransactionReceipt } from "@/components/wallet/transaction-receipt";
 
 export default function WalletPage(): React.JSX.Element {
   const tx = useTranslations("wallet");
@@ -81,6 +82,7 @@ function WalletAction({ href, icon, label }: { href: string; icon: React.ReactNo
 function DepositsList(): React.JSX.Element {
   const tx = useTranslations("wallet");
   const { data, isLoading } = useDeposits(1);
+  const [receipt, setReceipt] = useState<Deposit | null>(null);
   if (isLoading) return <ListSkeleton />;
   if (!data || data.items.length === 0) {
     return (
@@ -97,50 +99,69 @@ function DepositsList(): React.JSX.Element {
     );
   }
   return (
-    <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
-      {data.items.map((d) => (
-        <div key={d.id} className="flex items-center justify-between px-4 py-3">
-          <div className="min-w-0">
-            <p className="font-money text-sm">{shortHash(d.txHash)}</p>
-            <p className="text-xs text-text-3">{formatDateTime(d.createdAt)}</p>
-            {d.fee !== "0" && (
-              <p className="text-xs text-text-3">
-                {tx("depositFeeNote", { fee: toDisplay(d.fee, "USDT_TRC20", 2), net: toDisplay(d.net, "USDT_TRC20", 2) })}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <Usdt value={d.amount} size="sm" showUnit={false} />
-            <DepositStatusBadge status={d.status} />
-          </div>
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+        {data.items.map((d) => (
+          <button
+            key={d.id}
+            type="button"
+            onClick={() => setReceipt(d)}
+            className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-surface-2"
+            aria-label={tx("viewReceipt")}
+          >
+            <div className="min-w-0">
+              <p className="font-money text-sm">{shortHash(d.txHash)}</p>
+              <p className="text-xs text-text-3">{formatDateTime(d.createdAt)}</p>
+              {d.fee !== "0" && (
+                <p className="text-xs text-text-3">
+                  {tx("depositFeeNote", { fee: toDisplay(d.fee, "USDT_TRC20", 2), net: toDisplay(d.net, "USDT_TRC20", 2) })}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <Usdt value={d.amount} size="sm" showUnit={false} />
+              <DepositStatusBadge status={d.status} />
+            </div>
+          </button>
+        ))}
+      </div>
+      {receipt && <TransactionReceipt kind="deposit" data={receipt} open onClose={() => setReceipt(null)} />}
+    </>
   );
 }
 
 function WithdrawalsList(): React.JSX.Element {
   const tx = useTranslations("wallet");
   const { data, isLoading } = useWithdrawals(1);
+  const [receipt, setReceipt] = useState<Withdrawal | null>(null);
   if (isLoading) return <ListSkeleton />;
   if (!data || data.items.length === 0) {
     return <EmptyState icon={History} title={tx("noWithdrawalsTitle")} description={tx("noWithdrawalsDescription")} />;
   }
   return (
-    <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
-      {data.items.map((w) => (
-        <div key={w.id} className="flex items-center justify-between px-4 py-3">
-          <div className="min-w-0">
-            <p className="font-money text-sm">{shortHash(w.toAddress)}</p>
-            <p className="text-xs text-text-3">{formatDateTime(w.createdAt)}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Usdt value={w.amount} size="sm" showUnit={false} />
-            <WithdrawalStatusBadge status={w.status} />
-          </div>
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+        {data.items.map((w) => (
+          <button
+            key={w.id}
+            type="button"
+            onClick={() => setReceipt(w)}
+            className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-surface-2"
+            aria-label={tx("viewReceipt")}
+          >
+            <div className="min-w-0">
+              <p className="font-money text-sm">{shortHash(w.toAddress)}</p>
+              <p className="text-xs text-text-3">{formatDateTime(w.createdAt)}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Usdt value={w.amount} size="sm" showUnit={false} />
+              <WithdrawalStatusBadge status={w.status} />
+            </div>
+          </button>
+        ))}
+      </div>
+      {receipt && <TransactionReceipt kind="withdrawal" data={receipt} open onClose={() => setReceipt(null)} />}
+    </>
   );
 }
 
