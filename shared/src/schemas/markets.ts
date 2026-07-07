@@ -48,3 +48,41 @@ export const zMarketCoinsResponse = z.object({
   perPage: z.number().int(),
 });
 export type MarketCoinsResponse = z.infer<typeof zMarketCoinsResponse>;
+
+// ---- asset detail (Phase B) ----
+export const zMarketCoinDetail = z.object({
+  id: z.string(),
+  symbol: z.string(),
+  name: z.string(),
+  image: z.string(),
+  description: z.string(),
+  price: z.number(),
+  change24h: z.number().nullable(),
+  high24h: z.number().nullable(),
+  low24h: z.number().nullable(),
+  ath: z.number().nullable(),
+  athDate: z.string().nullable(),
+  atl: z.number().nullable(),
+  atlDate: z.string().nullable(),
+  marketCap: z.number(),
+  fdv: z.number().nullable(),
+  circulatingSupply: z.number().nullable(),
+  totalSupply: z.number().nullable(),
+  maxSupply: z.number().nullable(),
+  volume24h: z.number(),
+  rank: z.number().nullable(),
+});
+export type MarketCoinDetail = z.infer<typeof zMarketCoinDetail>;
+
+export const zChartRange = z.enum(["24h", "7d", "30d", "90d", "1y", "all"]);
+export type ChartRange = z.infer<typeof zChartRange>;
+
+export const zChartRangeQuery = z.object({ range: zChartRange.default("7d") });
+export type ChartRangeQuery = z.infer<typeof zChartRangeQuery>;
+
+export const zMarketChart = z.object({
+  range: z.string(),
+  line: z.array(z.object({ t: z.number(), v: z.number() })),
+  candles: z.array(z.object({ t: z.number(), o: z.number(), h: z.number(), l: z.number(), c: z.number() })),
+});
+export type MarketChart = z.infer<typeof zMarketChart>;

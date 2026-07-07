@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type Redis from "ioredis";
-import type { MarketCoin, MarketGlobal } from "@quatatrade/shared";
+import type { MarketChart, MarketCoin, MarketCoinDetail, MarketGlobal } from "@quatatrade/shared";
 import type { Env } from "../../config/env";
 import { REDIS } from "../../common/redis/redis.module";
 import { MARKET_PROVIDERS } from "./markets.tokens";
@@ -41,6 +41,14 @@ export class MarketsService {
   coins(params: ListCoinsParams): Promise<MarketCoin[]> {
     const key = `markets:coins:${params.order}:${params.page}:${params.perPage}`;
     return this.cached(key, () => this.fromProviders((p) => p.listCoins(params)));
+  }
+
+  coin(id: string): Promise<MarketCoinDetail> {
+    return this.cached(`markets:coin:${id}`, () => this.fromProviders((p) => p.getCoin(id)));
+  }
+
+  chart(id: string, range: string): Promise<MarketChart> {
+    return this.cached(`markets:chart:${id}:${range}`, () => this.fromProviders((p) => p.getChart(id, range)));
   }
 
   /** Try each provider in order; the first success wins (automatic failover). */

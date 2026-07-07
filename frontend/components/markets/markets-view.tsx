@@ -94,7 +94,11 @@ export function MarketsView(): React.JSX.Element {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {coins.isLoading
             ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)
-            : featured.map((c) => <FeaturedCard key={c.id} c={c} />)}
+            : featured.map((c) => (
+                <Link key={c.id} href={`/markets/${c.id}`} className="block">
+                  <FeaturedCard c={c} />
+                </Link>
+              ))}
         </div>
       </section>
 
@@ -168,12 +172,12 @@ export function MarketsView(): React.JSX.Element {
                   <tr key={c.id} className="hover:bg-surface-2">
                     <td className="px-3 py-2.5 text-text-3">{c.rank ?? "—"}</td>
                     <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-2">
+                      <Link href={`/markets/${c.id}`} className="flex items-center gap-2 hover:text-accent-400">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={c.image} alt="" width={22} height={22} loading="lazy" className="rounded-full" />
                         <span className="font-medium">{c.name}</span>
                         <span className="text-xs text-text-3">{c.symbol}</span>
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-3 py-2.5 text-right font-money tabular-nums">{price(c.price)}</td>
                     <td className="px-3 py-2.5 text-right"><Change value={c.change1h} /></td>

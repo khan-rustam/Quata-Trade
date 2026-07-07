@@ -1,8 +1,21 @@
-import { Controller, Get, Query, ServiceUnavailableException } from "@nestjs/common";
-import { zMarketCoinsQuery, type MarketCoinsQuery, type MarketCoinsResponse, type MarketGlobal } from "@quatatrade/shared";
+import { Controller, Get, Param, Query, ServiceUnavailableException } from "@nestjs/common";
+import { z } from "zod";
+import {
+  zMarketCoinsQuery,
+  zChartRangeQuery,
+  type ChartRangeQuery,
+  type MarketChart,
+  type MarketCoinDetail,
+  type MarketCoinsQuery,
+  type MarketCoinsResponse,
+  type MarketGlobal,
+} from "@quatatrade/shared";
 import { Public } from "../../common/auth/decorators";
 import { ZodPipe } from "../../common/zod.pipe";
 import { MarketsService, MarketDataUnavailableError } from "./markets.service";
+
+/** Coin ids from CoinGecko are lowercase slugs (e.g. "bitcoin", "tron"). */
+const zCoinId = z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/);
 
 /**
  * markets — public, read-only market data (informational; independent of the
@@ -29,6 +42,29 @@ export class MarketsController {
     try {
       const items = await this.markets.coins({ order: q.order, page: q.page, perPage: q.perPage });
       return { items, page: q.page, perPage: q.perPage };
+    } catch (err) {
+      throw this.map(err);
+    }
+  }
+
+  @Public()
+  @Get("coins/:id")
+  async coin(@Param("id", new ZodPipe(zCoinId)) id: string): Promise<MarketCoinDetail> {
+    try {
+      return await this.markets.coin(id);
+    } catch (err) {
+      throw this.map(err);
+    }
+  }
+
+  @Public()
+  @Get("coins/:id/chart")
+  async chart(
+    @Param("id", new ZodPipe(zCoinId)) id: string,
+    @Query(new ZodPipe(zChartRangeQuery)) q: ChartRangeQuery,
+  ): Promise<MarketChart> {
+    try {
+      return await this.markets.chart(id, q.range);
     } catch (err) {
       throw this.map(err);
     }
