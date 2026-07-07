@@ -89,11 +89,13 @@ import {
   zAdminUserDetail,
   zAdminWithdrawalsResponse,
   zAdminSettingsResponse,
+  zAdminWalletConfigResponse,
   zAuditLogsResponse,
   zAuditVerifyResponse,
   zKillSwitchState,
   zLedgerAdjustmentResponse,
   zModerationResult,
+  type ActivateWalletConfigRequest,
   type AdminLoginRequest,
   type ApproveWithdrawalRequest,
   type KillSwitchRequest,
@@ -380,4 +382,7 @@ export class QuataApiClient {
   adminVerifyAudit = () => this.request("GET", "/api/v1/admin/audit-logs/verify", zAuditVerifyResponse);
   adminRevenue = () => this.request("GET", "/api/v1/admin/revenue", zAdminRevenueResponse);
   adminTreasury = () => this.request("GET", "/api/v1/admin/treasury/balances", zAdminTreasuryResponse);
+  adminWalletConfig = () => this.request("GET", "/api/v1/admin/wallet-config", zAdminWalletConfigResponse);
+  adminActivateWalletConfig = (body: ActivateWalletConfigRequest) =>
+    this.request("POST", "/api/v1/admin/wallet-config/activate", zAdminWalletConfigResponse, body);
 }
