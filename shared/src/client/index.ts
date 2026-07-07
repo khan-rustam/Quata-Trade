@@ -116,6 +116,7 @@ import {
   zMarketCoinDetail,
   zMarketChart,
   zWatchlistResponse,
+  zFearGreed,
 } from "../schemas/markets.js";
 import {
   zBlockedAddress,
@@ -251,6 +252,7 @@ export class QuataApiClient {
   marketsCoin = (id: string) => this.request("GET", `/api/v1/markets/coins/${id}`, zMarketCoinDetail);
   marketsChart = (id: string, query?: Query) =>
     this.request("GET", `/api/v1/markets/coins/${id}/chart`, zMarketChart, undefined, query);
+  marketsFearGreed = () => this.request("GET", "/api/v1/markets/fear-greed", zFearGreed);
   watchlist = () => this.request("GET", "/api/v1/markets/watchlist", zWatchlistResponse);
   watchlistAdd = (id: string) => this.request("PUT", `/api/v1/markets/watchlist/${id}`, zWatchlistResponse);
   watchlistRemove = (id: string) => this.request("DELETE", `/api/v1/markets/watchlist/${id}`, zWatchlistResponse);

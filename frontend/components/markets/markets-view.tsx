@@ -14,6 +14,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkline } from "./sparkline";
 import { StarButton } from "./star-button";
+import { FearGreedGauge } from "./fear-greed";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { api } from "@/lib/api/client";
 
@@ -93,6 +94,17 @@ export function MarketsView(): React.JSX.Element {
             <OverviewTile label={tx("activeCryptos")} value={nf({ notation: "compact" }).format(global.data.activeCryptos)} />
           </>
         )}
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-2">
+        <FearGreedGauge />
+        <Card className="flex flex-col items-start justify-center gap-2">
+          <p className="font-medium">{tx("compareTitle")}</p>
+          <p className="text-sm text-text-2">{tx("compareBody")}</p>
+          <Link href="/markets/compare" className={buttonClassName({ size: "sm", variant: "secondary" })}>
+            {tx("compareCta")}
+          </Link>
+        </Card>
       </section>
 
       <section className="space-y-3">

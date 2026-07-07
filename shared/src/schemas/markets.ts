@@ -90,3 +90,11 @@ export type MarketChart = z.infer<typeof zMarketChart>;
 // ---- watchlist (Phase C, authenticated) ----
 export const zWatchlistResponse = z.object({ coinIds: z.array(z.string()) });
 export type WatchlistResponse = z.infer<typeof zWatchlistResponse>;
+
+// ---- fear & greed (Phase D) ----
+export const zFearGreed = z.object({
+  value: z.number(), // 0..100
+  classification: z.string(),
+  history: z.array(z.object({ t: z.number(), v: z.number() })),
+});
+export type FearGreed = z.infer<typeof zFearGreed>;

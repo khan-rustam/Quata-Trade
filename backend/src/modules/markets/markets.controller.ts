@@ -10,6 +10,7 @@ import {
   type MarketCoinsResponse,
   type MarketGlobal,
   type WatchlistResponse,
+  type FearGreed,
 } from "@quatatrade/shared";
 import { CurrentUserId, Public } from "../../common/auth/decorators";
 import { ZodPipe } from "../../common/zod.pipe";
@@ -66,6 +67,16 @@ export class MarketsController {
     try {
       const items = await this.markets.coins({ order: q.order, page: q.page, perPage: q.perPage });
       return { items, page: q.page, perPage: q.perPage };
+    } catch (err) {
+      throw this.map(err);
+    }
+  }
+
+  @Public()
+  @Get("fear-greed")
+  async fearGreed(): Promise<FearGreed> {
+    try {
+      return await this.markets.fearGreed();
     } catch (err) {
       throw this.map(err);
     }

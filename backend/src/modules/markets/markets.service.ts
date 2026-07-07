@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type Redis from "ioredis";
-import type { MarketChart, MarketCoin, MarketCoinDetail, MarketGlobal } from "@quatatrade/shared";
+import type { FearGreed, MarketChart, MarketCoin, MarketCoinDetail, MarketGlobal } from "@quatatrade/shared";
 import type { Env } from "../../config/env";
 import { REDIS } from "../../common/redis/redis.module";
 import { MARKET_PROVIDERS } from "./markets.tokens";
@@ -49,6 +49,29 @@ export class MarketsService {
 
   chart(id: string, range: string): Promise<MarketChart> {
     return this.cached(`markets:chart:${id}:${range}`, () => this.fromProviders((p) => p.getChart(id, range)));
+  }
+
+  /** Crypto Fear & Greed index (alternative.me — single free source, cached). */
+  fearGreed(): Promise<FearGreed> {
+    return this.cached("markets:fng", async () => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      try {
+        const res = await fetch("https://api.alternative.me/fng/?limit=30", { signal: controller.signal });
+        if (!res.ok) throw new Error(`fng ${res.status}`);
+        const body = (await res.json()) as { data?: { value: string; value_classification: string; timestamp: string }[] };
+        const data = body.data ?? [];
+        const latest = data[0];
+        return {
+          value: latest ? Number(latest.value) : 0,
+          classification: latest?.value_classification ?? "Unknown",
+          // oldest → newest for the trend line
+          history: [...data].reverse().map((d) => ({ t: Number(d.timestamp) * 1000, v: Number(d.value) })),
+        };
+      } finally {
+        clearTimeout(timer);
+      }
+    });
   }
 
   /** Try each provider in order; the first success wins (automatic failover). */
