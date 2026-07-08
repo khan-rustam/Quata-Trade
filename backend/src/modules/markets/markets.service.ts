@@ -44,11 +44,13 @@ export class MarketsService {
   }
 
   coin(id: string): Promise<MarketCoinDetail> {
-    return this.cached(`markets:coin:${id}`, () => this.fromProviders((p) => p.getCoin(id)));
+    // Detail + charts change slowly and are the heaviest upstream calls — cache
+    // them longer to stay well under the CoinGecko free-tier rate limit.
+    return this.cached(`markets:coin:${id}`, () => this.fromProviders((p) => p.getCoin(id)), 300);
   }
 
   chart(id: string, range: string): Promise<MarketChart> {
-    return this.cached(`markets:chart:${id}:${range}`, () => this.fromProviders((p) => p.getChart(id, range)));
+    return this.cached(`markets:chart:${id}:${range}`, () => this.fromProviders((p) => p.getChart(id, range)), 300);
   }
 
   /** Crypto Fear & Greed index (alternative.me — single free source, cached). */
@@ -88,14 +90,14 @@ export class MarketsService {
     throw lastErr ?? new MarketDataUnavailableError();
   }
 
-  private async cached<T>(key: string, fetchFresh: () => Promise<T>): Promise<T> {
+  private async cached<T>(key: string, fetchFresh: () => Promise<T>, ttl: number = this.ttl): Promise<T> {
     const hit = await this.redis.get(key).catch(() => null);
     if (hit) return JSON.parse(hit) as T;
     try {
       const fresh = await fetchFresh();
       const payload = JSON.stringify(fresh);
       // Fresh copy with TTL + a persistent last-good copy for outage fallback.
-      await this.redis.set(key, payload, "EX", this.ttl).catch(() => undefined);
+      await this.redis.set(key, payload, "EX", ttl).catch(() => undefined);
       await this.redis.set(`${key}:stale`, payload).catch(() => undefined);
       return fresh;
     } catch (err) {

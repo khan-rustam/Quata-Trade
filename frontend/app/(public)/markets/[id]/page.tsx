@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonClassName } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PriceChart } from "@/components/markets/price-chart";
+import { LightweightChart } from "@/components/markets/lightweight-chart";
 import { StarButton } from "@/components/markets/star-button";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { api } from "@/lib/api/client";
@@ -109,10 +109,19 @@ export default function MarketDetailPage(): React.JSX.Element {
                 ]}
               />
             </div>
-            {chart.isLoading || !chart.data ? (
+            {chart.isLoading ? (
               <Skeleton className="h-72 w-full" />
+            ) : chart.isError ? (
+              <div className="flex h-72 flex-col items-center justify-center gap-2 text-sm text-text-3">
+                <span>{tx("chartError")}</span>
+                <Button size="sm" variant="secondary" onClick={() => void chart.refetch()}>
+                  {tx("retry")}
+                </Button>
+              </div>
+            ) : chart.data && (chart.data.line.length > 1 || chart.data.candles.length > 1) ? (
+              <LightweightChart chart={chart.data} kind={kind} />
             ) : (
-              <PriceChart chart={chart.data} kind={kind} />
+              <div className="flex h-72 items-center justify-center text-sm text-text-3">{tx("chartEmpty")}</div>
             )}
           </Card>
 
