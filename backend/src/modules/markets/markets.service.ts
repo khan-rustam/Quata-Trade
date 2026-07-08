@@ -8,6 +8,8 @@ import type {
   MarketCoinDetail,
   MarketGlobal,
   MarketMovers,
+  NewsItem,
+  NewsResponse,
   TrendingCoin,
 } from "@quatatrade/shared";
 import type { Env } from "../../config/env";
@@ -33,6 +35,7 @@ export class MarketDataUnavailableError extends Error {
 export class MarketsService {
   private readonly logger = new Logger(MarketsService.name);
   private readonly ttl: number;
+  private readonly newsKey: string;
 
   constructor(
     @Inject(REDIS) private readonly redis: Redis,
@@ -40,6 +43,7 @@ export class MarketsService {
     config: ConfigService<Env, true>,
   ) {
     this.ttl = config.get("MARKETS_CACHE_TTL_SECONDS", { infer: true });
+    this.newsKey = config.get("CRYPTOPANIC_API_KEY", { infer: true });
   }
 
   global(): Promise<MarketGlobal> {
@@ -47,7 +51,7 @@ export class MarketsService {
   }
 
   coins(params: ListCoinsParams): Promise<MarketCoin[]> {
-    const key = `markets:coins:${params.order}:${params.page}:${params.perPage}`;
+    const key = `markets:coins:${params.order}:${params.page}:${params.perPage}:${params.category ?? "all"}`;
     return this.cached(key, () => this.fromProviders((p) => p.listCoins(params)));
   }
 
@@ -82,6 +86,43 @@ export class MarketsService {
 
   search(query: string): Promise<TrendingCoin[]> {
     return this.cached(`markets:search:${query.toLowerCase()}`, () => this.fromProviders((p) => p.search(query)), 120);
+  }
+
+  /** Crypto news (CryptoPanic). Empty list when no key is configured (feature off). */
+  news(): Promise<NewsResponse> {
+    if (this.newsKey.trim() === "") return Promise.resolve({ items: [] });
+    return this.cached(
+      "markets:news",
+      async () => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 8000);
+        try {
+          const url = `https://cryptopanic.com/api/v1/posts/?auth_token=${encodeURIComponent(this.newsKey)}&public=true&kind=news`;
+          const res = await fetch(url, { signal: controller.signal });
+          if (!res.ok) throw new Error(`cryptopanic ${res.status}`);
+          const body = (await res.json()) as {
+            results?: {
+              title: string;
+              url: string;
+              published_at: string;
+              source?: { title?: string };
+              currencies?: { code?: string }[];
+            }[];
+          };
+          const items: NewsItem[] = (body.results ?? []).slice(0, 20).map((r) => ({
+            title: r.title,
+            url: r.url,
+            source: r.source?.title ?? "",
+            publishedAt: r.published_at,
+            currencies: (r.currencies ?? []).map((c) => c.code ?? "").filter(Boolean).slice(0, 4),
+          }));
+          return { items };
+        } finally {
+          clearTimeout(timer);
+        }
+      },
+      300,
+    );
   }
 
   /** Crypto Fear & Greed index (alternative.me — single free source, cached). */

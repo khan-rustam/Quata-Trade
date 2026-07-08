@@ -17,11 +17,23 @@ import { StarButton } from "./star-button";
 import { FearGreedGauge } from "./fear-greed";
 import { MarketMovers } from "./market-movers";
 import { MarketSearch } from "./market-search";
+import { MarketNews } from "./market-news";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { api } from "@/lib/api/client";
 
 const REFRESH_MS = 60_000;
 const PER_PAGE = 100;
+
+// Curated CoinGecko category ids for the filter chips (stable slugs).
+const CATEGORIES: { id: string; label: string }[] = [
+  { id: "decentralized-finance-defi", label: "DeFi" },
+  { id: "layer-1", label: "Layer 1" },
+  { id: "stablecoins", label: "Stablecoins" },
+  { id: "meme-token", label: "Memes" },
+  { id: "artificial-intelligence", label: "AI" },
+  { id: "gaming", label: "Gaming" },
+  { id: "exchange-based-tokens", label: "Exchange" },
+];
 
 const nf = (opts: Intl.NumberFormatOptions) => new Intl.NumberFormat("en", opts);
 const usdCompact = (n: number) => "$" + nf({ notation: "compact", maximumFractionDigits: 2 }).format(n);
@@ -47,15 +59,22 @@ export function MarketsView(): React.JSX.Element {
   const { authed, ids, toggle } = useWatchlist();
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
+  const [category, setCategory] = useState("");
   const [wlOnly, setWlOnly] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "rank", dir: "asc" });
 
   const global = useQuery({ queryKey: ["markets", "global"], queryFn: () => api.marketsGlobal(), refetchInterval: REFRESH_MS });
   const coins = useQuery({
-    queryKey: ["markets", "coins", page],
-    queryFn: () => api.marketsCoins({ page: String(page), perPage: String(PER_PAGE) }),
+    queryKey: ["markets", "coins", page, category],
+    queryFn: () =>
+      api.marketsCoins({ page: String(page), perPage: String(PER_PAGE), ...(category ? { category } : {}) }),
     refetchInterval: REFRESH_MS,
   });
+
+  const pickCategory = (id: string) => {
+    setCategory(id);
+    setPage(1);
+  };
 
   const rows = useMemo(() => {
     let list = coins.data?.items ?? [];
@@ -134,6 +153,8 @@ export function MarketsView(): React.JSX.Element {
         </div>
       </section>
 
+      <MarketNews />
+
       <section className="space-y-3">
         <h2 className="font-display text-lg font-medium">{tx("supportedTitle")}</h2>
         <Card className="flex flex-wrap items-center justify-between gap-3">
@@ -176,6 +197,13 @@ export function MarketsView(): React.JSX.Element {
               <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("searchPlaceholder")} className="w-64 pl-9" />
             </div>
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5">
+          <CategoryChip active={category === ""} onClick={() => pickCategory("")} label={tx("filterAll")} />
+          {CATEGORIES.map((cat) => (
+            <CategoryChip key={cat.id} active={category === cat.id} onClick={() => pickCategory(cat.id)} label={cat.label} />
+          ))}
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-border">
@@ -260,6 +288,22 @@ export function MarketsView(): React.JSX.Element {
         <p className="text-xs text-text-3">{tx("dataNote")}</p>
       </section>
     </div>
+  );
+}
+
+function CategoryChip({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        active
+          ? "rounded-full bg-accent-400/15 px-3 py-1 text-xs font-medium text-accent-400"
+          : "rounded-full bg-surface-2 px-3 py-1 text-xs text-text-2 hover:bg-surface-3 hover:text-text-1"
+      }
+    >
+      {label}
+    </button>
   );
 }
 

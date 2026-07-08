@@ -39,6 +39,13 @@ export const zMarketCoinsQuery = z.object({
   order: z.enum(["market_cap_desc", "market_cap_asc", "volume_desc"]).default("market_cap_desc"),
   page: z.coerce.number().int().min(1).default(1),
   perPage: z.coerce.number().int().min(1).max(250).default(100),
+  // CoinGecko category id (e.g. "decentralized-finance-defi"). Empty = all.
+  category: z
+    .string()
+    .trim()
+    .max(60)
+    .regex(/^[a-z0-9-]+$/)
+    .optional(),
 });
 export type MarketCoinsQuery = z.infer<typeof zMarketCoinsQuery>;
 
@@ -121,6 +128,19 @@ export type MarketSearchQuery = z.infer<typeof zMarketSearchQuery>;
 
 export const zMarketSearchResponse = z.object({ coins: z.array(zTrendingCoin) });
 export type MarketSearchResponse = z.infer<typeof zMarketSearchResponse>;
+
+// ---- news (Phase F, CryptoPanic) ----
+export const zNewsItem = z.object({
+  title: z.string(),
+  url: z.string(),
+  source: z.string(),
+  publishedAt: z.string(),
+  currencies: z.array(z.string()),
+});
+export type NewsItem = z.infer<typeof zNewsItem>;
+
+export const zNewsResponse = z.object({ items: z.array(zNewsItem) });
+export type NewsResponse = z.infer<typeof zNewsResponse>;
 
 // ---- fear & greed (Phase D) ----
 export const zFearGreed = z.object({

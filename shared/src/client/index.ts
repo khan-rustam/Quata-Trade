@@ -119,6 +119,7 @@ import {
   zFearGreed,
   zMarketMovers,
   zMarketSearchResponse,
+  zNewsResponse,
 } from "../schemas/markets.js";
 import {
   zBlockedAddress,
@@ -257,6 +258,7 @@ export class QuataApiClient {
   marketsFearGreed = () => this.request("GET", "/api/v1/markets/fear-greed", zFearGreed);
   marketsMovers = () => this.request("GET", "/api/v1/markets/movers", zMarketMovers);
   marketsSearch = (query?: Query) => this.request("GET", "/api/v1/markets/search", zMarketSearchResponse, undefined, query);
+  marketsNews = () => this.request("GET", "/api/v1/markets/news", zNewsResponse);
   watchlist = () => this.request("GET", "/api/v1/markets/watchlist", zWatchlistResponse);
   watchlistAdd = (id: string) => this.request("PUT", `/api/v1/markets/watchlist/${id}`, zWatchlistResponse);
   watchlistRemove = (id: string) => this.request("DELETE", `/api/v1/markets/watchlist/${id}`, zWatchlistResponse);

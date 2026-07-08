@@ -92,6 +92,8 @@ export const envSchema = z.object({
   COINGECKO_API_URL: z.string().url().default("https://api.coingecko.com/api/v3"),
   COINGECKO_API_KEY: z.string().default(""),
   MARKETS_CACHE_TTL_SECONDS: z.coerce.number().int().min(10).max(600).default(45),
+  // Crypto news (CryptoPanic). Empty = news section hidden (feature off).
+  CRYPTOPANIC_API_KEY: z.string().default(""),
 
   SWAGGER_ENABLED: z
     .string()

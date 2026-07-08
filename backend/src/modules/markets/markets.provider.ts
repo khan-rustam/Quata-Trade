@@ -8,6 +8,7 @@ export interface ListCoinsParams {
   order: "market_cap_desc" | "market_cap_asc" | "volume_desc";
   page: number;
   perPage: number;
+  category?: string;
 }
 
 /** How many days of history a chart range maps to (CoinGecko `days` param). */
@@ -171,6 +172,7 @@ export class CoinGeckoProvider implements MarketDataProvider {
       sparkline: "true",
       price_change_percentage: "1h,24h,7d",
     });
+    if (params.category) q.set("category", params.category);
     const rows = await fetchJson<CgCoin[]>(`${this.baseUrl}/coins/markets?${q.toString()}`, this.headers);
     return rows.map((c) => ({
       id: c.id,
