@@ -49,7 +49,7 @@ export const zMarketCoinsResponse = z.object({
 });
 export type MarketCoinsResponse = z.infer<typeof zMarketCoinsResponse>;
 
-// ---- asset detail (Phase B) ----
+// ---- asset detail (Phase B, enriched Phase E) ----
 export const zMarketCoinDetail = z.object({
   id: z.string(),
   symbol: z.string(),
@@ -71,6 +71,13 @@ export const zMarketCoinDetail = z.object({
   maxSupply: z.number().nullable(),
   volume24h: z.number(),
   rank: z.number().nullable(),
+  // Phase E extras (from the CoinGecko detail payload)
+  homepage: z.string().nullable(),
+  explorer: z.string().nullable(),
+  twitter: z.string().nullable(),
+  reddit: z.string().nullable(),
+  categories: z.array(z.string()),
+  sentimentUp: z.number().nullable(),
 });
 export type MarketCoinDetail = z.infer<typeof zMarketCoinDetail>;
 
@@ -90,6 +97,30 @@ export type MarketChart = z.infer<typeof zMarketChart>;
 // ---- watchlist (Phase C, authenticated) ----
 export const zWatchlistResponse = z.object({ coinIds: z.array(z.string()) });
 export type WatchlistResponse = z.infer<typeof zWatchlistResponse>;
+
+// ---- movers + search (Phase E) ----
+export const zTrendingCoin = z.object({
+  id: z.string(),
+  symbol: z.string(),
+  name: z.string(),
+  image: z.string(),
+  rank: z.number().nullable(),
+});
+export type TrendingCoin = z.infer<typeof zTrendingCoin>;
+
+export const zMarketMovers = z.object({
+  trending: z.array(zTrendingCoin),
+  gainers: z.array(zMarketCoin),
+  losers: z.array(zMarketCoin),
+  topVolume: z.array(zMarketCoin),
+});
+export type MarketMovers = z.infer<typeof zMarketMovers>;
+
+export const zMarketSearchQuery = z.object({ q: z.string().trim().min(1).max(80) });
+export type MarketSearchQuery = z.infer<typeof zMarketSearchQuery>;
+
+export const zMarketSearchResponse = z.object({ coins: z.array(zTrendingCoin) });
+export type MarketSearchResponse = z.infer<typeof zMarketSearchResponse>;
 
 // ---- fear & greed (Phase D) ----
 export const zFearGreed = z.object({

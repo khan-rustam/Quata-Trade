@@ -3,12 +3,16 @@ import { z } from "zod";
 import {
   zMarketCoinsQuery,
   zChartRangeQuery,
+  zMarketSearchQuery,
   type ChartRangeQuery,
   type MarketChart,
   type MarketCoinDetail,
   type MarketCoinsQuery,
   type MarketCoinsResponse,
   type MarketGlobal,
+  type MarketMovers,
+  type MarketSearchQuery,
+  type MarketSearchResponse,
   type WatchlistResponse,
   type FearGreed,
 } from "@quatatrade/shared";
@@ -67,6 +71,26 @@ export class MarketsController {
     try {
       const items = await this.markets.coins({ order: q.order, page: q.page, perPage: q.perPage });
       return { items, page: q.page, perPage: q.perPage };
+    } catch (err) {
+      throw this.map(err);
+    }
+  }
+
+  @Public()
+  @Get("movers")
+  async movers(): Promise<MarketMovers> {
+    try {
+      return await this.markets.movers();
+    } catch (err) {
+      throw this.map(err);
+    }
+  }
+
+  @Public()
+  @Get("search")
+  async search(@Query(new ZodPipe(zMarketSearchQuery)) q: MarketSearchQuery): Promise<MarketSearchResponse> {
+    try {
+      return { coins: await this.markets.search(q.q) };
     } catch (err) {
       throw this.map(err);
     }

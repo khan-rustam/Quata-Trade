@@ -1,7 +1,15 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type Redis from "ioredis";
-import type { FearGreed, MarketChart, MarketCoin, MarketCoinDetail, MarketGlobal } from "@quatatrade/shared";
+import type {
+  FearGreed,
+  MarketChart,
+  MarketCoin,
+  MarketCoinDetail,
+  MarketGlobal,
+  MarketMovers,
+  TrendingCoin,
+} from "@quatatrade/shared";
 import type { Env } from "../../config/env";
 import { REDIS } from "../../common/redis/redis.module";
 import { MARKET_PROVIDERS } from "./markets.tokens";
@@ -51,6 +59,29 @@ export class MarketsService {
 
   chart(id: string, range: string): Promise<MarketChart> {
     return this.cached(`markets:chart:${id}:${range}`, () => this.fromProviders((p) => p.getChart(id, range)), 300);
+  }
+
+  /** Trending + top gainers/losers/volume, derived from the top 250 by market cap. */
+  movers(): Promise<MarketMovers> {
+    return this.cached("markets:movers", async () => {
+      const [top, trending] = await Promise.all([
+        this.fromProviders((p) => p.listCoins({ order: "market_cap_desc", page: 1, perPage: 250 })),
+        this.fromProviders((p) => p.trending()).catch(() => [] as TrendingCoin[]),
+      ]);
+      const withChange = top.filter((c) => c.change24h !== null);
+      const byChange = [...withChange].sort((a, b) => (b.change24h ?? 0) - (a.change24h ?? 0));
+      const byVolume = [...top].sort((a, b) => b.volume24h - a.volume24h);
+      return {
+        trending,
+        gainers: byChange.slice(0, 7),
+        losers: byChange.slice(-7).reverse(),
+        topVolume: byVolume.slice(0, 7),
+      };
+    });
+  }
+
+  search(query: string): Promise<TrendingCoin[]> {
+    return this.cached(`markets:search:${query.toLowerCase()}`, () => this.fromProviders((p) => p.search(query)), 120);
   }
 
   /** Crypto Fear & Greed index (alternative.me — single free source, cached). */

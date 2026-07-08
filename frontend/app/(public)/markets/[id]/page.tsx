@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowUp, ArrowDown, CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, CheckCircle2, Clock, Globe, Link2, ExternalLink } from "lucide-react";
 import type { ChartRange, MarketCoinDetail } from "@quatatrade/shared";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -139,6 +139,38 @@ export default function MarketDetailPage(): React.JSX.Element {
             <Stat label={tx("maxSupply")} value={supply(c.maxSupply)} />
           </div>
 
+          {/* links · categories · sentiment */}
+          {(c.homepage || c.explorer || c.twitter || c.reddit || c.categories.length > 0 || c.sentimentUp !== null) && (
+            <Card className="space-y-3">
+              {c.categories.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {c.categories.map((cat) => (
+                    <Badge key={cat} tone="neutral">
+                      {cat}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              {c.sentimentUp !== null && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-success">{tx("bullish", { pct: c.sentimentUp.toFixed(0) })}</span>
+                    <span className="text-danger">{tx("bearish", { pct: (100 - c.sentimentUp).toFixed(0) })}</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-danger/30">
+                    <div className="h-full bg-success" style={{ width: `${c.sentimentUp}%` }} />
+                  </div>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {c.homepage && <LinkChip href={c.homepage} label={tx("website")} icon={<Globe size={13} />} />}
+                {c.explorer && <LinkChip href={c.explorer} label={tx("explorer")} icon={<Link2 size={13} />} />}
+                {c.twitter && <LinkChip href={c.twitter} label="Twitter / X" icon={<ExternalLink size={13} />} />}
+                {c.reddit && <LinkChip href={c.reddit} label="Reddit" icon={<ExternalLink size={13} />} />}
+              </div>
+            </Card>
+          )}
+
           {/* QuataTrade availability / networks */}
           <Card className="space-y-3">
             <p className="font-medium">{tx("networksTitle")}</p>
@@ -160,6 +192,19 @@ export default function MarketDetailPage(): React.JSX.Element {
         </>
       )}
     </div>
+  );
+}
+
+function LinkChip({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }): React.JSX.Element {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
+    >
+      {icon} {label}
+    </a>
   );
 }
 

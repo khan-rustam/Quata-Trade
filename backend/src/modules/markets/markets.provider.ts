@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import type { MarketChart, MarketCoin, MarketCoinDetail, MarketGlobal } from "@quatatrade/shared";
+import type { MarketChart, MarketCoin, MarketCoinDetail, MarketGlobal, TrendingCoin } from "@quatatrade/shared";
 import type { Env } from "../../config/env";
 
 export interface ListCoinsParams {
@@ -31,6 +31,33 @@ export interface MarketDataProvider {
   listCoins(params: ListCoinsParams): Promise<MarketCoin[]>;
   getCoin(id: string): Promise<MarketCoinDetail>;
   getChart(id: string, range: string): Promise<MarketChart>;
+  trending(): Promise<TrendingCoin[]>;
+  search(query: string): Promise<TrendingCoin[]>;
+}
+
+/** First non-empty URL from a CoinGecko link array (they include empty strings). */
+function firstUrl(arr?: (string | null)[]): string | null {
+  return arr?.find((u): u is string => typeof u === "string" && u.length > 0) ?? null;
+}
+
+interface CgTrendingItem {
+  id: string;
+  symbol?: string;
+  name?: string;
+  thumb?: string;
+  small?: string;
+  large?: string;
+  market_cap_rank?: number | null;
+}
+
+function mapTrending(i: CgTrendingItem): TrendingCoin {
+  return {
+    id: i.id,
+    symbol: (i.symbol ?? "").toUpperCase(),
+    name: i.name ?? i.id,
+    image: i.large ?? i.small ?? i.thumb ?? "",
+    rank: i.market_cap_rank ?? null,
+  };
 }
 
 async function fetchJson<T>(url: string, headers: Record<string, string>): Promise<T> {
@@ -70,6 +97,14 @@ interface CgCoinDetail {
   name: string;
   image?: { large?: string; small?: string };
   description?: { en?: string };
+  categories?: (string | null)[];
+  sentiment_votes_up_percentage?: number | null;
+  links?: {
+    homepage?: (string | null)[];
+    blockchain_site?: (string | null)[];
+    twitter_screen_name?: string | null;
+    subreddit_url?: string | null;
+  };
   market_data?: {
     current_price?: CgUsd;
     high_24h?: CgUsd;
@@ -181,7 +216,26 @@ export class CoinGeckoProvider implements MarketDataProvider {
       maxSupply: m.max_supply ?? null,
       volume24h: m.total_volume?.usd ?? 0,
       rank: m.market_cap_rank ?? null,
+      homepage: firstUrl(c.links?.homepage),
+      explorer: firstUrl(c.links?.blockchain_site),
+      twitter: c.links?.twitter_screen_name ? `https://twitter.com/${c.links.twitter_screen_name}` : null,
+      reddit: c.links?.subreddit_url || null,
+      categories: (c.categories ?? []).filter((x): x is string => typeof x === "string" && x.length > 0).slice(0, 8),
+      sentimentUp: typeof c.sentiment_votes_up_percentage === "number" ? c.sentiment_votes_up_percentage : null,
     };
+  }
+
+  async trending(): Promise<TrendingCoin[]> {
+    const body = await fetchJson<{ coins?: { item?: CgTrendingItem }[] }>(`${this.baseUrl}/search/trending`, this.headers);
+    return (body.coins ?? []).map((c) => c.item).filter((i): i is CgTrendingItem => Boolean(i)).map(mapTrending);
+  }
+
+  async search(query: string): Promise<TrendingCoin[]> {
+    const body = await fetchJson<{ coins?: CgTrendingItem[] }>(
+      `${this.baseUrl}/search?query=${encodeURIComponent(query)}`,
+      this.headers,
+    );
+    return (body.coins ?? []).slice(0, 15).map(mapTrending);
   }
 
   async getChart(id: string, range: string): Promise<MarketChart> {

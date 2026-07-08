@@ -15,6 +15,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkline } from "./sparkline";
 import { StarButton } from "./star-button";
 import { FearGreedGauge } from "./fear-greed";
+import { MarketMovers } from "./market-movers";
+import { MarketSearch } from "./market-search";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { api } from "@/lib/api/client";
 
@@ -77,9 +79,12 @@ export function MarketsView(): React.JSX.Element {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8">
-      <header className="space-y-1">
-        <h1 className="font-display text-2xl font-bold">{tx("title")}</h1>
-        <p className="text-text-2">{tx("subtitle")}</p>
+      <header className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+        <div className="space-y-1">
+          <h1 className="font-display text-2xl font-bold">{tx("title")}</h1>
+          <p className="text-text-2">{tx("subtitle")}</p>
+        </div>
+        <MarketSearch />
       </header>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -95,6 +100,8 @@ export function MarketsView(): React.JSX.Element {
           </>
         )}
       </section>
+
+      <MarketMovers />
 
       <section className="grid gap-3 md:grid-cols-2">
         <FearGreedGauge />
