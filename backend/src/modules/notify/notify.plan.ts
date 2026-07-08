@@ -24,6 +24,7 @@ const DIRECT_EVENTS: Readonly<Record<string, TemplateName>> = {
   "withdrawal.confirmed": "withdrawal_confirmed",
   "kyc.submitted": "kyc_submitted",
   "kyc.reviewed": "kyc_reviewed",
+  "price_alert.triggered": "price_alert_triggered",
 };
 
 /** Events that notify BOTH trade parties via payload.tradeId. */
@@ -60,7 +61,7 @@ export function planDispatch(eventType: string, payload: Record<string, unknown>
 }
 
 /** Whitelisted, length-limited string fields allowed into templates verbatim. */
-const PASSTHROUGH_KEYS = ["shortRef", "resolution", "kind"] as const;
+const PASSTHROUGH_KEYS = ["shortRef", "resolution", "kind", "symbol", "direction", "targetDisplay", "priceDisplay"] as const;
 const MAX_VALUE_LENGTH = 64;
 
 /**

@@ -120,6 +120,9 @@ import {
   zMarketMovers,
   zMarketSearchResponse,
   zNewsResponse,
+  zPriceAlert,
+  zPriceAlertsResponse,
+  type CreatePriceAlertRequest,
 } from "../schemas/markets.js";
 import {
   zBlockedAddress,
@@ -259,6 +262,9 @@ export class QuataApiClient {
   marketsMovers = () => this.request("GET", "/api/v1/markets/movers", zMarketMovers);
   marketsSearch = (query?: Query) => this.request("GET", "/api/v1/markets/search", zMarketSearchResponse, undefined, query);
   marketsNews = () => this.request("GET", "/api/v1/markets/news", zNewsResponse);
+  priceAlerts = () => this.request("GET", "/api/v1/markets/alerts", zPriceAlertsResponse);
+  createPriceAlert = (body: CreatePriceAlertRequest) => this.request("POST", "/api/v1/markets/alerts", zPriceAlert, body);
+  deletePriceAlert = (id: string): Promise<Ok> => this.request("DELETE", `/api/v1/markets/alerts/${id}`, zOk);
   watchlist = () => this.request("GET", "/api/v1/markets/watchlist", zWatchlistResponse);
   watchlistAdd = (id: string) => this.request("PUT", `/api/v1/markets/watchlist/${id}`, zWatchlistResponse);
   watchlistRemove = (id: string) => this.request("DELETE", `/api/v1/markets/watchlist/${id}`, zWatchlistResponse);

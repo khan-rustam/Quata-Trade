@@ -445,6 +445,18 @@
     "sellUsdt": "Sell USDT",
     "disclaimer": "Prices are indicative P2P rates set by traders — the price you get is the offer you accept, shown before every trade. QuataTrade never sets a mandatory rate."
   },
+  "priceAlert": {
+    "title": "Price alert",
+    "above": "Above",
+    "below": "Below",
+    "target": "Target price",
+    "create": "Set alert",
+    "createdTitle": "Alert set",
+    "createdBody": "We'll email you when {symbol} hits your target.",
+    "error": "Could not set the alert.",
+    "triggered": "Triggered",
+    "delete": "Delete alert"
+  },
   "marketsCompare": {
     "back": "Back to markets",
     "title": "Compare assets",

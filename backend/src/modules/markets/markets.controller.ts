@@ -1,9 +1,26 @@
-import { Controller, Delete, Get, Param, Put, Query, ServiceUnavailableException } from "@nestjs/common";
+import {
+  Body,
+  ConflictException,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Put,
+  Query,
+  ServiceUnavailableException,
+} from "@nestjs/common";
 import { z } from "zod";
 import {
   zMarketCoinsQuery,
   zChartRangeQuery,
   zMarketSearchQuery,
+  zCreatePriceAlertRequest,
+  type CreatePriceAlertRequest,
+  type PriceAlertsResponse,
+  type PriceAlert,
   type ChartRangeQuery,
   type MarketChart,
   type MarketCoinDetail,
@@ -21,6 +38,7 @@ import { CurrentUserId, Public } from "../../common/auth/decorators";
 import { ZodPipe } from "../../common/zod.pipe";
 import { MarketsService, MarketDataUnavailableError } from "./markets.service";
 import { WatchlistService } from "./watchlist.service";
+import { PriceAlertsService, PriceAlertLimitError } from "./price-alerts.service";
 
 /** Coin ids from CoinGecko are lowercase slugs (e.g. "bitcoin", "tron"). */
 const zCoinId = z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/);
@@ -35,7 +53,35 @@ export class MarketsController {
   constructor(
     private readonly markets: MarketsService,
     private readonly watchlist: WatchlistService,
+    private readonly alerts: PriceAlertsService,
   ) {}
+
+  // ── price alerts (authenticated user) ────────────────────────────────────
+  @Get("alerts")
+  async alertsList(@CurrentUserId() userId: string): Promise<PriceAlertsResponse> {
+    return { items: await this.alerts.list(userId) };
+  }
+
+  @Post("alerts")
+  @HttpCode(HttpStatus.OK)
+  async alertCreate(
+    @CurrentUserId() userId: string,
+    @Body(new ZodPipe(zCreatePriceAlertRequest)) dto: CreatePriceAlertRequest,
+  ): Promise<PriceAlert> {
+    try {
+      return await this.alerts.create(userId, dto);
+    } catch (err) {
+      if (err instanceof PriceAlertLimitError) throw new ConflictException(err.message);
+      throw err;
+    }
+  }
+
+  @Delete("alerts/:id")
+  @HttpCode(HttpStatus.OK)
+  async alertRemove(@CurrentUserId() userId: string, @Param("id", new ZodPipe(z.string().uuid())) id: string): Promise<{ ok: true }> {
+    await this.alerts.remove(userId, id);
+    return { ok: true };
+  }
 
   // ── watchlist (authenticated user — NOT @Public) ─────────────────────────
   @Get("watchlist")

@@ -88,6 +88,11 @@ export class MarketsService {
     return this.cached(`markets:search:${query.toLowerCase()}`, () => this.fromProviders((p) => p.search(query)), 120);
   }
 
+  /** Current USD prices for coin ids (uncached — the price-alert cron controls frequency). */
+  simplePrices(ids: string[]): Promise<Record<string, number>> {
+    return this.fromProviders((p) => p.getSimplePrices(ids));
+  }
+
   /** Crypto news (CryptoPanic). Empty list when no key is configured (feature off). */
   news(): Promise<NewsResponse> {
     if (this.newsKey.trim() === "") return Promise.resolve({ items: [] });

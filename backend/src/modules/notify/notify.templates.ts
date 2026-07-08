@@ -32,6 +32,7 @@ export const TEMPLATE_NAMES = [
   "dispute_resolved",
   "kyc_submitted",
   "kyc_reviewed",
+  "price_alert_triggered",
 ] as const;
 
 export type TemplateName = (typeof TEMPLATE_NAMES)[number];
@@ -97,6 +98,10 @@ const TEMPLATE_SOURCES: Record<TemplateName, TemplateSource> = {
   kyc_reviewed: {
     subject: "Identity verification update",
     body: "Your identity verification was reviewed{{#if status}}: {{status}}{{/if}}. Open the app for details.",
+  },
+  price_alert_triggered: {
+    subject: "Price alert: {{symbol}} {{direction}} {{targetDisplay}}",
+    body: "Your price alert triggered — {{symbol}} is now {{priceDisplay}}, {{direction}} your target of {{targetDisplay}}.",
   },
 };
 
@@ -237,6 +242,19 @@ const EMAIL_CONTENT: Record<TemplateName, (ctx: Record<string, string>, appUrl: 
     paragraphs: ["Your identity verification has been reviewed. Open the app to see the outcome and what to do next."],
     facts: ctx["status"] ? [{ label: "Outcome", value: ctx["status"] }] : [],
     button: button(appUrl, "/account", "View status"),
+  }),
+  price_alert_triggered: (ctx, appUrl) => ({
+    preheader: `${ctx["symbol"] ?? "A coin"} hit your target`,
+    heading: "Price alert triggered",
+    paragraphs: [
+      `${ctx["symbol"] ?? "A coin"} is now ${ctx["priceDisplay"] ?? ""}, ${ctx["direction"] ?? ""} your target of ${ctx["targetDisplay"] ?? ""}.`,
+    ],
+    facts: [
+      ...(ctx["symbol"] ? [{ label: "Asset", value: ctx["symbol"] }] : []),
+      ...(ctx["priceDisplay"] ? [{ label: "Price", value: ctx["priceDisplay"] }] : []),
+      ...(ctx["targetDisplay"] ? [{ label: "Target", value: `${ctx["direction"] ?? ""} ${ctx["targetDisplay"]}` }] : []),
+    ],
+    button: button(appUrl, "/markets", "Open markets"),
   }),
 };
 

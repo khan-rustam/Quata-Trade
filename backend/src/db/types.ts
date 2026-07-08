@@ -452,6 +452,19 @@ export interface WalletConfigsTable {
   created_at: Timestamp;
 }
 
+/** Price alerts (migration 0026). Notify a user when a coin crosses a target. */
+export interface PriceAlertsTable {
+  id: string;
+  user_id: string;
+  coin_id: string;
+  symbol: string;
+  direction: string;
+  target: number;
+  active: Generated<boolean>;
+  triggered_at: ColumnType<Date | null, Date | null | undefined, Date | null>;
+  created_at: Timestamp;
+}
+
 /** Personal market watchlist (migration 0025). One row per (user, coin id). */
 export interface WatchlistsTable {
   id: string;
@@ -489,6 +502,7 @@ export interface Database {
   wallet_configs: WalletConfigsTable;
   alerts: AlertsTable;
   watchlists: WatchlistsTable;
+  price_alerts: PriceAlertsTable;
   blocked_addresses: BlockedAddressesTable;
   offers: OffersTable;
   trades: TradesTable;

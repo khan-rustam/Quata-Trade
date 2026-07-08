@@ -34,6 +34,8 @@ export interface MarketDataProvider {
   getChart(id: string, range: string): Promise<MarketChart>;
   trending(): Promise<TrendingCoin[]>;
   search(query: string): Promise<TrendingCoin[]>;
+  /** Current USD price for the given coin ids (for the price-alert checker). */
+  getSimplePrices(ids: string[]): Promise<Record<string, number>>;
 }
 
 /** First non-empty URL from a CoinGecko link array (they include empty strings). */
@@ -238,6 +240,18 @@ export class CoinGeckoProvider implements MarketDataProvider {
       this.headers,
     );
     return (body.coins ?? []).slice(0, 15).map(mapTrending);
+  }
+
+  async getSimplePrices(ids: string[]): Promise<Record<string, number>> {
+    if (ids.length === 0) return {};
+    const q = new URLSearchParams({ ids: ids.join(","), vs_currencies: "usd" });
+    const body = await fetchJson<Record<string, { usd?: number }>>(
+      `${this.baseUrl}/simple/price?${q.toString()}`,
+      this.headers,
+    );
+    const out: Record<string, number> = {};
+    for (const [id, v] of Object.entries(body)) if (typeof v.usd === "number") out[id] = v.usd;
+    return out;
   }
 
   async getChart(id: string, range: string): Promise<MarketChart> {

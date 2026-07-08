@@ -13,6 +13,7 @@ import { Button, buttonClassName } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LightweightChart } from "@/components/markets/lightweight-chart";
+import { PriceAlertPanel } from "@/components/markets/price-alert-panel";
 import { StarButton } from "@/components/markets/star-button";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { api } from "@/lib/api/client";
@@ -124,6 +125,8 @@ export default function MarketDetailPage(): React.JSX.Element {
               <div className="flex h-72 items-center justify-center text-sm text-text-3">{tx("chartEmpty")}</div>
             )}
           </Card>
+
+          {authed && <PriceAlertPanel coinId={c.id} symbol={c.symbol} currentPrice={c.price} />}
 
           {/* stats */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

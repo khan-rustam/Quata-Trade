@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { MarketsController } from "./markets.controller";
 import { MarketsService } from "./markets.service";
 import { WatchlistService } from "./watchlist.service";
+import { PriceAlertsService } from "./price-alerts.service";
 import { CoinGeckoProvider } from "./markets.provider";
 import { MARKET_PROVIDERS } from "./markets.tokens";
 
@@ -22,6 +23,7 @@ import { MARKET_PROVIDERS } from "./markets.tokens";
     },
     MarketsService,
     WatchlistService,
+    PriceAlertsService,
   ],
   exports: [MarketsService],
 })

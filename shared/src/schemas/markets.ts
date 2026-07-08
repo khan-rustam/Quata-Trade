@@ -129,6 +129,40 @@ export type MarketSearchQuery = z.infer<typeof zMarketSearchQuery>;
 export const zMarketSearchResponse = z.object({ coins: z.array(zTrendingCoin) });
 export type MarketSearchResponse = z.infer<typeof zMarketSearchResponse>;
 
+// ---- price alerts (Phase G, authenticated) ----
+export const zAlertDirection = z.enum(["above", "below"]);
+export type AlertDirection = z.infer<typeof zAlertDirection>;
+
+export const zPriceAlert = z.object({
+  id: z.string(),
+  coinId: z.string(),
+  symbol: z.string(),
+  direction: zAlertDirection,
+  target: z.number().positive(),
+  active: z.boolean(),
+  triggeredAt: z.string().nullable(),
+  createdAt: z.string(),
+});
+export type PriceAlert = z.infer<typeof zPriceAlert>;
+
+export const zPriceAlertsResponse = z.object({ items: z.array(zPriceAlert) });
+export type PriceAlertsResponse = z.infer<typeof zPriceAlertsResponse>;
+
+export const zCreatePriceAlertRequest = z
+  .object({
+    coinId: z
+      .string()
+      .trim()
+      .min(1)
+      .max(120)
+      .regex(/^[a-z0-9-]+$/),
+    symbol: z.string().trim().min(1).max(20),
+    direction: zAlertDirection,
+    target: z.number().positive(),
+  })
+  .strict();
+export type CreatePriceAlertRequest = z.infer<typeof zCreatePriceAlertRequest>;
+
 // ---- news (Phase F, CryptoPanic) ----
 export const zNewsItem = z.object({
   title: z.string(),

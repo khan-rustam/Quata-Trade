@@ -445,6 +445,18 @@
     "sellUsdt": "Vendre USDT",
     "disclaimer": "Les prix sont des taux P2P indicatifs fixés par les traders — le prix que vous obtenez est l'offre que vous acceptez, affichée avant chaque échange. QuataTrade ne fixe jamais de taux obligatoire."
   },
+  "priceAlert": {
+    "title": "Alerte de prix",
+    "above": "Au-dessus",
+    "below": "En dessous",
+    "target": "Prix cible",
+    "create": "Créer l'alerte",
+    "createdTitle": "Alerte créée",
+    "createdBody": "Nous vous enverrons un e-mail lorsque {symbol} atteindra votre cible.",
+    "error": "Impossible de créer l'alerte.",
+    "triggered": "Déclenchée",
+    "delete": "Supprimer l'alerte"
+  },
   "marketsCompare": {
     "back": "Retour aux marchés",
     "title": "Comparer des actifs",
