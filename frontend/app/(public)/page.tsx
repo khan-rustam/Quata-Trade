@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, Lock, MessageSquare, ShieldCheck, Wallet } from "lucide-react";
@@ -13,6 +14,8 @@ import { ReviewsSection } from "@/components/public/reviews-section";
 import { Reveal } from "@/components/motion/reveal";
 import { getReviews } from "@/lib/content-server";
 import { EscrowSimulator } from "@/components/public/escrow-simulator";
+import { buildMetadata } from "@/lib/seo-engine";
+import { EngineJsonLd } from "./engine-json-ld";
 
 /**
  * Illustrative offers for the "know who you trade with" band. Clearly labelled as
@@ -67,12 +70,22 @@ const EXAMPLE_OFFERS: Offer[] = [
 
 const TRUST_ICONS = [Lock, ShieldCheck, MessageSquare, Wallet] as const;
 
+export function generateMetadata(): Promise<Metadata> {
+  return buildMetadata("/", {
+    title: { absolute: "QuataTrade — Crypto to cash. Protected." },
+    description:
+      "Buy and sell USDT for cash in Cameroon with escrow protection. Trade peer-to-peer with MTN MoMo, Orange Money, or QuataPay.",
+    alternates: { canonical: "https://quatatrade.com/" },
+  });
+}
+
 export default async function LandingPage(): Promise<React.JSX.Element> {
   const t = await getTranslations("landing");
   const reviews = await getReviews();
 
   return (
     <>
+      <EngineJsonLd path="/" />
       <Hero />
       <EscrowSteps />
 

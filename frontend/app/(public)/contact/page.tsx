@@ -5,11 +5,14 @@ import { Section, SectionHeading } from "@/components/public/marketing";
 import { Reveal } from "@/components/motion/reveal";
 import { ContactForm } from "@/components/public/contact-form";
 import { getCompany } from "@/lib/content-server";
+import { buildMetadata } from "@/lib/seo-engine";
 
-export const metadata: Metadata = {
-  title: "Contact & Support — QuataTrade",
-  description: "Get help with your QuataTrade account, trades, and disputes.",
-};
+export function generateMetadata(): Promise<Metadata> {
+  return buildMetadata("/contact", {
+    title: "Contact & Support — QuataTrade",
+    description: "Get help with your QuataTrade account, trades, and disputes.",
+  });
+}
 
 export default async function ContactPage(): Promise<React.JSX.Element> {
   const t = await getTranslations("contact");

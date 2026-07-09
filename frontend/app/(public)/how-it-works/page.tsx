@@ -3,15 +3,18 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Section, SectionHeading } from "@/components/public/marketing";
 import { buttonClassName } from "@/components/ui/button";
+import { buildMetadata } from "@/lib/seo-engine";
 import { Keyhole } from "@/components/brand/keyhole";
 import { Reveal } from "@/components/motion/reveal";
 import { TimelinePhone } from "@/components/public/timeline-phone";
 import { ArrowRight } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "How it works — QuataTrade",
-  description: "Buyer and seller flows on QuataTrade, and how escrow protects every trade.",
-};
+export function generateMetadata(): Promise<Metadata> {
+  return buildMetadata("/how-it-works", {
+    title: "How it works — QuataTrade",
+    description: "Buyer and seller flows on QuataTrade, and how escrow protects every trade.",
+  });
+}
 
 export default function HowItWorksPage(): React.JSX.Element {
   const t = useTranslations("howItWorks");

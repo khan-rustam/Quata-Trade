@@ -4,10 +4,11 @@ import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Section, SectionHeading } from "@/components/public/marketing";
 import { Badge } from "@/components/ui/badge";
 import { API_BASE_URL } from "@/lib/env";
+import { buildMetadata } from "@/lib/seo-engine";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("status");
-  return { title: t("metaTitle"), description: t("metaDescription") };
+  return buildMetadata("/status", { title: t("metaTitle"), description: t("metaDescription") });
 }
 
 type Health = {

@@ -13,11 +13,14 @@ import {
   BiometricsIllustration,
   InfrastructureIllustration,
 } from "@/components/public/security-illustrations";
+import { buildMetadata } from "@/lib/seo-engine";
 
-export const metadata: Metadata = {
-  title: "Security & Trust — QuataTrade",
-  description: "How QuataTrade protects your account and your funds: escrow, 2FA, cold storage, KYC, and dispute protection.",
-};
+export function generateMetadata(): Promise<Metadata> {
+  return buildMetadata("/security", {
+    title: "Security & Trust — QuataTrade",
+    description: "How QuataTrade protects your account and your funds: escrow, 2FA, cold storage, KYC, and dispute protection.",
+  });
+}
 
 const CARDS = [
   { Illustration: EscrowIllustration, titleKey: "card1Title", bodyKey: "card1Body" },

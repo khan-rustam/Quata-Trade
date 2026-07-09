@@ -17,11 +17,14 @@ import type { Faq } from "@quatatrade/shared";
 import { Section, SectionHeading } from "@/components/public/marketing";
 import { Reveal } from "@/components/motion/reveal";
 import { getFaqs } from "@/lib/content-server";
+import { buildMetadata } from "@/lib/seo-engine";
 
-export const metadata: Metadata = {
-  title: "Help Center — QuataTrade",
-  description: "Guides for getting started, verification, buying, selling, payments, wallet, disputes, and security.",
-};
+export function generateMetadata(): Promise<Metadata> {
+  return buildMetadata("/help", {
+    title: "Help Center — QuataTrade",
+    description: "Guides for getting started, verification, buying, selling, payments, wallet, disputes, and security.",
+  });
+}
 
 const CATEGORIES = [
   { icon: Rocket, key: "cat1" },

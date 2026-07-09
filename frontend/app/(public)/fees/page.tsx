@@ -6,12 +6,15 @@ import { Section, SectionHeading } from "@/components/public/marketing";
 import { buttonClassName } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
 import { FeeCalculator } from "@/components/public/fee-calculator";
+import { buildMetadata } from "@/lib/seo-engine";
 
-export const metadata: Metadata = {
-  title: "Fees — QuataTrade",
-  description:
-    "QuataTrade's launch fee structure: 0% trading for buyers and sellers, a low flat deposit fee, and no platform withdrawal fee. No hidden fees.",
-};
+export function generateMetadata(): Promise<Metadata> {
+  return buildMetadata("/fees", {
+    title: "Fees — QuataTrade",
+    description:
+      "QuataTrade's launch fee structure: 0% trading for buyers and sellers, a low flat deposit fee, and no platform withdrawal fee. No hidden fees.",
+  });
+}
 
 const ROWS = ["buyerFee", "sellerFee", "depositFee", "withdrawalFee", "adFee", "disputeFee"] as const;
 const EXAMPLES = ["example1", "example2", "example3"] as const;

@@ -3,14 +3,17 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Section, SectionHeading } from "@/components/public/marketing";
 import { Reveal } from "@/components/motion/reveal";
+import { buildMetadata } from "@/lib/seo-engine";
 import { buttonClassName } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand/logo";
 import { CameroonMap } from "@/components/public/cameroon-map";
 
-export const metadata: Metadata = {
-  title: "About — QuataTrade",
-  description: "QuataTrade is a Cameroon-first P2P crypto marketplace built on trust and escrow protection.",
-};
+export function generateMetadata(): Promise<Metadata> {
+  return buildMetadata("/about", {
+    title: "About — QuataTrade",
+    description: "QuataTrade is a Cameroon-first P2P crypto marketplace built on trust and escrow protection.",
+  });
+}
 
 const VALUES: { titleKey: string; bodyKey: string }[] = [
   { titleKey: "value1Title", bodyKey: "value1Body" },
