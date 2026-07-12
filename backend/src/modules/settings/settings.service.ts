@@ -226,13 +226,24 @@ export class SettingsService {
     feeBps: Record<string, number>;
     sellerFeeBps: number;
     withdrawalCaps: { perTxMax: string; dailyMax: string; dualApprovalThreshold: string; autoApproveBelow: string };
+    hotWallet: { maxBalance: string; minBalance: string; reserve: string; dailyOpLimit: string; alertThreshold: string };
+    launchLimits: {
+      maxUserBalance: string;
+      maxDailyDepositPerUser: string;
+      maxPlatformCustody: string;
+      maxDailyWithdrawalVolume: string;
+      maxPendingWithdrawalQueue: number;
+      maxWithdrawalsPerDay: number;
+    };
   }> {
-    const [window, deposit, caps, feeBps, sellerFeeBps] = await Promise.all([
+    const [window, deposit, caps, feeBps, sellerFeeBps, hotWallet, launchLimits] = await Promise.all([
       this.tradePaymentWindowMinutes(),
       this.depositPolicy(),
       this.withdrawalCaps(),
       this.raw("fee_bps").then((v) => zFeeBps.parse(v)),
       this.sellerFeeBps(),
+      this.hotWallet(),
+      this.launchLimits(),
     ]);
     return {
       paymentWindowMinutes: window,
@@ -251,6 +262,73 @@ export class SettingsService {
         dualApprovalThreshold: caps.dualApprovalThreshold.toString(),
         autoApproveBelow: caps.autoApproveBelow.toString(),
       },
+      hotWallet: {
+        maxBalance: hotWallet.maxBalance.toString(),
+        minBalance: hotWallet.minBalance.toString(),
+        reserve: hotWallet.reserve.toString(),
+        dailyOpLimit: hotWallet.dailyOpLimit.toString(),
+        alertThreshold: hotWallet.alertThreshold.toString(),
+      },
+      launchLimits: {
+        maxUserBalance: launchLimits.maxUserBalance.toString(),
+        maxDailyDepositPerUser: launchLimits.maxDailyDepositPerUser.toString(),
+        maxPlatformCustody: launchLimits.maxPlatformCustody.toString(),
+        maxDailyWithdrawalVolume: launchLimits.maxDailyWithdrawalVolume.toString(),
+        maxPendingWithdrawalQueue: launchLimits.maxPendingWithdrawalQueue,
+        maxWithdrawalsPerDay: launchLimits.maxWithdrawalsPerDay,
+      },
+    };
+  }
+
+  /** Hot-wallet operating thresholds (key "hot_wallet"). 0 = disabled. */
+  async hotWallet(): Promise<{
+    maxBalance: bigint;
+    minBalance: bigint;
+    reserve: bigint;
+    dailyOpLimit: bigint;
+    alertThreshold: bigint;
+  }> {
+    const amt = z.string().regex(/^\d{1,30}$/);
+    const v = z
+      .object({ max_balance: amt, min_balance: amt, reserve: amt, daily_op_limit: amt, alert_threshold: amt })
+      .parse(await this.raw("hot_wallet"));
+    return {
+      maxBalance: BigInt(v.max_balance),
+      minBalance: BigInt(v.min_balance),
+      reserve: BigInt(v.reserve),
+      dailyOpLimit: BigInt(v.daily_op_limit),
+      alertThreshold: BigInt(v.alert_threshold),
+    };
+  }
+
+  /** Launch-protection ceilings (key "launch_limits"). 0 = disabled. */
+  async launchLimits(): Promise<{
+    maxUserBalance: bigint;
+    maxDailyDepositPerUser: bigint;
+    maxPlatformCustody: bigint;
+    maxDailyWithdrawalVolume: bigint;
+    maxPendingWithdrawalQueue: number;
+    maxWithdrawalsPerDay: number;
+  }> {
+    const amt = z.string().regex(/^\d{1,30}$/);
+    const cnt = z.coerce.number().int().min(0);
+    const v = z
+      .object({
+        max_user_balance: amt,
+        max_daily_deposit_per_user: amt,
+        max_platform_custody: amt,
+        max_daily_withdrawal_volume: amt,
+        max_pending_withdrawal_queue: cnt,
+        max_withdrawals_per_day: cnt,
+      })
+      .parse(await this.raw("launch_limits"));
+    return {
+      maxUserBalance: BigInt(v.max_user_balance),
+      maxDailyDepositPerUser: BigInt(v.max_daily_deposit_per_user),
+      maxPlatformCustody: BigInt(v.max_platform_custody),
+      maxDailyWithdrawalVolume: BigInt(v.max_daily_withdrawal_volume),
+      maxPendingWithdrawalQueue: v.max_pending_withdrawal_queue,
+      maxWithdrawalsPerDay: v.max_withdrawals_per_day,
     };
   }
 

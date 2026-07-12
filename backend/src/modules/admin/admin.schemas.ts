@@ -8,6 +8,8 @@ import {
   zLedgerAdjustmentRequest,
   zPagination,
   zPromoCampaignsValue,
+  zHotWalletValue,
+  zLaunchLimitsValue,
   zUuid,
   zWithdrawalCapsValue,
   zWithdrawalFeeValue,
@@ -95,6 +97,10 @@ export const SETTING_VALUE_SCHEMAS: Readonly<Record<string, ZodTypeAny>> = {
   // min/max (gross) + platform deposit fee (fixed + percentage), with the refine
   // guaranteeing the fee never zeroes the smallest allowed deposit.
   deposit_policy: zDepositPolicyValue,
+  // Hot-wallet operating thresholds + launch-protection ceilings (D30-limits).
+  // 0 = disabled. Editable here; reserve/alert are read by the reconciliation job.
+  hot_wallet: zHotWalletValue,
+  launch_limits: zLaunchLimitsValue,
 };
 
 /** Local response shape for the KYC review queue (no shared schema exists). */

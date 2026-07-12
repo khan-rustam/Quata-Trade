@@ -101,6 +101,23 @@ export const zAdminSettingsResponse = z.object({
     dualApprovalThreshold: zAmount,
     autoApproveBelow: zAmount,
   }),
+  /** Hot-wallet operating thresholds (Documents/10 D30-limits). 0 = disabled. */
+  hotWallet: z.object({
+    maxBalance: zAmount,
+    minBalance: zAmount,
+    reserve: zAmount,
+    dailyOpLimit: zAmount,
+    alertThreshold: zAmount,
+  }),
+  /** Launch-protection ceilings (Documents/10 D30-limits). 0 = disabled. */
+  launchLimits: z.object({
+    maxUserBalance: zAmount,
+    maxDailyDepositPerUser: zAmount,
+    maxPlatformCustody: zAmount,
+    maxDailyWithdrawalVolume: zAmount,
+    maxPendingWithdrawalQueue: z.number().int(),
+    maxWithdrawalsPerDay: z.number().int(),
+  }),
 });
 export type AdminSettingsResponse = z.infer<typeof zAdminSettingsResponse>;
 
@@ -153,6 +170,39 @@ export const zWithdrawalCapsValue = z
     if (auto > dual) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "auto_approve_below must be <= dual_approval_threshold", path: ["auto_approve_below"] });
   });
 export type WithdrawalCapsValue = z.infer<typeof zWithdrawalCapsValue>;
+
+/**
+ * hot_wallet write value (Documents/10 D30-limits). Smallest-unit strings; 0 =
+ * that threshold is disabled. Monitoring/liquidity knobs — the reconciliation
+ * reserve check reads `reserve`/`alert_threshold`.
+ */
+export const zHotWalletValue = z
+  .object({
+    max_balance: zCapAmount,
+    min_balance: zCapAmount,
+    reserve: zCapAmount,
+    daily_op_limit: zCapAmount,
+    alert_threshold: zCapAmount,
+  })
+  .strict();
+export type HotWalletValue = z.infer<typeof zHotWalletValue>;
+
+/**
+ * launch_limits write value (Documents/10 D30-limits). Custody/velocity ceilings
+ * (0 = disabled). Amount fields are smallest-unit strings; queue/count fields are
+ * integers. Reject-enforcement of the money-path ceilings is wired incrementally.
+ */
+export const zLaunchLimitsValue = z
+  .object({
+    max_user_balance: zCapAmount,
+    max_daily_deposit_per_user: zCapAmount,
+    max_platform_custody: zCapAmount,
+    max_daily_withdrawal_volume: zCapAmount,
+    max_pending_withdrawal_queue: z.number().int().min(0),
+    max_withdrawals_per_day: z.number().int().min(0),
+  })
+  .strict();
+export type LaunchLimitsValue = z.infer<typeof zLaunchLimitsValue>;
 
 /**
  * deposit_policy write value. Smallest-unit strings + a percentage. The platform
