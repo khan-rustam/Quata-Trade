@@ -17,10 +17,16 @@ export const zBalance = z.object({
   asset: zAssetCode,
   available: zAmount,
   inEscrow: zAmount,
+  /** Unconfirmed incoming deposits (SEEN/CONFIRMING) not yet credited. */
+  pending: zAmount,
 });
 export type Balance = z.infer<typeof zBalance>;
 
-export const zBalancesResponse = z.object({ balances: z.array(zBalance) });
+/** Wallet/account status surfaced on the dashboard. */
+export const zWalletStatus = z.enum(["active", "restricted"]);
+export type WalletStatus = z.infer<typeof zWalletStatus>;
+
+export const zBalancesResponse = z.object({ balances: z.array(zBalance), status: zWalletStatus });
 
 export const zDepositAddressResponse = z.object({
   asset: zAssetCode,

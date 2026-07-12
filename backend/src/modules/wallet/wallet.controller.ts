@@ -19,6 +19,7 @@ import type {
   InternalTransferRequest,
   Ok,
   Pagination,
+  WalletStatus,
 } from "@quatatrade/shared";
 import { serializeAmount, zAssetCode, zInternalTransferRequest, zPagination } from "@quatatrade/shared";
 import { CurrentUserId } from "../../common/auth/decorators";
@@ -48,14 +49,16 @@ export class WalletController {
   ) {}
 
   @Get("balances")
-  async balances(@CurrentUserId() userId: string): Promise<{ balances: Balance[] }> {
-    const balances = await this.wallet.getBalances(userId);
+  async balances(@CurrentUserId() userId: string): Promise<{ balances: Balance[]; status: WalletStatus }> {
+    const [balances, status] = await Promise.all([this.wallet.getBalances(userId), this.wallet.walletStatus(userId)]);
     return {
       balances: balances.map((b) => ({
         asset: b.asset,
         available: serializeAmount(b.available),
         inEscrow: serializeAmount(b.inEscrow),
+        pending: serializeAmount(b.pending),
       })),
+      status,
     };
   }
 

@@ -26,6 +26,8 @@ export interface AssetBalance {
   asset: AssetCode;
   available: bigint;
   inEscrow: bigint;
+  /** Unconfirmed incoming deposits (SEEN/CONFIRMING), not yet credited. */
+  pending: bigint;
 }
 
 const UNIQUE_VIOLATION = "23505";
@@ -65,19 +67,33 @@ export class WalletService {
     return this.walletConfig ? this.walletConfig.getActiveXpub() : this.xpub;
   }
 
-  /** Ledger-derived balances (user_available + user_escrow) per asset. */
+  /** Ledger-derived balances (user_available + user_escrow) + pending (unconfirmed deposits) per asset. */
   async getBalances(userId: string): Promise<AssetBalance[]> {
     const balances: AssetBalance[] = [];
     for (const asset of ASSET_CODES) {
       const availableId = await this.ledger.getOrCreateAccount(userId, "user_available", asset);
       const escrowId = await this.ledger.getOrCreateAccount(userId, "user_escrow", asset);
+      const pendingRow = await this.db
+        .selectFrom("deposits")
+        .select(sql<string>`COALESCE(SUM(amount),0)::text`.as("s"))
+        .where("user_id", "=", userId)
+        .where("asset", "=", asset)
+        .where("status", "in", ["SEEN", "CONFIRMING"])
+        .executeTakeFirst();
       balances.push({
         asset,
         available: await this.ledger.balanceOf(availableId),
         inEscrow: await this.ledger.balanceOf(escrowId),
+        pending: BigInt(pendingRow?.s ?? "0"),
       });
     }
     return balances;
+  }
+
+  /** Wallet status for the dashboard: 'active' unless the account is frozen/suspended/closed. */
+  async walletStatus(userId: string): Promise<"active" | "restricted"> {
+    const user = await this.db.selectFrom("users").select("status").where("id", "=", userId).executeTakeFirst();
+    return user && user.status === "active" ? "active" : "restricted";
   }
 
   /**
