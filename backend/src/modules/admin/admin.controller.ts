@@ -49,6 +49,7 @@ import {
   type ActivateWalletConfigRequest,
   type AdminWalletConfigResponse,
   type ColdWalletStatusResponse,
+  type WalletAdminOverview,
   type SystemHealthResponse,
   type AdminAccountsResponse,
   type AdminAccount,
@@ -86,6 +87,7 @@ import { AdminService, type AdjustmentResult, type UserModerationAction } from "
 import { SystemHealthService } from "./system-health.service";
 import { AdminTeamService } from "./admin-team.service";
 import { AlertsAdminService } from "./alerts-admin.service";
+import { WalletAdminService } from "./wallet-admin.service";
 import { RBAC } from "./admin.rbac";
 import {
   zAdminAuditQuery,
@@ -175,6 +177,7 @@ export class AdminController {
     private readonly walletConfig: WalletConfigService,
     private readonly walletProvisioning: WalletProvisioningService,
     private readonly coldWallet: ColdWalletService,
+    private readonly walletAdmin: WalletAdminService,
     private readonly systemHealth: SystemHealthService,
     private readonly team: AdminTeamService,
     private readonly alerts: AlertsAdminService,
@@ -558,6 +561,14 @@ export class AdminController {
   @Get("cold-wallet")
   coldWalletStatus(): ColdWalletStatusResponse {
     return this.coldWallet.status();
+  }
+
+  // ── wallet administration center (all admin roles) ────────────────────────
+
+  @Roles(...RBAC.viewDashboards)
+  @Get("wallet-overview")
+  async walletOverview(): Promise<WalletAdminOverview> {
+    return this.walletAdmin.overview();
   }
 
   // ── team / admin-account management (SUPER only, TOTP step-up) ────────────

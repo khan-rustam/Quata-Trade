@@ -410,6 +410,17 @@ export const zAdminWalletConfigResponse = z.object({
 });
 export type AdminWalletConfigResponse = z.infer<typeof zAdminWalletConfigResponse>;
 
+/** Blockchain node/provider health (Documents/10 D30-node). */
+export const zBlockchainHealth = z.object({
+  network: z.string(),
+  reachable: z.boolean(),
+  blockHeight: z.number().int().nullable(),
+  latencyMs: z.number().int().nullable(),
+  usingFallback: z.boolean(),
+  checkedAt: z.string(),
+});
+export type BlockchainHealthItem = z.infer<typeof zBlockchainHealth>;
+
 /** Cold Wallet Provider status (Documents/10 D30-cold) — disabled at launch. */
 export const zColdWalletStatus = z.object({
   provider: z.enum(["disabled", "trezor_safe_3", "future_hardware", "institutional_custody"]),
@@ -419,6 +430,31 @@ export const zColdWalletStatus = z.object({
   note: z.string(),
 });
 export type ColdWalletStatusResponse = z.infer<typeof zColdWalletStatus>;
+
+/** Admin Wallet Administration Center overview (Documents/10 D30, audit gap #10). */
+export const zWalletAdminOverview = z.object({
+  checkedAt: z.string(),
+  wallets: z.object({ total: z.number().int(), active: z.number().int(), restricted: z.number().int() }),
+  deposits: z.object({ pending: z.number().int(), credited: z.number().int(), volume: zAmount }),
+  withdrawals: z.object({
+    pendingApproval: z.number().int(),
+    riskHold: z.number().int(),
+    failed: z.number().int(),
+    confirmed: z.number().int(),
+    volume: zAmount,
+  }),
+  hotWallet: z.object({
+    address: z.string().nullable(),
+    onChainBalance: zAmount.nullable(),
+    maxBalance: zAmount,
+    minBalance: zAmount,
+    reserve: zAmount,
+    alertThreshold: zAmount,
+  }),
+  blockchain: z.array(zBlockchainHealth),
+  coldWallet: zColdWalletStatus,
+});
+export type WalletAdminOverview = z.infer<typeof zWalletAdminOverview>;
 
 export const zActivateWalletConfigRequest = z
   .object({

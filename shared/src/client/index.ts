@@ -91,6 +91,7 @@ import {
   zAdminSettingsResponse,
   zAdminWalletConfigResponse,
   zColdWalletStatus,
+  zWalletAdminOverview,
   zAdminAccount,
   zAdminAccountsResponse,
   zAuditLogsResponse,
@@ -432,6 +433,7 @@ export class QuataApiClient {
     this.request("POST", `/api/v1/admin/team/${id}/reset-2fa`, zAdminAccount, body);
   adminWalletConfig = () => this.request("GET", "/api/v1/admin/wallet-config", zAdminWalletConfigResponse);
   adminColdWallet = () => this.request("GET", "/api/v1/admin/cold-wallet", zColdWalletStatus);
+  adminWalletOverview = () => this.request("GET", "/api/v1/admin/wallet-overview", zWalletAdminOverview);
   adminActivateWalletConfig = (body: ActivateWalletConfigRequest) =>
     this.request("POST", "/api/v1/admin/wallet-config/activate", zAdminWalletConfigResponse, body);
 }

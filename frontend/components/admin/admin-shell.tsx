@@ -28,6 +28,7 @@ import {
   UserCog,
   Users,
   UsersRound,
+  Wallet,
   X,
 } from "lucide-react";
 import type { LucideProps } from "lucide-react";
@@ -59,6 +60,7 @@ const NAV: NavItem[] = [
   { href: "/admin/users", labelKey: "navUsers", icon: Users },
   { href: "/admin/trades", labelKey: "navTrades", icon: Repeat },
   { href: "/admin/treasury", labelKey: "navTreasury", icon: Coins },
+  { href: "/admin/wallets", labelKey: "navWallets", icon: Wallet },
   { href: "/admin/ledger-adjustment", labelKey: "navLedgerAdjustment", icon: Scale, gate: "ledgerAdjustment" },
   { href: "/admin/wallet-config", labelKey: "navWalletConfig", icon: KeyRound, gate: "manageWalletConfig" },
   { href: "/admin/team", labelKey: "navTeam", icon: UsersRound, gate: "manageAdmins" },
