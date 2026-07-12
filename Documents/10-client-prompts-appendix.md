@@ -115,6 +115,25 @@ the buyer is credited internally and must start the withdrawal themselves (simpl
 "automatic"). Recommend (a). This is a money-path security choice and per Behavioral Rule #1 it will
 not be decided in code without sign-off.
 
+### 2026-07-08 client re-prompt "Self-Hosted Blockchain Infrastructure Upgrade (Addendum)" + wallet-spec gap closure
+
+A multi-agent audit (36 agents, adversarially verified) scored the earlier "Wallet
+Infrastructure Upgrade" spec at ~60% coverage. This addendum re-demands a self-hosted TRON
+full node, a Blockchain Provider abstraction, an HD wallet **provisioning** engine (auto-create
+on KYC), a Cold Wallet Provider abstraction, admin-configurable hot-wallet + launch limits, and
+enterprise monitoring. Decisions taken for the build:
+
+| # | Client asked | We build | Reason |
+|---|---|---|---|
+| D30-node | Deploy & operate our OWN TRON full node; "no dependency on paid wallet providers" | **Reaffirm D2 for launch** (TronGrid free-tier + fallback) **and build the Blockchain Provider abstraction** (`BlockchainProvider` interface + `TronProvider` wrapping the RPC client, primary/secondary URL + failover config) so a self-hosted node drops in by changing config only — no business-logic change. Physically provisioning + syncing a ~2 TB java-tron node stays an **ops task**, not a coding deliverable. | Node ops = weeks of infra; the provider seam delivers the addendum's "no business logic depends on TRON / adding a node needs no redesign" goal in code today. |
+| D30-provision | Auto-generate the deposit wallet the moment register+email+**phone**+KYC complete | Auto-provision the deposit address on **KYC approval** via a `WalletProvisioningService` fed by the `kyc.reviewed` outbox event (audited + `wallet.created` notification). **Phone-verify stays skipped** (client decision, no SMS provider) so the gate is register+email+KYC. | Closes the #1 audit gap (address was lazy/on-demand). Phone gate deferred per the earlier skip decision. |
+| D30-cold | Cold Wallet Provider abstraction (Trezor Safe 3 = coming soon, disabled) | `ColdWalletProvider` interface + a **disabled** `TrezorSafe3Provider` stub + registry; wallet-config activation remains the deposit-xpub seam. Enabling later = provider config, no other code change. | Closes the audit's "no cold-wallet abstraction" gap; real hardware comms stay out until the device + key ceremony exist. |
+| D30-limits | Admin-editable hot-wallet balances/reserve/limits + launch-protection ceilings | Add the missing keys to the settings whitelist (hot-wallet min/max/reserve/daily-op-limit/alert-threshold; max balance/user, max daily deposit/user, max platform custody, max pending-queue, max daily withdrawal volume, max withdrawals/day) with enforcement where a money path exists. | Closes audit gaps #6 + #11 (only 3 of 10 limits were admin-editable). |
+| D30-gaps | (from audit) real holes to fix regardless of the spec | Audit-log deposits + internal transfers; notify withdrawal **approved/rejected/failed** and incoming internal transfers (events were emitted but dropped, so a rejected+refunded withdrawal never told the user). | These are genuine trust/observability gaps the audit surfaced, independent of the addendum. |
+
+Note: money-path features here are built **sequentially** (not via parallel agents) because they
+edit shared money-path files; each increment is typechecked + committed + pushed on its own.
+
 ### Legal/commercial guardrails to settle in writing BEFORE building (from prior research)
 - Client owns the legal entity, any required licenses, treasury/cold keys, and the regulatory/legal risk. Developer is a contractor, not fund custodian.
 - The 30% revenue-share can reclassify the developer as an operator/partner (higher liability). Prefer paid milestones or a clear contract that isolates liability + indemnifies the developer.

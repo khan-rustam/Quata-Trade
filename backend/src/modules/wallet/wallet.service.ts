@@ -7,6 +7,7 @@ import { DB } from "../../db/database.module";
 import type { Database, DepositAddressesTable, DepositsTable } from "../../db/types";
 import { newId } from "../../common/ids";
 import { LedgerService } from "../ledger/ledger.service";
+import { AuditService } from "../../common/audit/audit.service";
 import { deriveTronAddress } from "./derivation";
 import { WalletConfigService } from "./wallet-config.service";
 import {
@@ -54,6 +55,9 @@ export class WalletService {
     // When present (production wiring), the DB-active production xpub takes
     // precedence over the env value. Absent in unit tests → env xpub is used.
     @Optional() private readonly walletConfig?: WalletConfigService,
+    // Optional so unit tests can construct without it; the Nest app injects the
+    // @Global AuditService and every internal transfer is audit-logged.
+    @Optional() private readonly audit?: AuditService,
   ) {}
 
   /** The xpub to derive from: DB-active config when wired, else the env value. */
@@ -228,6 +232,20 @@ export class WalletService {
             }),
           })
           .execute();
+        // Immutable audit trail — user-initiated money movement, like withdrawals.
+        if (this.audit) {
+          await this.audit.log(
+            {
+              actorType: "user",
+              actorId: userId,
+              action: "wallet.internal_transfer",
+              targetType: "user",
+              targetId: recipient.id,
+              metadata: { fromUserId: userId, toUserId: recipient.id, asset: dto.asset, amount: dto.amount, journalId },
+            },
+            trx,
+          );
+        }
       }
       return { journalId, replayed };
     });

@@ -5,6 +5,7 @@ import { DB } from "../../db/database.module";
 import type { Database } from "../../db/types";
 import { newId } from "../../common/ids";
 import { LedgerService } from "../ledger/ledger.service";
+import { AuditService } from "../../common/audit/audit.service";
 import { ScreeningService } from "../screening/screening.service";
 import { SettingsService } from "../settings/settings.service";
 import { PromoService } from "../promo/promo.service";
@@ -35,6 +36,7 @@ export class DepositConfirmationService {
     @Inject(TRONGRID_CLIENT) private readonly client: TronGridClient,
     @Inject(DEPOSITS_CONFIG) private readonly cfg: DepositsConfig,
     private readonly ledger: LedgerService,
+    private readonly audit: AuditService,
     private readonly screening: ScreeningService,
     private readonly settings: SettingsService,
     private readonly promo: PromoService,
@@ -232,6 +234,28 @@ export class DepositConfirmationService {
           }),
         })
         .execute();
+
+      // Immutable audit trail for the deposit credit (spec: admin audit log per deposit).
+      await this.audit.log(
+        {
+          actorType: "system",
+          actorId: null,
+          action: "deposit.credited",
+          targetType: "deposit",
+          targetId: deposit.id,
+          metadata: {
+            userId: deposit.user_id,
+            asset: deposit.asset,
+            amount: deposit.amount.toString(),
+            fee: fee.toString(),
+            net: net.toString(),
+            txHash: deposit.tx_hash,
+            logIndex: deposit.log_index,
+            journalId,
+          },
+        },
+        trx,
+      );
     });
   }
 

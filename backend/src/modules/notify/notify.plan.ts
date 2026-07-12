@@ -21,10 +21,23 @@ const DIRECT_EVENTS: Readonly<Record<string, TemplateName>> = {
   // dispatched here (safeContext would strip the code, and it would double-send).
   "deposit.credited": "deposit_credited",
   "withdrawal.requested": "withdrawal_requested",
+  "withdrawal.approved": "withdrawal_approved",
+  "withdrawal.rejected": "withdrawal_rejected",
+  "withdrawal.failed": "withdrawal_failed",
   "withdrawal.confirmed": "withdrawal_confirmed",
+  "wallet.created": "wallet_created",
   "kyc.submitted": "kyc_submitted",
   "kyc.reviewed": "kyc_reviewed",
   "price_alert.triggered": "price_alert_triggered",
+};
+
+/**
+ * Events addressed to a recipient field OTHER than payload.userId.
+ * wallet.internal_transfer notifies the RECEIVER (payload.toUserId) — the sender
+ * initiated it and already knows.
+ */
+const RECIPIENT_FIELD_EVENTS: Readonly<Record<string, { template: TemplateName; field: string }>> = {
+  "wallet.internal_transfer": { template: "internal_transfer_received", field: "toUserId" },
 };
 
 /** Events that notify BOTH trade parties via payload.tradeId. */
@@ -56,6 +69,12 @@ export function planDispatch(eventType: string, payload: Record<string, unknown>
     const userId = str(payload, "userId");
     if (!userId) return null;
     return { template: directTemplate, recipients: [userId], tradeId: null };
+  }
+  const recipientEvent = RECIPIENT_FIELD_EVENTS[eventType];
+  if (recipientEvent) {
+    const recipient = str(payload, recipientEvent.field);
+    if (!recipient) return null;
+    return { template: recipientEvent.template, recipients: [recipient], tradeId: null };
   }
   return null;
 }

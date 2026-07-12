@@ -3,6 +3,7 @@ import { newId } from "../../common/ids";
 import { startTestDb, type TestDb } from "../../../test/helpers/pg";
 import { createUser } from "../../../test/helpers/fixtures";
 import { LedgerService } from "../ledger/ledger.service";
+import { AuditService } from "../../common/audit/audit.service";
 import { ScreeningService } from "../screening/screening.service";
 import { SettingsService } from "../settings/settings.service";
 import { PromoService } from "../promo/promo.service";
@@ -119,7 +120,7 @@ describe("deposits pipeline (Gate 3)", () => {
     grid = new FakeTronGrid();
     scanner = new DepositScannerService(t.db, grid, CONFIG);
     settings = new SettingsService(t.db);
-    confirmer = new DepositConfirmationService(t.db, grid, CONFIG, ledger, new ScreeningService(t.db), settings, new PromoService(settings));
+    confirmer = new DepositConfirmationService(t.db, grid, CONFIG, ledger, new AuditService(t.db), new ScreeningService(t.db), settings, new PromoService(settings));
   });
 
   afterEach(async () => {
