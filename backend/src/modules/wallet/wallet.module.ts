@@ -8,6 +8,7 @@ import { PinService } from "../auth/pin.service";
 import { WalletController } from "./wallet.controller";
 import { WalletService } from "./wallet.service";
 import { WalletConfigService } from "./wallet-config.service";
+import { WalletProvisioningService } from "./wallet-provisioning.service";
 import { PIN_SERVICE, WALLET_XPUB } from "./wallet.tokens";
 
 /**
@@ -21,6 +22,7 @@ import { PIN_SERVICE, WALLET_XPUB } from "./wallet.tokens";
   providers: [
     WalletService,
     WalletConfigService,
+    WalletProvisioningService,
     { provide: PIN_SERVICE, useExisting: PinService },
     {
       provide: WALLET_XPUB,
@@ -28,6 +30,6 @@ import { PIN_SERVICE, WALLET_XPUB } from "./wallet.tokens";
       useFactory: (config: ConfigService<Env, true>) => config.get("WALLET_XPUB", { infer: true }),
     },
   ],
-  exports: [WalletService, WalletConfigService],
+  exports: [WalletService, WalletConfigService, WalletProvisioningService],
 })
 export class WalletModule {}

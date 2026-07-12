@@ -134,6 +134,7 @@ export interface AccountBalancesTable {
   version: Generated<bigint>;
 }
 
+/** network added in migration 0025 (wallet provisioning) — 'TRON' for existing rows. */
 export interface DepositAddressesTable {
   id: string;
   user_id: string;
@@ -141,6 +142,7 @@ export interface DepositAddressesTable {
   address: string;
   derivation_index: number;
   derivation_path: string;
+  network: Generated<string>;
   active: Generated<boolean>;
   created_at: Timestamp;
 }

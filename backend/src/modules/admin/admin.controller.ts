@@ -69,6 +69,7 @@ import { ConflictingResolutionError, DisputeNotFoundError } from "../disputes/di
 import { IllegalTransitionError, TradeNotFoundError } from "../escrow/escrow.errors";
 import { WithdrawalsService } from "../withdrawals/withdrawals.service";
 import { WalletConfigService } from "../wallet/wallet-config.service";
+import { WalletProvisioningService } from "../wallet/wallet-provisioning.service";
 import { WalletConfigInvalidXpubError, WalletConfigRotationBlockedError } from "../wallet/wallet.errors";
 import { SettingsService } from "../settings/settings.service";
 import {
@@ -170,6 +171,7 @@ export class AdminController {
     private readonly disputesAdmin: DisputesAdminService,
     private readonly withdrawals: WithdrawalsService,
     private readonly walletConfig: WalletConfigService,
+    private readonly walletProvisioning: WalletProvisioningService,
     private readonly systemHealth: SystemHealthService,
     private readonly team: AdminTeamService,
     private readonly alerts: AlertsAdminService,
@@ -380,7 +382,14 @@ export class AdminController {
     req: AuthenticatedRequest,
   ): Promise<unknown> {
     try {
-      return await this.kycAdmin.review(submissionId, adminId, decision, notes, this.ip(req));
+      const result = await this.kycAdmin.review(submissionId, adminId, decision, notes, this.ip(req));
+      // Auto-provision the deposit wallet the moment onboarding completes
+      // (Documents/10 D30-provision). Best-effort: never blocks the approval;
+      // the lazy deposit-address path remains a backstop.
+      if (result.decision === "APPROVED") {
+        await this.walletProvisioning.onKycApproved(result.userId);
+      }
+      return result;
     } catch (err) {
       throw mapAdminError(err);
     }
