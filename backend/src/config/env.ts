@@ -68,6 +68,14 @@ export const envSchema = z.object({
   WALLET_XPUB: z.string().default(""),
   /** Signer hot-wallet (base58) — enables the on-chain reserve check (item 5b). Optional. */
   WALLET_HOT_ADDRESS: z.string().default(""),
+  /**
+   * Cold Wallet Provider (Documents/10 D30-cold). 'disabled' at launch; flip to
+   * 'trezor_safe_3' (a human completes the stub) after the hardware key ceremony.
+   * Enabling later is config-only — no other code changes.
+   */
+  COLD_WALLET_PROVIDER: z
+    .enum(["disabled", "trezor_safe_3", "future_hardware", "institutional_custody"])
+    .default("disabled"),
 
   SIGNER_MODE: z.enum(["mock", "remote"]).default("mock"),
   SIGNER_URL: z.string().default(""),

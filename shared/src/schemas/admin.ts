@@ -360,6 +360,16 @@ export const zAdminWalletConfigResponse = z.object({
 });
 export type AdminWalletConfigResponse = z.infer<typeof zAdminWalletConfigResponse>;
 
+/** Cold Wallet Provider status (Documents/10 D30-cold) — disabled at launch. */
+export const zColdWalletStatus = z.object({
+  provider: z.enum(["disabled", "trezor_safe_3", "future_hardware", "institutional_custody"]),
+  enabled: z.boolean(),
+  canReceive: z.boolean(),
+  label: z.string(),
+  note: z.string(),
+});
+export type ColdWalletStatusResponse = z.infer<typeof zColdWalletStatus>;
+
 export const zActivateWalletConfigRequest = z
   .object({
     network: z.enum(["tron"]).default("tron"),

@@ -48,6 +48,7 @@ import {
   type UpdateCountryRequest,
   type ActivateWalletConfigRequest,
   type AdminWalletConfigResponse,
+  type ColdWalletStatusResponse,
   type SystemHealthResponse,
   type AdminAccountsResponse,
   type AdminAccount,
@@ -70,6 +71,7 @@ import { IllegalTransitionError, TradeNotFoundError } from "../escrow/escrow.err
 import { WithdrawalsService } from "../withdrawals/withdrawals.service";
 import { WalletConfigService } from "../wallet/wallet-config.service";
 import { WalletProvisioningService } from "../wallet/wallet-provisioning.service";
+import { ColdWalletService } from "../cold-wallet/cold-wallet.service";
 import { WalletConfigInvalidXpubError, WalletConfigRotationBlockedError } from "../wallet/wallet.errors";
 import { SettingsService } from "../settings/settings.service";
 import {
@@ -172,6 +174,7 @@ export class AdminController {
     private readonly withdrawals: WithdrawalsService,
     private readonly walletConfig: WalletConfigService,
     private readonly walletProvisioning: WalletProvisioningService,
+    private readonly coldWallet: ColdWalletService,
     private readonly systemHealth: SystemHealthService,
     private readonly team: AdminTeamService,
     private readonly alerts: AlertsAdminService,
@@ -549,6 +552,12 @@ export class AdminController {
     } catch (err) {
       throw mapAdminError(err);
     }
+  }
+
+  @Roles(...RBAC.viewDashboards)
+  @Get("cold-wallet")
+  coldWalletStatus(): ColdWalletStatusResponse {
+    return this.coldWallet.status();
   }
 
   // ── team / admin-account management (SUPER only, TOTP step-up) ────────────

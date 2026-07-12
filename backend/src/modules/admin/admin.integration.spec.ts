@@ -220,6 +220,12 @@ describe("admin RBAC matrix (RolesGuard x route metadata)", () => {
       handler: AdminController.prototype.systemHealthSnapshot,
       allowed: ALL7,
     },
+    {
+      name: "GET /admin/cold-wallet",
+      cls: AdminController,
+      handler: AdminController.prototype.coldWalletStatus,
+      allowed: ALL7,
+    },
     { name: "GET /admin/team", cls: AdminController, handler: AdminController.prototype.teamList, allowed: ["SUPER_ADMIN"] },
     { name: "POST /admin/team", cls: AdminController, handler: AdminController.prototype.teamCreate, allowed: ["SUPER_ADMIN"] },
     { name: "PATCH /admin/team/:id", cls: AdminController, handler: AdminController.prototype.teamUpdate, allowed: ["SUPER_ADMIN"] },

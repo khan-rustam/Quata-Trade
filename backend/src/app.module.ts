@@ -24,6 +24,7 @@ import { TradesModule } from "./modules/trades/trades.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { UsersModule } from "./modules/users/users.module";
 import { WalletModule } from "./modules/wallet/wallet.module";
+import { ColdWalletModule } from "./modules/cold-wallet/cold-wallet.module";
 import { KycModule } from "./modules/kyc/kyc.module";
 import { WithdrawalsModule } from "./modules/withdrawals/withdrawals.module";
 import { DisputesModule } from "./modules/disputes/disputes.module";
@@ -94,6 +95,7 @@ import { MarketsModule } from "./modules/markets/markets.module";
     AuthModule,
     UsersModule,
     WalletModule,
+    ColdWalletModule,
     KycModule,
     WithdrawalsModule,
     DisputesModule,
