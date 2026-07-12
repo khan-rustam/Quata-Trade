@@ -28,6 +28,30 @@ export type WalletStatus = z.infer<typeof zWalletStatus>;
 
 export const zBalancesResponse = z.object({ balances: z.array(zBalance), status: zWalletStatus });
 
+/** Consolidated wallet metadata per asset (GET /wallet/info). */
+export const zWalletInfo = z.object({
+  asset: zAssetCode,
+  network: z.string(),
+  address: z.string().nullable(),
+  provisioned: z.boolean(),
+  active: z.boolean(),
+  createdAt: z.string().nullable(),
+});
+export type WalletInfo = z.infer<typeof zWalletInfo>;
+export const zWalletInfoResponse = z.object({ wallets: z.array(zWalletInfo), status: zWalletStatus });
+export type WalletInfoResponse = z.infer<typeof zWalletInfoResponse>;
+
+/** User-facing blockchain/network status (GET /wallet/blockchain-status). */
+export const zBlockchainStatusItem = z.object({
+  network: z.string(),
+  reachable: z.boolean(),
+  blockHeight: z.number().int().nullable(),
+  confirmationsRequired: z.number().int(),
+});
+export type BlockchainStatusItem = z.infer<typeof zBlockchainStatusItem>;
+export const zBlockchainStatusResponse = z.object({ networks: z.array(zBlockchainStatusItem) });
+export type BlockchainStatusResponse = z.infer<typeof zBlockchainStatusResponse>;
+
 export const zDepositAddressResponse = z.object({
   asset: zAssetCode,
   address: zTronAddress,

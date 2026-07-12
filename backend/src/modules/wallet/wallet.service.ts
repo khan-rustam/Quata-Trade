@@ -90,6 +90,30 @@ export class WalletService {
     return balances;
   }
 
+  /** Consolidated wallet metadata per asset: the deposit address (if provisioned), network, status. */
+  async walletInfo(userId: string): Promise<
+    Array<{ asset: AssetCode; network: string; address: string | null; provisioned: boolean; active: boolean; createdAt: string | null }>
+  > {
+    const infos = [];
+    for (const asset of ASSET_CODES) {
+      const row = await this.db
+        .selectFrom("deposit_addresses")
+        .select(["address", "network", "active", "created_at"])
+        .where("user_id", "=", userId)
+        .where("asset", "=", asset)
+        .executeTakeFirst();
+      infos.push({
+        asset,
+        network: row?.network ?? "TRON",
+        address: row?.address ?? null,
+        provisioned: row !== undefined,
+        active: row?.active ?? false,
+        createdAt: row ? row.created_at.toISOString() : null,
+      });
+    }
+    return infos;
+  }
+
   /** Wallet status for the dashboard: 'active' unless the account is frozen/suspended/closed. */
   async walletStatus(userId: string): Promise<"active" | "restricted"> {
     const user = await this.db.selectFrom("users").select("status").where("id", "=", userId).executeTakeFirst();

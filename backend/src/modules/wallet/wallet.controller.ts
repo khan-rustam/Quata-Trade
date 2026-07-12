@@ -11,6 +11,9 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import type { Env } from "../../config/env";
+import { BlockchainRegistry } from "../blockchain/blockchain-registry.service";
 import type {
   AssetCode,
   Balance,
@@ -20,6 +23,8 @@ import type {
   Ok,
   Pagination,
   WalletStatus,
+  WalletInfoResponse,
+  BlockchainStatusResponse,
 } from "@quatatrade/shared";
 import { serializeAmount, zAssetCode, zInternalTransferRequest, zPagination } from "@quatatrade/shared";
 import { CurrentUserId } from "../../common/auth/decorators";
@@ -46,7 +51,29 @@ export class WalletController {
   constructor(
     private readonly wallet: WalletService,
     private readonly settings: SettingsService,
+    private readonly chain: BlockchainRegistry,
+    private readonly config: ConfigService<Env, true>,
   ) {}
+
+  @Get("info")
+  async info(@CurrentUserId() userId: string): Promise<WalletInfoResponse> {
+    const [wallets, status] = await Promise.all([this.wallet.walletInfo(userId), this.wallet.walletStatus(userId)]);
+    return { wallets, status };
+  }
+
+  @Get("blockchain-status")
+  async blockchainStatus(): Promise<BlockchainStatusResponse> {
+    const confirmationsRequired = this.config.get("DEPOSIT_CONFIRMATIONS", { infer: true });
+    const health = await this.chain.healthAll();
+    return {
+      networks: health.map((h) => ({
+        network: h.network,
+        reachable: h.reachable,
+        blockHeight: h.blockHeight,
+        confirmationsRequired,
+      })),
+    };
+  }
 
   @Get("balances")
   async balances(@CurrentUserId() userId: string): Promise<{ balances: Balance[]; status: WalletStatus }> {

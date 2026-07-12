@@ -24,6 +24,8 @@ import {
 } from "../schemas/kyc.js";
 import {
   zBalancesResponse,
+  zWalletInfoResponse,
+  zBlockchainStatusResponse,
   zDepositAddressResponse,
   zDepositsResponse,
   zWithdrawal,
@@ -273,11 +275,14 @@ export class QuataApiClient {
 
   // ---- wallet ----
   balances = () => this.request("GET", "/api/v1/wallet/balances", zBalancesResponse);
+  walletInfo = () => this.request("GET", "/api/v1/wallet/info", zWalletInfoResponse);
+  blockchainStatus = () => this.request("GET", "/api/v1/wallet/blockchain-status", zBlockchainStatusResponse);
   depositAddress = (asset: string) =>
     this.request("GET", `/api/v1/wallet/${asset}/deposit-address`, zDepositAddressResponse);
   deposits = (query?: Query) => this.request("GET", "/api/v1/wallet/deposits", zDepositsResponse, undefined, query);
   requestWithdrawal = (body: WithdrawalRequest) => this.request("POST", "/api/v1/withdrawals", zWithdrawal, body);
   withdrawals = (query?: Query) => this.request("GET", "/api/v1/withdrawals", zWithdrawalsResponse, undefined, query);
+  withdrawal = (id: string) => this.request("GET", `/api/v1/withdrawals/${id}`, zWithdrawal);
   internalTransfer = (body: InternalTransferRequest): Promise<Ok> =>
     this.request("POST", "/api/v1/wallet/transfer", zOk, body);
   withdrawalAddresses = () =>
