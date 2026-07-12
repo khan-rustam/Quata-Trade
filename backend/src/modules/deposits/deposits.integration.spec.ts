@@ -23,6 +23,7 @@ const FAKE_TOKEN = "TFakeTokenContractzzzzzzzzzzzzzzzzz";
 
 const CONFIG: DepositsConfig = {
   trongridUrl: "http://fake.invalid",
+  trongridFallbackUrl: "",
   trongridApiKey: "",
   usdtContract: CANONICAL_USDT,
   minAmount: 1_000_000n, // 1 USDT

@@ -106,14 +106,22 @@ function addressToEvmHex(address: string): string | null {
 @Injectable()
 export class HttpTronGridClient implements TronGridClient {
   private readonly logger = new Logger(HttpTronGridClient.name);
+  /** True when the LAST successful call fell back to the secondary node — a health signal. */
+  lastUsedFallback = false;
 
   constructor(@Inject(DEPOSITS_CONFIG) private readonly cfg: DepositsConfig) {}
 
+  /** Primary base + optional secondary (self-hosted node / backup provider) for failover. */
+  private bases(): string[] {
+    const fallback = this.cfg.trongridFallbackUrl.trim();
+    return fallback.length > 0 ? [this.cfg.trongridUrl, fallback] : [this.cfg.trongridUrl];
+  }
+
   async getTrc20TransfersTo(address: string): Promise<Trc20Transfer[]> {
-    const url =
-      `${this.cfg.trongridUrl}/v1/accounts/${address}/transactions/trc20` +
+    const path =
+      `/v1/accounts/${address}/transactions/trc20` +
       `?contract_address=${this.cfg.usdtContract}&only_to=true&limit=100`;
-    const parsed = zTrc20Response.parse(await this.getJson(url));
+    const parsed = zTrc20Response.parse(await this.getJson(path));
 
     const transfers: Trc20Transfer[] = [];
     const metaCache = new Map<string, { blockNumber: bigint | null; logIndexes: number[] }>();
@@ -228,20 +236,46 @@ export class HttpTronGridClient implements TronGridClient {
     return headers;
   }
 
-  private async getJson(url: string): Promise<unknown> {
-    const res = await fetch(url, { headers: this.headers(), signal: AbortSignal.timeout(15_000) });
-    if (!res.ok) throw new Error(`TronGrid HTTP ${res.status}`);
-    return res.json();
+  /**
+   * GET with primary→secondary failover: try each base in order; a network error
+   * or non-2xx moves to the next node. Throws only if EVERY node fails. This is
+   * the node-redundancy path — a primary-RPC outage degrades to the fallback node
+   * instead of stalling deposits.
+   */
+  private async getJson(path: string): Promise<unknown> {
+    return this.withFailover((base) =>
+      fetch(`${base}${path}`, { headers: this.headers(), signal: AbortSignal.timeout(15_000) }),
+    );
   }
 
   private async postJson(path: string, body: Record<string, unknown>): Promise<unknown> {
-    const res = await fetch(`${this.cfg.trongridUrl}${path}`, {
-      method: "POST",
-      headers: this.headers(),
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!res.ok) throw new Error(`TronGrid HTTP ${res.status}`);
-    return res.json();
+    return this.withFailover((base) =>
+      fetch(`${base}${path}`, {
+        method: "POST",
+        headers: this.headers(),
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(15_000),
+      }),
+    );
+  }
+
+  private async withFailover(call: (base: string) => Promise<Response>): Promise<unknown> {
+    const bases = this.bases();
+    let lastErr: unknown;
+    for (let i = 0; i < bases.length; i += 1) {
+      const base = bases[i] as string;
+      try {
+        const res = await call(base);
+        if (!res.ok) throw new Error(`RPC HTTP ${res.status}`);
+        this.lastUsedFallback = i > 0;
+        return await res.json();
+      } catch (err) {
+        lastErr = err;
+        if (i < bases.length - 1) {
+          this.logger.warn(`RPC node ${i} failed (${err instanceof Error ? err.message : "unknown"}) — trying fallback`);
+        }
+      }
+    }
+    throw lastErr instanceof Error ? lastErr : new Error("all RPC nodes failed");
   }
 }
