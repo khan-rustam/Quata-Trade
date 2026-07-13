@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, Pause, Play } from "lucide-react";
-import { fromDisplay, MAX_FEE_BPS, toDisplay, zFeeBpsValue, zWithdrawalCapsValue } from "@quatatrade/shared";
+import { fromDisplay, MAX_FEE_BPS, toDisplay, zFeeBpsValue, zHotWalletValue, zLaunchLimitsValue, zWithdrawalCapsValue } from "@quatatrade/shared";
 import { AdminTitle } from "@/components/admin/admin-ui";
 import { TotpActionDialog } from "@/components/admin/totp-dialog";
 import { Card } from "@/components/ui/card";
@@ -114,7 +114,14 @@ function SettingsConfigEditor(): React.JSX.Element {
   const feeKey = Object.values(data.feeBps).join(",");
   const capsKey = Object.values(data.withdrawalCaps).join(",");
   const depKey = Object.values(data.depositPolicy).join(",");
-  return <ConfigForm key={`${data.paymentWindowMinutes}:${depKey}:${feeKey}:${capsKey}:${data.sellerFeeBps}`} data={data} />;
+  const hotKey = Object.values(data.hotWallet).join(",");
+  const limitsKey = Object.values(data.launchLimits).join(",");
+  return (
+    <ConfigForm
+      key={`${data.paymentWindowMinutes}:${depKey}:${feeKey}:${capsKey}:${data.sellerFeeBps}:${hotKey}:${limitsKey}`}
+      data={data}
+    />
+  );
 }
 
 function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSettings>> }): React.JSX.Element {
@@ -142,6 +149,22 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
     daily_max: capToDisplay(data.withdrawalCaps.dailyMax),
     dual_approval_threshold: capToDisplay(data.withdrawalCaps.dualApprovalThreshold),
     auto_approve_below: capToDisplay(data.withdrawalCaps.autoApproveBelow),
+  });
+  // Hot-wallet operating thresholds + launch-protection ceilings (D30-limits). 0 = disabled.
+  const [hot, setHot] = useState({
+    max_balance: usdt(data.hotWallet.maxBalance),
+    min_balance: usdt(data.hotWallet.minBalance),
+    reserve: usdt(data.hotWallet.reserve),
+    daily_op_limit: usdt(data.hotWallet.dailyOpLimit),
+    alert_threshold: usdt(data.hotWallet.alertThreshold),
+  });
+  const [limits, setLimits] = useState({
+    max_user_balance: usdt(data.launchLimits.maxUserBalance),
+    max_daily_deposit_per_user: usdt(data.launchLimits.maxDailyDepositPerUser),
+    max_platform_custody: usdt(data.launchLimits.maxPlatformCustody),
+    max_daily_withdrawal_volume: usdt(data.launchLimits.maxDailyWithdrawalVolume),
+    max_pending_withdrawal_queue: String(data.launchLimits.maxPendingWithdrawalQueue),
+    max_withdrawals_per_day: String(data.launchLimits.maxWithdrawalsPerDay),
   });
   const [pending, setPending] = useState<{ key: string; value: unknown } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -205,6 +228,47 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
         return;
       }
       setPending({ key: "withdrawal_caps", value });
+    } catch (err) {
+      setError(apiErrorMessage(err, tx("errorUpdate")));
+    }
+  };
+  const saveHotWallet = () => {
+    setError(null);
+    try {
+      const value = {
+        max_balance: fromDisplay(hot.max_balance || "0").toString(),
+        min_balance: fromDisplay(hot.min_balance || "0").toString(),
+        reserve: fromDisplay(hot.reserve || "0").toString(),
+        daily_op_limit: fromDisplay(hot.daily_op_limit || "0").toString(),
+        alert_threshold: fromDisplay(hot.alert_threshold || "0").toString(),
+      };
+      const parsed = zHotWalletValue.safeParse(value);
+      if (!parsed.success) {
+        setError(parsed.error.issues[0]?.message ?? tx("errorUpdate"));
+        return;
+      }
+      setPending({ key: "hot_wallet", value });
+    } catch (err) {
+      setError(apiErrorMessage(err, tx("errorUpdate")));
+    }
+  };
+  const saveLaunchLimits = () => {
+    setError(null);
+    try {
+      const value = {
+        max_user_balance: fromDisplay(limits.max_user_balance || "0").toString(),
+        max_daily_deposit_per_user: fromDisplay(limits.max_daily_deposit_per_user || "0").toString(),
+        max_platform_custody: fromDisplay(limits.max_platform_custody || "0").toString(),
+        max_daily_withdrawal_volume: fromDisplay(limits.max_daily_withdrawal_volume || "0").toString(),
+        max_pending_withdrawal_queue: Number(limits.max_pending_withdrawal_queue || "0"),
+        max_withdrawals_per_day: Number(limits.max_withdrawals_per_day || "0"),
+      };
+      const parsed = zLaunchLimitsValue.safeParse(value);
+      if (!parsed.success) {
+        setError(parsed.error.issues[0]?.message ?? tx("errorUpdate"));
+        return;
+      }
+      setPending({ key: "launch_limits", value });
     } catch (err) {
       setError(apiErrorMessage(err, tx("errorUpdate")));
     }
@@ -370,6 +434,69 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
         <div>
           <Button size="sm" onClick={saveCaps}>
             {tx("saveCaps")}
+          </Button>
+        </div>
+      </Card>
+
+      {/* editable: hot-wallet operating thresholds */}
+      <Card className="space-y-3">
+        <div>
+          <p className="font-medium">{tx("hotWalletTitle")}</p>
+          <p className="text-sm text-text-2">{tx("hotWalletDesc")}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <CapInput label={tx("hwMax")} value={hot.max_balance} onChange={(v) => setHot((s) => ({ ...s, max_balance: v }))} />
+          <CapInput label={tx("hwMin")} value={hot.min_balance} onChange={(v) => setHot((s) => ({ ...s, min_balance: v }))} />
+          <CapInput label={tx("hwReserve")} value={hot.reserve} onChange={(v) => setHot((s) => ({ ...s, reserve: v }))} />
+          <CapInput label={tx("hwDailyOp")} value={hot.daily_op_limit} onChange={(v) => setHot((s) => ({ ...s, daily_op_limit: v }))} />
+          <CapInput label={tx("hwAlert")} value={hot.alert_threshold} onChange={(v) => setHot((s) => ({ ...s, alert_threshold: v }))} />
+        </div>
+        <p className="text-xs text-text-3">{tx("limitsZeroNote")}</p>
+        <div>
+          <Button size="sm" onClick={saveHotWallet}>
+            {tx("saveChanges")}
+          </Button>
+        </div>
+      </Card>
+
+      {/* editable: launch-protection ceilings */}
+      <Card className="space-y-3">
+        <div>
+          <p className="font-medium">{tx("launchLimitsTitle")}</p>
+          <p className="text-sm text-text-2">{tx("launchLimitsDesc")}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <CapInput label={tx("llUserBalance")} value={limits.max_user_balance} onChange={(v) => setLimits((s) => ({ ...s, max_user_balance: v }))} />
+          <CapInput label={tx("llDailyDeposit")} value={limits.max_daily_deposit_per_user} onChange={(v) => setLimits((s) => ({ ...s, max_daily_deposit_per_user: v }))} />
+          <CapInput label={tx("llCustody")} value={limits.max_platform_custody} onChange={(v) => setLimits((s) => ({ ...s, max_platform_custody: v }))} />
+          <CapInput label={tx("llDailyVolume")} value={limits.max_daily_withdrawal_volume} onChange={(v) => setLimits((s) => ({ ...s, max_daily_withdrawal_volume: v }))} />
+          <Field label={tx("llPendingQueue")}>
+            {(p) => (
+              <Input
+                {...p}
+                mono
+                inputMode="numeric"
+                value={limits.max_pending_withdrawal_queue}
+                onChange={(e) => setLimits((s) => ({ ...s, max_pending_withdrawal_queue: e.target.value.replace(/[^\d]/g, "") }))}
+              />
+            )}
+          </Field>
+          <Field label={tx("llPerDay")}>
+            {(p) => (
+              <Input
+                {...p}
+                mono
+                inputMode="numeric"
+                value={limits.max_withdrawals_per_day}
+                onChange={(e) => setLimits((s) => ({ ...s, max_withdrawals_per_day: e.target.value.replace(/[^\d]/g, "") }))}
+              />
+            )}
+          </Field>
+        </div>
+        <p className="text-xs text-text-3">{tx("limitsEnforcementNote")}</p>
+        <div>
+          <Button size="sm" onClick={saveLaunchLimits}>
+            {tx("saveChanges")}
           </Button>
         </div>
       </Card>
