@@ -118,7 +118,12 @@ export const envSchema = z.object({
     .string()
     .default("false")
     .transform((v) => v === "true"),
-  LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
+  // Case-insensitive: a harmless "INFO" vs "info" must never crash-loop boot.
+  LOG_LEVEL: z
+    .string()
+    .default("info")
+    .transform((v) => v.trim().toLowerCase())
+    .pipe(z.enum(["fatal", "error", "warn", "info", "debug", "trace"])),
 });
 
 export type Env = z.infer<typeof envSchema>;

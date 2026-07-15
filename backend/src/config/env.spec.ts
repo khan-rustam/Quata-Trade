@@ -119,6 +119,12 @@ describe("validateEnv", () => {
     expect(() => validateEnv(prod({ SWAGGER_ENABLED: "true" }))).toThrow(/Swagger/);
   });
 
+  it("accepts LOG_LEVEL case-insensitively (INFO -> info)", () => {
+    expect(validateEnv(base({ LOG_LEVEL: "INFO" })).LOG_LEVEL).toBe("info");
+    expect(validateEnv(base({ LOG_LEVEL: "Debug" })).LOG_LEVEL).toBe("debug");
+    expect(() => validateEnv(base({ LOG_LEVEL: "verbose" }))).toThrow(/LOG_LEVEL/);
+  });
+
   it("does not apply production hard-stops in development", () => {
     // dev key, empty xpub, shasta, mock signer — all fine outside production
     expect(() => validateEnv(base({ SIGNER_MODE: "mock", TRON_NETWORK: "shasta", WALLET_XPUB: "" }))).not.toThrow();
