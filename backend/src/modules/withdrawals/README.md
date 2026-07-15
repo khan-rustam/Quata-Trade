@@ -10,5 +10,6 @@ signer AND by DB CHECK; `>= dual_approval_threshold` needs two DIFFERENT admins;
 change is a guarded UPDATE (`WHERE status = expected`); every action audit-logged + outbox event.
 Callers: users via HTTP (`POST/GET /withdrawals`); admin module calls `approve`/`reject`;
 the signer module's pipeline calls `claimForSigning`/`markBroadcast`/`settleConfirmed`/`markFailed`.
-NOTE: `secret-crypto.ts` defines the AES-256-GCM layout for `users.totp_secret_enc`
-(`iv‖tag‖ciphertext`) — the auth module must encrypt with the same layout.
+NOTE: TOTP-secret encryption/decryption uses the single shared helper
+`common/crypto.ts` (AES-256-GCM, `iv‖tag‖ciphertext`) — the former duplicate
+`secret-crypto.ts` was removed to keep one source of truth for the layout.

@@ -17,7 +17,7 @@ import { PromoService } from "../promo/promo.service";
 import { BlockedAddressError } from "../screening/screening.errors";
 import { MockSignerService } from "../signer/mock-signer.service";
 import { WithdrawalPipelineService } from "../signer/withdrawal-pipeline.service";
-import { encryptSecret } from "./secret-crypto";
+import { encryptSecret } from "../../common/crypto";
 import { WithdrawalsService, type WithdrawalRow } from "./withdrawals.service";
 import {
   ApprovalNotAllowedError,
@@ -95,7 +95,7 @@ describe("Withdrawals (Phase 3)", () => {
         kyc_tier: tier,
         email_verified_at: new Date(),
         totp_enabled: true,
-        totp_secret_enc: encryptSecret(secret, MASTER_KEY),
+        totp_secret_enc: encryptSecret(secret, MASTER_KEY.toString("base64")),
         pin_hash: pinHash,
       })
       .where("id", "=", userId)

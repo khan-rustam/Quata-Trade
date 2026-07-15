@@ -238,6 +238,14 @@ export class RiskService {
         .executeTakeFirst();
       if (frozen.numUpdatedRows === 0n) return; // already frozen/suspended/closed
 
+      // Revoke live sessions so the auto-frozen user can't keep refreshing tokens.
+      await trx
+        .updateTable("sessions")
+        .set({ revoked_at: new Date() })
+        .where("user_id", "=", userId)
+        .where("revoked_at", "is", null)
+        .execute();
+
       await this.audit.log(
         {
           actorType: "system",

@@ -3,7 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { sql, type Kysely, type Selectable, type Transaction } from "kysely";
 import { computeFee } from "../fees/fees";
 import * as argon2 from "argon2";
-import { authenticator } from "otplib";
+import { matchedTotpStep } from "../../common/auth/totp-step";
 import { TronWeb } from "tronweb";
 import type {
   AddWithdrawalAddressRequest,
@@ -21,7 +21,7 @@ import { LedgerService } from "../ledger/ledger.service";
 import { SettingsService } from "../settings/settings.service";
 import { PromoService } from "../promo/promo.service";
 import { ScreeningService } from "../screening/screening.service";
-import { decryptSecret } from "./secret-crypto";
+import { decryptSecret } from "../../common/crypto";
 import { RISK_HOLD_SCORE, scoreWithdrawalRisk } from "./withdrawal-risk";
 import {
   ApprovalNotAllowedError,
@@ -191,7 +191,7 @@ export class WithdrawalsService {
       throw new WithdrawalNotEligibleError("two-factor authentication must be enabled for withdrawals");
     }
 
-    this.verifyTotp(user, dto.totpCode);
+    await this.verifyTotp(user, dto.totpCode);
     await this.verifyPin(user, dto.pin);
 
     if (!TronWeb.isAddress(dto.toAddress)) {
@@ -706,22 +706,24 @@ export class WithdrawalsService {
 
   // ------------------------------------------------------------------ private
 
-  private masterKey(): Buffer {
-    const keyB64: string = this.config.get("MASTER_ENCRYPTION_KEY", { infer: true });
-    return Buffer.from(keyB64, "base64");
-  }
-
-  private verifyTotp(user: UserRow, code: string): void {
+  private async verifyTotp(user: UserRow, code: string): Promise<void> {
     if (!user.totp_secret_enc) throw new WithdrawalVerificationError();
     let secret: string;
     try {
-      secret = decryptSecret(user.totp_secret_enc, this.masterKey());
+      secret = decryptSecret(user.totp_secret_enc, this.config.get("MASTER_ENCRYPTION_KEY", { infer: true }));
     } catch {
       throw new WithdrawalVerificationError();
     }
-    if (!authenticator.verify({ token: code, secret })) {
-      throw new WithdrawalVerificationError();
-    }
+    const step = matchedTotpStep(code, secret);
+    if (step === null) throw new WithdrawalVerificationError();
+    // Single-use: atomically advance the last-consumed step; a replay updates 0 rows.
+    const res = await this.db
+      .updateTable("users")
+      .set({ totp_last_step: step })
+      .where("id", "=", user.id)
+      .where((eb) => eb.or([eb("totp_last_step", "is", null), eb("totp_last_step", "<", step)]))
+      .executeTakeFirst();
+    if (res.numUpdatedRows !== 1n) throw new WithdrawalVerificationError();
   }
 
   /** PIN check with brute-force lockout (5 attempts → 15 min). Errors stay generic. */

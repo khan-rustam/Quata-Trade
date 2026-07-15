@@ -8,6 +8,7 @@ import type { Database } from "../../db/types";
 import type { Env } from "../../config/env";
 import { AuditService } from "../../common/audit/audit.service";
 import { decryptSecret, encryptSecret } from "../../common/crypto";
+import { matchedTotpStep } from "../../common/auth/totp-step";
 import { InvalidCodeError, InvalidCredentialsError, TotpAlreadyEnabledError, TotpNotConfiguredError } from "./auth.errors";
 
 const TOTP_ISSUER = "QuataTrade";
@@ -127,15 +128,45 @@ export class TotpService {
   async assertCode(userId: string, code: string): Promise<void> {
     const user = await this.db
       .selectFrom("users")
-      .select(["totp_secret_enc", "totp_enabled"])
+      .select(["totp_enabled"])
       .where("id", "=", userId)
       .executeTakeFirst();
-    if (!user || !user.totp_enabled || !user.totp_secret_enc || !this.checkEncrypted(user.totp_secret_enc, code)) {
+    if (!user || !user.totp_enabled || !(await this.consume(userId, code))) {
       throw new InvalidCodeError();
     }
   }
 
-  /** Pure check against an encrypted secret (used by AuthService.login). */
+  /**
+   * Verify a user's TOTP code AND consume it (single-use): the code is accepted
+   * only if its time-step is strictly newer than the last accepted one, atomically
+   * advanced via a guarded UPDATE so a captured code cannot be replayed inside its
+   * window even under concurrency (Documents/08 §E). Returns false on any failure.
+   */
+  async consume(userId: string, code: string): Promise<boolean> {
+    const user = await this.db
+      .selectFrom("users")
+      .select(["totp_secret_enc"])
+      .where("id", "=", userId)
+      .executeTakeFirst();
+    if (!user || !user.totp_secret_enc) return false;
+    let secret: string;
+    try {
+      secret = decryptSecret(user.totp_secret_enc, this.key);
+    } catch {
+      return false; // corrupt blob / wrong key — never explain why
+    }
+    const step = matchedTotpStep(code, secret);
+    if (step === null) return false;
+    const res = await this.db
+      .updateTable("users")
+      .set({ totp_last_step: step })
+      .where("id", "=", userId)
+      .where((eb) => eb.or([eb("totp_last_step", "is", null), eb("totp_last_step", "<", step)]))
+      .executeTakeFirst();
+    return res.numUpdatedRows === 1n; // 0 → already consumed this step (replay)
+  }
+
+  /** Pure check against an encrypted secret — enrollment only (no single-use state yet). */
   checkEncrypted(encryptedSecret: Buffer, code: string): boolean {
     try {
       return authenticator.check(code, decryptSecret(encryptedSecret, this.key));

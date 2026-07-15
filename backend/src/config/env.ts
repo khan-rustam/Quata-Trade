@@ -4,6 +4,12 @@ import { z } from "zod";
  * Zod-validated environment (Documents/02-tech-stack.md).
  * The app REFUSES to boot on missing/invalid env — fail fast, never limp.
  */
+
+/** Canonical mainnet USDT-TRC20 contract. Prod deposits must match this exactly. */
+export const MAINNET_USDT_TRC20 = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
+/** Safe minimum confirmations at/above TRON DPoS finality (2/3+1 of 27 SRs). */
+export const MIN_PROD_CONFIRMATIONS = 19;
+
 export const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "staging", "production"]).default("development"),
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
@@ -59,13 +65,18 @@ export const envSchema = z.object({
   TRON_NETWORK: z.enum(["shasta", "nile", "mainnet"]).default("shasta"),
   TRONGRID_API_URL: z.string().url().default("https://api.shasta.trongrid.io"),
   TRONGRID_API_KEY: z.string().default(""),
-  TRON_FALLBACK_RPC_URL: z.string().default(""),
+  TRON_FALLBACK_RPC_URL: z.string().url().or(z.literal("")).default(""),
   USDT_TRC20_CONTRACT: z
     .string()
     .regex(/^T[1-9A-HJ-NP-Za-km-z]{33}$/, "USDT contract must be a TRON address"),
   DEPOSIT_CONFIRMATIONS: z.coerce.number().int().min(1).default(19),
   DEPOSIT_MIN_AMOUNT: z.coerce.bigint().positive().default(1_000_000n),
-  WALLET_XPUB: z.string().default(""),
+  // Watch-only account xpub. Reject any extended PRIVATE key outright — spending
+  // key material must never enter the API/worker env (golden rule, Documents/08 §D).
+  WALLET_XPUB: z
+    .string()
+    .default("")
+    .refine((v) => !/^(xprv|tprv|yprv|zprv|Ltpv|xpriv)/i.test(v.trim()), "WALLET_XPUB must be a watch-only xpub, never a private key"),
   /** Signer hot-wallet (base58) — enables the on-chain reserve check (item 5b). Optional. */
   WALLET_HOT_ADDRESS: z.string().default(""),
   /**
@@ -141,6 +152,37 @@ export function validateEnv(config: Record<string, unknown>): Env {
     }
     if (parsed.data.TRON_NETWORK !== "mainnet") {
       throw new Error(`TRON_NETWORK must be 'mainnet' in production (got '${parsed.data.TRON_NETWORK}')`);
+    }
+    // Pin the deposit token to canonical mainnet USDT — a wrong/mistyped contract
+    // would credit a different token 1:1 as USDT (or never credit real USDT).
+    if (parsed.data.USDT_TRC20_CONTRACT !== MAINNET_USDT_TRC20) {
+      throw new Error(`USDT_TRC20_CONTRACT must equal the canonical mainnet USDT contract (${MAINNET_USDT_TRC20}) in production`);
+    }
+    // Below TRON finality (~19), a chain reorg could un-do an already-credited deposit.
+    if (parsed.data.DEPOSIT_CONFIRMATIONS < MIN_PROD_CONFIRMATIONS) {
+      throw new Error(`DEPOSIT_CONFIRMATIONS must be >= ${MIN_PROD_CONFIRMATIONS} in production (TRON finality; got ${parsed.data.DEPOSIT_CONFIRMATIONS})`);
+    }
+    // The on-chain reserve/solvency check (ledger obligations vs real custody) is
+    // skipped when this is empty — nobody is paged on insolvency. Require it.
+    if (parsed.data.WALLET_HOT_ADDRESS.trim() === "") {
+      throw new Error("WALLET_HOT_ADDRESS is required in production (on-chain reserve/solvency reconciliation)");
+    }
+    // Prod forbids the mock signer (above); a 'remote' signer with no connection
+    // config would fail closed at runtime — catch the misconfig at boot instead.
+    if (parsed.data.SIGNER_MODE === "remote") {
+      const missing = (
+        [
+          ["SIGNER_URL", parsed.data.SIGNER_URL],
+          ["SIGNER_CA_CERT_PATH", parsed.data.SIGNER_CA_CERT_PATH],
+          ["SIGNER_CLIENT_CERT_PATH", parsed.data.SIGNER_CLIENT_CERT_PATH],
+          ["SIGNER_CLIENT_KEY_PATH", parsed.data.SIGNER_CLIENT_KEY_PATH],
+        ] as const
+      )
+        .filter(([, v]) => v.trim() === "")
+        .map(([k]) => k);
+      if (missing.length > 0) {
+        throw new Error(`SIGNER_MODE=remote requires mTLS config in production — missing: ${missing.join(", ")}`);
+      }
     }
     if (!parsed.data.STORAGE_SSE_ENABLED) {
       throw new Error("STORAGE_SSE_ENABLED must be true in production (at-rest encryption of KYC/PII objects)");

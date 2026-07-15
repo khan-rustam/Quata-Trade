@@ -90,6 +90,34 @@ export class SettingsService {
     return { withdrawalsPaused: v.withdrawals_paused, tradesPaused: v.trades_paused };
   }
 
+  /**
+   * Atomically engage the withdrawals kill switch (incident use — e.g. the
+   * reconciliation job on a ledger mismatch), preserving every other switch.
+   * FOR UPDATE serializes against a concurrent admin toggle so neither
+   * lost-updates the other. Invalidates the local cache; other processes pick the
+   * change up within the short cache TTL. Returns true when it changed state.
+   */
+  async pauseWithdrawals(): Promise<boolean> {
+    const changed = await this.db.transaction().execute(async (trx) => {
+      const row = await trx
+        .selectFrom("settings")
+        .select("value")
+        .where("key", "=", "kill_switches")
+        .forUpdate()
+        .executeTakeFirstOrThrow();
+      const raw = (row.value ?? {}) as Record<string, unknown>;
+      if (zKillSwitches.parse(raw).withdrawals_paused) return false; // already paused
+      await trx
+        .updateTable("settings")
+        .set({ value: JSON.stringify({ ...raw, withdrawals_paused: true }), updated_at: new Date() })
+        .where("key", "=", "kill_switches")
+        .execute();
+      return true;
+    });
+    this.invalidate();
+    return changed;
+  }
+
   async withdrawalCaps(): Promise<{
     perTxMax: bigint;
     dailyMax: bigint;

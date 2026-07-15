@@ -674,6 +674,17 @@ export class AdminService {
         .where("status", "=", user.status) // belt and braces under the row lock
         .execute();
 
+      // Cut all live sessions the moment an account is frozen/suspended so an
+      // already-issued refresh token can't keep minting access (Documents/08 §E).
+      if (target !== "active") {
+        await trx
+          .updateTable("sessions")
+          .set({ revoked_at: new Date() })
+          .where("user_id", "=", userId)
+          .where("revoked_at", "is", null)
+          .execute();
+      }
+
       const eventType = action === "freeze" ? "user.frozen" : action === "suspend" ? "user.suspended" : "user.restored";
       await trx
         .insertInto("outbox")

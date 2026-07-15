@@ -45,6 +45,7 @@ export interface UsersTable {
   kyc_status: Generated<KycStatus>;
   totp_secret_enc: Buffer | null;
   totp_enabled: Generated<boolean>;
+  totp_last_step: number | null;
   status: Generated<UserStatus>;
   reputation_score: Generated<number>;
   display_name: string | null;
@@ -96,6 +97,7 @@ export interface AdminsTable {
   role: AdminRole;
   totp_secret_enc: Buffer | null;
   totp_enabled: Generated<boolean>;
+  totp_last_step: number | null;
   active: Generated<boolean>;
   created_at: Timestamp;
   first_name: string | null;

@@ -17,7 +17,7 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as argon2 from "argon2";
-import { authenticator } from "otplib";
+import { matchedTotpStep } from "../../common/auth/totp-step";
 import { z } from "zod";
 import type { Kysely } from "kysely";
 import {
@@ -57,6 +57,7 @@ import { SettingsService } from "../settings/settings.service";
 import { PromoService } from "../promo/promo.service";
 import { TradesService } from "./trades.service";
 import { fetchParties, fetchPayments, mapTrade, mapTradeDetail, type TradeDetailResponse } from "./trades.mapper";
+import { missingSecondFactor } from "./second-factors";
 
 /**
  * No shared schema exists for the cancel body (only the idempotency key) —
@@ -296,8 +297,16 @@ export class TradesController {
       .executeTakeFirst();
     if (!user) throw new UnauthorizedException("verification failed");
 
-    if (user.totp_enabled) {
-      if (!dto.totpCode) throw new BadRequestException("totpCode is required");
+    // Presence: an enrolled factor is MANDATORY on this money-release action and
+    // can never be bypassed by omitting the field (Documents/08 §E).
+    const missing = missingSecondFactor(
+      { totpEnabled: user.totp_enabled, hasPin: Boolean(user.pin_hash) },
+      dto,
+    );
+    if (missing === "totp") throw new BadRequestException("totpCode is required");
+    if (missing === "pin") throw new BadRequestException("pin is required");
+
+    if (user.totp_enabled && dto.totpCode) {
       let valid = false;
       if (user.totp_secret_enc) {
         try {
@@ -305,7 +314,17 @@ export class TradesController {
             user.totp_secret_enc,
             this.config.get("MASTER_ENCRYPTION_KEY", { infer: true }),
           );
-          valid = authenticator.check(dto.totpCode, secret);
+          const step = matchedTotpStep(dto.totpCode, secret);
+          if (step !== null) {
+            // Single-use: advance the last-consumed step atomically; a replay loses the race.
+            const res = await this.db
+              .updateTable("users")
+              .set({ totp_last_step: step })
+              .where("id", "=", userId)
+              .where((eb) => eb.or([eb("totp_last_step", "is", null), eb("totp_last_step", "<", step)]))
+              .executeTakeFirst();
+            valid = res.numUpdatedRows === 1n;
+          }
         } catch {
           valid = false; // decrypt/verify failure — stay generic
         }

@@ -18,8 +18,13 @@ const prod = (overrides: Record<string, unknown> = {}): Record<string, unknown> 
     JWT_ACCESS_SECRET: "prod-jwt-secret-that-is-at-least-32-chars-long",
     MASTER_ENCRYPTION_KEY: PROD_KEY,
     SIGNER_MODE: "remote",
+    SIGNER_URL: "https://10.0.0.2:8443",
+    SIGNER_CA_CERT_PATH: "/etc/signer/ca.pem",
+    SIGNER_CLIENT_CERT_PATH: "/etc/signer/client.pem",
+    SIGNER_CLIENT_KEY_PATH: "/etc/signer/client.key",
     SWAGGER_ENABLED: "false",
     WALLET_XPUB: "xpub-mainnet-watch-only-key-derived-offline",
+    WALLET_HOT_ADDRESS: "TKHotWa11etAddr3ssForReserveCheck0000",
     TRON_NETWORK: "mainnet",
     STORAGE_SSE_ENABLED: "true",
     ADMIN_2FA_REQUIRED: "true",
@@ -77,6 +82,35 @@ describe("validateEnv", () => {
   it("requires a real (non-dev, non-empty) MINIO_SECRET_KEY in production", () => {
     expect(() => validateEnv(prod({ MINIO_SECRET_KEY: "" }))).toThrow(/MINIO_SECRET_KEY/);
     expect(() => validateEnv(prod({ MINIO_SECRET_KEY: "quatatrade_dev_only" }))).toThrow(/MINIO_SECRET_KEY/);
+  });
+
+  it("rejects an extended PRIVATE key in WALLET_XPUB (schema-level, any env)", () => {
+    expect(() => validateEnv(base({ WALLET_XPUB: "xprv9s21ZrQH143K3privatekeymaterial" }))).toThrow(/watch-only/);
+    expect(() => validateEnv(prod({ WALLET_XPUB: "tprv8ZgxMBicQKsPeprivate" }))).toThrow(/watch-only/);
+  });
+
+  it("pins USDT_TRC20_CONTRACT to the canonical mainnet contract in production", () => {
+    expect(() => validateEnv(prod({ USDT_TRC20_CONTRACT: "TXYZa1b2c3d4e5f6g7h8i9j0k1l2m3n4o5" }))).toThrow(/USDT_TRC20_CONTRACT/);
+  });
+
+  it("enforces a safe DEPOSIT_CONFIRMATIONS floor in production", () => {
+    expect(() => validateEnv(prod({ DEPOSIT_CONFIRMATIONS: "1" }))).toThrow(/DEPOSIT_CONFIRMATIONS/);
+    expect(() => validateEnv(prod({ DEPOSIT_CONFIRMATIONS: "18" }))).toThrow(/DEPOSIT_CONFIRMATIONS/);
+    expect(() => validateEnv(prod({ DEPOSIT_CONFIRMATIONS: "19" }))).not.toThrow();
+  });
+
+  it("requires WALLET_HOT_ADDRESS (reserve/solvency check) in production", () => {
+    expect(() => validateEnv(prod({ WALLET_HOT_ADDRESS: "" }))).toThrow(/WALLET_HOT_ADDRESS/);
+  });
+
+  it("requires remote-signer mTLS config in production", () => {
+    expect(() => validateEnv(prod({ SIGNER_URL: "" }))).toThrow(/SIGNER_MODE=remote/);
+    expect(() => validateEnv(prod({ SIGNER_CLIENT_KEY_PATH: "" }))).toThrow(/SIGNER_MODE=remote/);
+  });
+
+  it("rejects a non-URL TRON_FALLBACK_RPC_URL (empty allowed)", () => {
+    expect(() => validateEnv(base({ TRON_FALLBACK_RPC_URL: "not-a-url" }))).toThrow();
+    expect(() => validateEnv(base({ TRON_FALLBACK_RPC_URL: "" }))).not.toThrow();
   });
 
   it("keeps the existing production hard-stops (mock signer, dev JWT, swagger)", () => {

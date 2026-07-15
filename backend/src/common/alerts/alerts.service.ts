@@ -19,6 +19,7 @@ const SECURITY_EVENTS: Record<string, { severity: Severity; title: string }> = {
   "aml.hit": { severity: "critical", title: "AML / sanctions blocklist hit" },
   "withdrawal.broadcast_stale": { severity: "critical", title: "Withdrawal stuck in BROADCAST" },
   "reconciliation.reserve_shortfall": { severity: "critical", title: "On-chain reserve shortfall" },
+  "reconciliation.job_error": { severity: "critical", title: "Reconciliation job failed to run" },
 };
 
 const ICON: Record<Severity, string> = { info: "info", warning: "warn", critical: "CRITICAL" };

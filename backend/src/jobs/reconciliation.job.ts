@@ -6,6 +6,7 @@ import { DB } from "../db/database.module";
 import type { Database } from "../db/types";
 import type { Env } from "../config/env";
 import { LedgerService } from "../modules/ledger/ledger.service";
+import { SettingsService } from "../modules/settings/settings.service";
 import { TRONGRID_CLIENT, type TronGridClient } from "../modules/deposits/trongrid.client";
 import { newId } from "../common/ids";
 
@@ -44,13 +45,38 @@ export class ReconciliationJob {
     private readonly ledger: LedgerService,
     @Inject(TRONGRID_CLIENT) private readonly tron: TronGridClient,
     private readonly config: ConfigService<Env, true>,
+    private readonly settings: SettingsService,
   ) {}
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async run(): Promise<void> {
-    await this.reconcileLedgerCache();
-    await this.alertStuckBroadcasts();
-    await this.checkOnChainReserves();
+    // Isolate each check: one failing must not skip the others, and a persistently
+    // failing reconciliation must itself page (a silent safety-net is worthless).
+    await this.guard("ledger-cache", () => this.reconcileLedgerCache());
+    await this.guard("stuck-broadcasts", () => this.alertStuckBroadcasts());
+    await this.guard("on-chain-reserves", () => this.checkOnChainReserves());
+  }
+
+  /** Run one sub-check; on failure log + emit a critical alert instead of aborting the cycle. */
+  private async guard(check: string, fn: () => Promise<void>): Promise<void> {
+    try {
+      await fn();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "unknown error";
+      this.logger.error(`reconciliation check '${check}' FAILED: ${message}`);
+      try {
+        await this.db
+          .insertInto("outbox")
+          .values({
+            id: newId(),
+            event_type: "reconciliation.job_error",
+            payload: JSON.stringify({ check, message: message.slice(0, 500) }),
+          })
+          .execute();
+      } catch {
+        // last-resort: even the alert insert failed — the error log above is all we have.
+      }
+    }
   }
 
   /** cached balances vs recomputed SUM(entries) — mismatch pauses withdrawals. */
@@ -66,18 +92,9 @@ export class ReconciliationJob {
       .join("; ");
     this.logger.error(`LEDGER MISMATCH — pausing withdrawals: ${detail}`);
 
-    // flip ONLY withdrawals_paused; never clobber the trades switch
-    const current = await this.db
-      .selectFrom("settings")
-      .select("value")
-      .where("key", "=", "kill_switches")
-      .executeTakeFirstOrThrow();
-    const switches = { ...(current.value as Record<string, unknown>), withdrawals_paused: true };
-    await this.db
-      .updateTable("settings")
-      .set({ value: JSON.stringify(switches), updated_at: new Date() })
-      .where("key", "=", "kill_switches")
-      .execute();
+    // Atomic (FOR UPDATE) flip that preserves other switches and invalidates the
+    // cache — never lost-updates a concurrent admin toggle (Documents/09 §G).
+    await this.settings.pauseWithdrawals();
     // Emit a security event; the outbox relay routes it to AlertsService so a
     // human is paged (webhook + error log), not just a silent kill-switch flip.
     await this.db

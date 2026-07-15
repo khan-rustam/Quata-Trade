@@ -4,6 +4,7 @@ import { JwtService } from "@nestjs/jwt";
 import * as argon2 from "argon2";
 import type { Kysely, Selectable } from "kysely";
 import { authenticator } from "otplib";
+import { matchedTotpStep } from "../../common/auth/totp-step";
 import * as QRCode from "qrcode";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import type { AdminLoginRequest, AdminProfile, AdminUpdateProfileRequest } from "@quatatrade/shared";
@@ -93,7 +94,7 @@ export class AdminAuthService {
         // password verified, but the admin has 2FA on — ask the client for a code
         return { accessToken: "", accessTokenExpiresIn: 0, totpRequired: true };
       }
-      if (!this.totpMatches(admin, dto.totpCode)) {
+      if (!(await this.totpMatches(admin, dto.totpCode))) {
         await this.loginFailed(limiterKey, admin.id, "bad_totp", ip);
         throw new AdminAuthError();
       }
@@ -147,7 +148,7 @@ export class AdminAuthService {
       });
       throw new AdminVerificationError();
     }
-    if (!code || !this.totpMatches(admin, code)) {
+    if (!code || !(await this.totpMatches(admin, code))) {
       await this.audit.log({
         actorType: "admin",
         actorId: adminId,
@@ -260,7 +261,7 @@ export class AdminAuthService {
   async totpEnable(adminId: string, code: string, ip?: string): Promise<void> {
     const admin = await this.db.selectFrom("admins").selectAll().where("id", "=", adminId).executeTakeFirst();
     if (!admin || !admin.active || !admin.totp_secret_enc) throw new AdminVerificationError();
-    if (!this.totpMatches(admin, code)) throw new AdminVerificationError();
+    if (!(await this.totpMatches(admin, code))) throw new AdminVerificationError();
     await this.db.updateTable("admins").set({ totp_enabled: true }).where("id", "=", adminId).execute();
     await this.audit.log({
       actorType: "admin",
@@ -274,7 +275,7 @@ export class AdminAuthService {
 
   // ── private ──────────────────────────────────────────────────────────────
 
-  private totpMatches(admin: AdminRow, code: string): boolean {
+  private async totpMatches(admin: AdminRow, code: string): Promise<boolean> {
     if (!admin.totp_secret_enc) return false;
     let secret: string;
     try {
@@ -282,7 +283,17 @@ export class AdminAuthService {
     } catch {
       return false; // corrupt/foreign blob — same generic failure as a bad code
     }
-    return authenticator.verify({ token: code, secret });
+    const step = matchedTotpStep(code, secret);
+    if (step === null) return false;
+    // Single-use: atomically advance the last-consumed step so one admin code can't
+    // authorize several rapid actions (e.g. multiple withdrawal approvals).
+    const res = await this.db
+      .updateTable("admins")
+      .set({ totp_last_step: step })
+      .where("id", "=", admin.id)
+      .where((eb) => eb.or([eb("totp_last_step", "is", null), eb("totp_last_step", "<", step)]))
+      .executeTakeFirst();
+    return res.numUpdatedRows === 1n;
   }
 
   private async loginFailed(limiterKey: string, adminId: string | null, reason: string, ip: string | null): Promise<void> {

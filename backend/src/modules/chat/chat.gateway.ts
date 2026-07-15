@@ -31,7 +31,13 @@ const zJoinPayload = z.object({ tradeId: zUuid }).strict();
  * enters a room after canJoinTradeRoom proves it is the buyer, the seller, or
  * an admin (read-only monitor). Failures are silent/generic — no enumeration.
  */
-@WebSocketGateway({ namespace: "/trades", cors: { origin: true, credentials: true } })
+// Pin the WS CORS origin to the web app (matches the REST CORS), rather than
+// reflecting any Origin. Read from env at load time (the gateway decorator runs
+// before DI); the handshake is still bearer-token authed, never an ambient cookie.
+@WebSocketGateway({
+  namespace: "/trades",
+  cors: { origin: process.env.WEB_ORIGIN || "http://localhost:3000", credentials: true },
+})
 export class ChatGateway implements OnGatewayInit<ChatNamespace>, OnGatewayConnection<ChatSocket> {
   constructor(
     private readonly jwt: JwtService,

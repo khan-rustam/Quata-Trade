@@ -239,6 +239,10 @@ export class AuthService {
       throw new InvalidCredentialsError();
     }
 
+    // Verify the password FIRST so every rejection path (locked, closed, wrong
+    // password) pays the same argon2 cost — no timing oracle for account state.
+    const passwordOk = await argon2.verify(user.password_hash, dto.password).catch(() => false);
+
     if (user.locked_until && user.locked_until.getTime() > Date.now()) {
       await this.audit.log({
         actorType: "user",
@@ -265,7 +269,6 @@ export class AuthService {
       throw new InvalidCredentialsError();
     }
 
-    const passwordOk = await argon2.verify(user.password_hash, dto.password).catch(() => false);
     if (!passwordOk) {
       await this.recordLoginFailure(user.id, "bad_password", meta);
       throw new InvalidCredentialsError();
@@ -274,7 +277,7 @@ export class AuthService {
     if (user.totp_enabled) {
       // password valid, code missing → 200 with totpRequired (client asks for the code)
       if (!dto.totpCode) return { totpRequired: true };
-      if (!user.totp_secret_enc || !this.totp.checkEncrypted(user.totp_secret_enc, dto.totpCode)) {
+      if (!user.totp_secret_enc || !(await this.totp.consume(user.id, dto.totpCode))) {
         await this.recordLoginFailure(user.id, "bad_totp", meta);
         throw new InvalidCredentialsError();
       }
@@ -421,6 +424,18 @@ export class AuthService {
       throw new InvalidTokenError();
     }
     if (session.expires_at.getTime() <= Date.now()) throw new InvalidTokenError();
+
+    // Account must still be active — a frozen/suspended/closed user must not be able
+    // to mint fresh access+refresh tokens. Kill the whole chain so the session dies now.
+    const owner = await this.db
+      .selectFrom("users")
+      .select("status")
+      .where("id", "=", session.user_id)
+      .executeTakeFirst();
+    if (!owner || owner.status !== "active") {
+      await this.revokeSessionChain(session.id, session.user_id, "account_not_active");
+      throw new InvalidTokenError();
+    }
 
     const rotateMeta: RequestMeta = { ...meta, deviceFingerprint: meta.deviceFingerprint ?? session.device_fingerprint };
     const rotated = await this.db.transaction().execute(async (trx) => {
