@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   ADMIN_ROLES,
   ASSET_CODES,
+  AVATAR_STYLES,
   KYC_STATUSES,
   MAX_FEE_BPS,
   OFFER_SIDES,
@@ -27,8 +28,31 @@ export const zAdminProfile = z.object({
   email: z.string(),
   role: z.enum(ADMIN_ROLES),
   totpEnabled: z.boolean(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  displayName: z.string().nullable(),
+  phone: z.string().nullable(),
+  avatarStyle: z.enum(AVATAR_STYLES).nullable(),
+  avatarSeed: z.string().nullable(),
 });
 export type AdminProfile = z.infer<typeof zAdminProfile>;
+
+/**
+ * Admin self-service profile edit. All fields optional; `null` clears a value.
+ * Strict — unknown fields rejected. Role/email/2FA are NOT editable here
+ * (email/role change is a privileged, separate flow; 2FA has its own routes).
+ */
+export const zAdminUpdateProfileRequest = z
+  .object({
+    firstName: z.string().trim().max(60).nullable().optional(),
+    lastName: z.string().trim().max(60).nullable().optional(),
+    displayName: z.string().trim().min(2).max(24).nullable().optional(),
+    phone: z.string().trim().max(20).nullable().optional(),
+    avatarStyle: z.enum(AVATAR_STYLES).nullable().optional(),
+    avatarSeed: z.string().trim().max(64).nullable().optional(),
+  })
+  .strict();
+export type AdminUpdateProfileRequest = z.infer<typeof zAdminUpdateProfileRequest>;
 
 export const zAdminUserRow = z.object({
   id: zUuid,

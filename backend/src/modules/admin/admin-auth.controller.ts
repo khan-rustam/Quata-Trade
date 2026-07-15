@@ -1,10 +1,13 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, HttpCode, HttpStatus, Patch, Post, Req, UnauthorizedException } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import { z } from "zod";
 import {
   zAdminLoginRequest,
+  zAdminUpdateProfileRequest,
   zTotpEnableRequest,
   type AdminLoginRequest,
+  type AdminProfile,
+  type AdminUpdateProfileRequest,
   type AuthTokensResponse,
 } from "@quatatrade/shared";
 import { ZodPipe } from "../../common/zod.pipe";
@@ -44,6 +47,17 @@ export class AdminAuthController {
       if (err instanceof AdminAuthError) throw new UnauthorizedException("Invalid credentials");
       throw err;
     }
+  }
+
+  /** Self-service profile edit (name/display/phone/avatar). Any admin, self only. */
+  @Roles(...RBAC.viewDashboards)
+  @Patch("profile")
+  async updateProfile(
+    @CurrentAdminId() adminId: string,
+    @Body(new ZodPipe(zAdminUpdateProfileRequest)) dto: AdminUpdateProfileRequest,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AdminProfile> {
+    return this.adminAuth.updateProfile(adminId, dto, req.ip);
   }
 
   /** Begin 2FA setup — returns the otpauth URL + QR to scan. Any admin, self only. */

@@ -98,6 +98,12 @@ export interface AdminsTable {
   totp_enabled: Generated<boolean>;
   active: Generated<boolean>;
   created_at: Timestamp;
+  first_name: string | null;
+  last_name: string | null;
+  display_name: string | null;
+  phone: string | null;
+  avatar_style: string | null;
+  avatar_seed: string | null;
 }
 
 export interface AccountsTable {

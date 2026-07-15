@@ -5,44 +5,79 @@ import { cn } from "@/lib/utils";
 
 /**
  * 6-digit code input (email OTP, 2FA). Auto-advance, backspace-to-prev,
- * arrow nav, paste-fills. One logical value; each box mirrors a character.
+ * arrow nav, paste-fills, and fires `onComplete` once every box is filled so
+ * the caller can auto-verify without a separate button press.
+ *
+ * Value is the concatenated digits (no spaces); box i renders value[i].
  */
 export function OtpInput({
   value,
   onChange,
+  onComplete,
   length = 6,
   autoFocus,
+  disabled,
   "aria-label": ariaLabel = "Verification code",
   invalid,
 }: {
   value: string;
   onChange: (v: string) => void;
+  /** Fired once with the full code when the last digit lands (auto-verify). */
+  onComplete?: (code: string) => void;
   length?: number;
   autoFocus?: boolean;
+  disabled?: boolean;
   "aria-label"?: string;
   invalid?: boolean;
 }): React.JSX.Element {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
-  const chars = value.padEnd(length).slice(0, length).split("");
+  const digits = value.replace(/\D/g, "").slice(0, length);
+  const chars = Array.from({ length }, (_, i) => digits[i] ?? "");
 
-  const setChar = (i: number, c: string) => {
-    const next = value.split("");
-    next[i] = c;
-    onChange(next.join("").replace(/\s/g, "").slice(0, length));
-    if (c && i < length - 1) refs.current[i + 1]?.focus();
+  const focusBox = (i: number) => {
+    const el = refs.current[i];
+    if (el) {
+      el.focus();
+      el.select();
+    }
+  };
+
+  const emit = (next: string): string => {
+    const v = next.replace(/\D/g, "").slice(0, length);
+    onChange(v);
+    if (v.length === length) onComplete?.(v);
+    return v;
+  };
+
+  const setChar = (i: number, raw: string) => {
+    const c = raw.replace(/\D/g, "").slice(-1); // keep only the last typed digit
+    const arr = chars.slice();
+    arr[i] = c;
+    emit(arr.join(""));
+    if (c && i < length - 1) focusBox(i + 1);
   };
 
   const onKeyDown = (i: number, e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !chars[i]?.trim() && i > 0) refs.current[i - 1]?.focus();
-    if (e.key === "ArrowLeft" && i > 0) refs.current[i - 1]?.focus();
-    if (e.key === "ArrowRight" && i < length - 1) refs.current[i + 1]?.focus();
+    if (e.key === "Backspace") {
+      if (chars[i]) {
+        // clear the current box in place
+        const arr = chars.slice();
+        arr[i] = "";
+        emit(arr.join(""));
+      } else if (i > 0) {
+        focusBox(i - 1);
+      }
+      return;
+    }
+    if (e.key === "ArrowLeft" && i > 0) focusBox(i - 1);
+    if (e.key === "ArrowRight" && i < length - 1) focusBox(i + 1);
   };
 
   const onPaste = (e: ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, length);
-    onChange(digits);
-    refs.current[Math.min(digits.length, length - 1)]?.focus();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, length);
+    const v = emit(pasted);
+    focusBox(Math.min(v.length, length - 1));
   };
 
   return (
@@ -57,16 +92,19 @@ export function OtpInput({
           inputMode="numeric"
           autoComplete={i === 0 ? "one-time-code" : "off"}
           maxLength={1}
+          disabled={disabled}
           autoFocus={autoFocus && i === 0}
           aria-label={`Digit ${i + 1}`}
           aria-invalid={invalid}
-          value={chars[i]?.trim() ?? ""}
-          onChange={(e) => setChar(i, e.target.value.replace(/\D/g, "").slice(-1))}
+          value={chars[i] ?? ""}
+          onChange={(e) => setChar(i, e.target.value)}
           onKeyDown={(e) => onKeyDown(i, e)}
+          onFocus={(e) => e.target.select()}
           onPaste={onPaste}
           className={cn(
-            "h-12 w-full rounded-[10px] border bg-surface-2 text-center font-money text-lg text-text-1 outline-none transition-colors",
+            "h-12 w-full rounded-btn border bg-surface-2 text-center font-money text-lg text-text-1 outline-none transition-colors",
             "focus-visible:border-accent-400 focus-visible:ring-2 focus-visible:ring-accent-400/40",
+            "disabled:opacity-50",
             invalid ? "border-danger" : "border-border",
           )}
         />

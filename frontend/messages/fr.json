@@ -1270,7 +1270,21 @@
     "verifyEnable": "Vérifier et activer",
     "enabledToastTitle": "Double authentification activée",
     "enabledToastBody": "Votre compte administrateur est mieux protégé désormais.",
-    "invalidCode": "Code invalide"
+    "invalidCode": "Code invalide",
+    "avatar": "Avatar",
+    "avatarHint": "Un avatar généré — choisissez un style et mélangez pour un nouveau visage.",
+    "displayName": "Nom affiché",
+    "displayNamePlaceholder": "Comment votre nom apparaît",
+    "displayNameLength": "Le nom affiché doit comporter de 2 à 24 caractères.",
+    "firstName": "Prénom",
+    "firstNamePlaceholder": "Prénom",
+    "lastName": "Nom",
+    "lastNamePlaceholder": "Nom",
+    "phone": "Téléphone",
+    "phonePlaceholder": "ex. +237 6 12 34 56 78",
+    "saveChanges": "Enregistrer",
+    "profileUpdated": "Profil mis à jour",
+    "couldNotUpdate": "Impossible de mettre à jour le profil"
   },
   "adminLogin": {
     "title": "Quata Admin",

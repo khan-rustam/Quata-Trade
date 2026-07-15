@@ -6,7 +6,7 @@ import type { Kysely, Selectable } from "kysely";
 import { authenticator } from "otplib";
 import * as QRCode from "qrcode";
 import { RateLimiterMemory } from "rate-limiter-flexible";
-import type { AdminLoginRequest, AdminProfile } from "@quatatrade/shared";
+import type { AdminLoginRequest, AdminProfile, AdminUpdateProfileRequest } from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
 import type { AdminsTable, Database } from "../../db/types";
 import type { Env } from "../../config/env";
@@ -166,11 +166,73 @@ export class AdminAuthService {
   async getProfile(adminId: string): Promise<AdminProfile> {
     const admin = await this.db
       .selectFrom("admins")
-      .select(["id", "email", "role", "active", "totp_enabled"])
+      .select([
+        "id",
+        "email",
+        "role",
+        "active",
+        "totp_enabled",
+        "first_name",
+        "last_name",
+        "display_name",
+        "phone",
+        "avatar_style",
+        "avatar_seed",
+      ])
       .where("id", "=", adminId)
       .executeTakeFirst();
     if (!admin || !admin.active) throw new AdminNotFoundError();
-    return { id: admin.id, email: admin.email, role: admin.role, totpEnabled: admin.totp_enabled };
+    return {
+      id: admin.id,
+      email: admin.email,
+      role: admin.role,
+      totpEnabled: admin.totp_enabled,
+      firstName: admin.first_name,
+      lastName: admin.last_name,
+      displayName: admin.display_name,
+      phone: admin.phone,
+      avatarStyle: admin.avatar_style as AdminProfile["avatarStyle"],
+      avatarSeed: admin.avatar_seed,
+    };
+  }
+
+  /** Self-service profile edit (name/display/phone/avatar). Audited; never touches role/email/2FA. */
+  async updateProfile(adminId: string, dto: AdminUpdateProfileRequest, ip?: string): Promise<AdminProfile> {
+    const admin = await this.db
+      .selectFrom("admins")
+      .select(["id", "active"])
+      .where("id", "=", adminId)
+      .executeTakeFirst();
+    if (!admin || !admin.active) throw new AdminNotFoundError();
+
+    const patch: {
+      first_name?: string | null;
+      last_name?: string | null;
+      display_name?: string | null;
+      phone?: string | null;
+      avatar_style?: string | null;
+      avatar_seed?: string | null;
+    } = {};
+    if (dto.firstName !== undefined) patch.first_name = dto.firstName;
+    if (dto.lastName !== undefined) patch.last_name = dto.lastName;
+    if (dto.displayName !== undefined) patch.display_name = dto.displayName;
+    if (dto.phone !== undefined) patch.phone = dto.phone;
+    if (dto.avatarStyle !== undefined) patch.avatar_style = dto.avatarStyle;
+    if (dto.avatarSeed !== undefined) patch.avatar_seed = dto.avatarSeed;
+
+    if (Object.keys(patch).length > 0) {
+      await this.db.updateTable("admins").set(patch).where("id", "=", adminId).execute();
+      await this.audit.log({
+        actorType: "admin",
+        actorId: adminId,
+        action: "admin.profile_update",
+        targetType: "admin",
+        targetId: adminId,
+        ip,
+        metadata: { fields: Object.keys(patch) },
+      });
+    }
+    return this.getProfile(adminId);
   }
 
   /** Generate + store a fresh TOTP secret (NOT yet enabled); return QR to scan. */

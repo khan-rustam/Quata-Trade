@@ -1270,7 +1270,21 @@
     "verifyEnable": "Verify & enable",
     "enabledToastTitle": "Two-factor enabled",
     "enabledToastBody": "Your admin account is better protected now.",
-    "invalidCode": "Invalid code"
+    "invalidCode": "Invalid code",
+    "avatar": "Avatar",
+    "avatarHint": "A generated avatar — pick a style and shuffle for a new look.",
+    "displayName": "Display name",
+    "displayNamePlaceholder": "How your name appears",
+    "displayNameLength": "Display name must be 2–24 characters.",
+    "firstName": "First name",
+    "firstNamePlaceholder": "First name",
+    "lastName": "Last name",
+    "lastNamePlaceholder": "Last name",
+    "phone": "Phone",
+    "phonePlaceholder": "e.g. +237 6 12 34 56 78",
+    "saveChanges": "Save changes",
+    "profileUpdated": "Profile updated",
+    "couldNotUpdate": "Could not update profile"
   },
   "adminLogin": {
     "title": "Quata Admin",
