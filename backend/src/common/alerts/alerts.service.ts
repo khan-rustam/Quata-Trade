@@ -44,6 +44,8 @@ export class AlertsService {
   private readonly logger = new Logger(AlertsService.name);
   private readonly webhookUrl: string;
   private readonly emailTo: string;
+  private readonly telegramToken: string;
+  private readonly telegramChatId: string;
 
   constructor(
     config: ConfigService<Env, true>,
@@ -54,6 +56,8 @@ export class AlertsService {
   ) {
     this.webhookUrl = config.get("ALERT_WEBHOOK_URL", { infer: true });
     this.emailTo = config.get("ALERT_EMAIL_TO", { infer: true });
+    this.telegramToken = config.get("TELEGRAM_BOT_TOKEN", { infer: true });
+    this.telegramChatId = config.get("TELEGRAM_CHAT_ID", { infer: true });
   }
 
   /** Route a domain event (from the outbox relay) to the alert channel if security-relevant. */
@@ -69,10 +73,11 @@ export class AlertsService {
     if (severity === "critical") this.logger.error(line);
     else this.logger.warn(line);
 
-    // Persist for the admin Alerts page + email criticals. Both are best-effort:
-    // alerting must never break the flow it observes.
+    // Persist for the admin Alerts page + email criticals + Telegram. All are
+    // best-effort: alerting must never break the flow it observes.
     await this.persist(severity, title, meta);
     if (severity === "critical") await this.emailCritical(title, meta);
+    await this.telegram(severity, title, meta);
 
     if (this.webhookUrl.trim() === "") return;
     const controller = new AbortController();
@@ -102,6 +107,33 @@ export class AlertsService {
         .execute();
     } catch (err) {
       this.logger.warn(`alert persist failed: ${err instanceof Error ? err.message : "unknown error"}`);
+    }
+  }
+
+  /**
+   * Push the alert to Telegram (BotFather bot → chat/group). Env-gated: dormant
+   * until both TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are set. Never throws;
+   * 5s timeout. No secrets in the message (title + already-trimmed meta only).
+   */
+  private async telegram(severity: Severity, title: string, meta: Record<string, unknown>): Promise<void> {
+    if (this.telegramToken.trim() === "" || this.telegramChatId.trim() === "") return;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5_000);
+    try {
+      await fetch(`https://api.telegram.org/bot${this.telegramToken}/sendMessage`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          chat_id: this.telegramChatId,
+          text: `${ICON[severity]} ${title}\n${safeJson(meta)}`,
+          disable_web_page_preview: true,
+        }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      this.logger.warn(`alert telegram failed: ${err instanceof Error ? err.message : "unknown error"}`);
+    } finally {
+      clearTimeout(timer);
     }
   }
 

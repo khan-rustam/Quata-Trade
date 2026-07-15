@@ -105,6 +105,9 @@ export const envSchema = z.object({
   ALERT_WEBHOOK_URL: z.string().default(""),
   // Comma-separated email recipients for CRITICAL alerts (ops/on-call). Empty = email disabled.
   ALERT_EMAIL_TO: z.string().default(""),
+  // Telegram ops-alert bot (BotFather token + target chat/group id). Both empty = disabled.
+  TELEGRAM_BOT_TOKEN: z.string().default(""),
+  TELEGRAM_CHAT_ID: z.string().default(""),
 
   // Market data (informational Markets page). CoinGecko primary; CoinCap failover.
   // Free tiers work with no key; a key raises rate limits. Responses are Redis-cached.

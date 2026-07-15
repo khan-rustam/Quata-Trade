@@ -4,7 +4,14 @@ import type { Env } from "../../config/env";
 import { AlertsService } from "./alerts.service";
 
 const make = (webhook = ""): AlertsService =>
-  new AlertsService(new ConfigService<Env, true>({ ALERT_WEBHOOK_URL: webhook }));
+  new AlertsService(
+    new ConfigService<Env, true>({
+      ALERT_WEBHOOK_URL: webhook,
+      ALERT_EMAIL_TO: "",
+      TELEGRAM_BOT_TOKEN: "",
+      TELEGRAM_CHAT_ID: "",
+    }),
+  );
 
 describe("AlertsService", () => {
   it("delivers security events to the webhook", async () => {

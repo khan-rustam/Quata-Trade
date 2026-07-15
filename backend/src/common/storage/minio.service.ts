@@ -46,4 +46,18 @@ export class MinioService {
   async removeObject(bucket: Bucket, key: string): Promise<void> {
     await this.client.removeObject(bucket, key);
   }
+
+  /**
+   * Cheap reachability probe for health checks: a completed `bucketExists` call
+   * (true OR false) proves the object store answered; only a connection/auth
+   * failure throws → reported as down. No object is read or written.
+   */
+  async ping(): Promise<boolean> {
+    try {
+      await this.client.bucketExists("kyc");
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }

@@ -14,11 +14,17 @@ notified to the authority (and affected users where required) **without undue de
 
 ## 1. Detect
 Signals that should reach a human:
-- **AlertsService webhook** (`ALERT_WEBHOOK_URL`) — fires on `reconciliation.mismatch`, `user.frozen`
-  (risk auto-freeze), `risk.flagged`, `admin.kill_switch`, `ledger.adjustment`.
-- **Ledger reconciliation** (10-min cron) auto-pauses withdrawals on any cached-vs-ledger mismatch.
+- **AlertsService** delivers to **webhook** (`ALERT_WEBHOOK_URL`), **email** (`ALERT_EMAIL_TO`, criticals),
+  **Telegram** (`TELEGRAM_BOT_TOKEN`+`TELEGRAM_CHAT_ID`, all severities), and the admin **Alerts page**.
+  Events: `reconciliation.mismatch`, `reconciliation.reserve_shortfall`, `reconciliation.job_error`,
+  `withdrawal.broadcast_stale`, `aml.hit`, `user.frozen`, `risk.flagged`, `admin.kill_switch`, `ledger.adjustment`.
+- **Ledger reconciliation** (10-min cron) auto-pauses withdrawals on any cached-vs-ledger mismatch, and
+  now alerts if the reconciliation job itself fails to run.
 - **Audit-chain verify:** `GET /api/v1/admin/audit-logs/verify` → `{ ok:false }` means tampering.
-- **pino error logs** (pm2), TronGrid circuit-breaker warnings, `/health/ready`.
+- **Health probes:** point uptime monitoring at `/ready` (503 on core-dep down); `/status` gives the full
+  infra snapshot (db/redis/storage/wallet/disk/memory). **A crash-looping API/worker (high PM2 restart
+  count) is an incident** — usually an invalid `backend/.env` value failing boot validation.
+- **pino error logs** (pm2), TronGrid circuit-breaker warnings.
 
 ## 2. Triage & declare
 Confirm scope in ≤10 min: which money path, how many users/funds, is it spreading. Declare severity,
