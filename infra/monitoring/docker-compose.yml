@@ -1,0 +1,70 @@
+# QuataTrade monitoring stack — Prometheus + Grafana + Uptime-Kuma + node-exporter.
+#
+# Deployed on the APP VPS for now (host networking so Prometheus can scrape the
+# 127.0.0.1-bound API /metrics). Fully containerized and PORTABLE: to move to a
+# dedicated monitoring box later, switch to a bridge network and point the
+# Prometheus scrape target at the app host's private IP (see README.md) — no
+# application change required.
+#
+# Ports (chosen to avoid 3000/3800 already used on this shared box):
+#   Prometheus 9090 · Grafana 3001 · Uptime-Kuma 3002 · node-exporter 9100
+#
+# Start:  docker compose -f infra/monitoring/docker-compose.yml up -d
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: quata-prometheus
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=30d
+      - --web.listen-address=127.0.0.1:9090 # local-only; Grafana reaches it via localhost
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: quata-grafana
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      GF_SERVER_HTTP_PORT: "3001"
+      GF_SERVER_ROOT_URL: "https://monitor.quatatrade.com" # adjust or front with nginx
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      # Set a strong admin password on the VPS (do NOT hardcode): export GF_SECURITY_ADMIN_PASSWORD=…
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:?set GF_SECURITY_ADMIN_PASSWORD in the shell/env before compose up}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: quata-uptime-kuma
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      UPTIME_KUMA_PORT: "3002"
+    volumes:
+      - uptime-kuma-data:/app/data
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: quata-node-exporter
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    command:
+      - --path.rootfs=/host
+      - --web.listen-address=127.0.0.1:9100
+    volumes:
+      - /:/host:ro,rslave
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  uptime-kuma-data:

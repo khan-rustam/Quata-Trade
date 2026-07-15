@@ -42,7 +42,11 @@ async function bootstrap(): Promise<void> {
     credentials: true,
   });
 
-  app.setGlobalPrefix("api/v1", { exclude: ["health", "health/ready"] });
+  // Health/ops probes + Prometheus scrape live at the ROOT (no /api/v1 prefix) so
+  // uptime monitors and Prometheus hit conventional paths.
+  app.setGlobalPrefix("api/v1", {
+    exclude: ["health", "health/ready", "live", "ready", "status", "metrics"],
+  });
   app.enableShutdownHooks();
 
   if (config.get("SWAGGER_ENABLED", { infer: true }) && config.get("NODE_ENV", { infer: true }) !== "production") {

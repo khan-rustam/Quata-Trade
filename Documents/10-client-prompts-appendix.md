@@ -134,6 +134,19 @@ enterprise monitoring. Decisions taken for the build:
 Note: money-path features here are built **sequentially** (not via parallel agents) because they
 edit shared money-path files; each increment is typechecked + committed + pushed on its own.
 
+### 2026-07-15 client prompt "Production Readiness Infrastructure" (Phase A + monitoring)
+
+| ID | Doc says | We did | Why |
+|---|---|---|---|
+| D31-prom | Doc 02 lists Prometheus + Grafana as infra; no metrics client library named | Added `prom-client` (backend dependency) exposing `GET /metrics`: default process metrics + an HTTP-latency histogram (interceptor) + business gauges (withdrawals/trades/deposits by status, stuck broadcasts, users, alerts/hour) computed **read-only at scrape time**. Containerized Prometheus + Grafana + Uptime-Kuma + node-exporter under `infra/monitoring/`. | Client requested full monitoring (§3). `prom-client` is the standard pure-JS Prometheus client (no native build). Business gauges query the DB at scrape — **no money-path code is instrumented**, the ledger stays untouched. `/metrics` is root-path, served only on the 127.0.0.1-bound API (local to Prometheus). |
+| D31-telegram | Notifications = email + in-app (doc 02); Telegram not named | Env-gated Telegram transport added to `AlertsService` (`TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`) alongside the existing webhook / email / admin-Alerts-page channels. | Client requested Telegram ops alerts (§4). Dormant until creds are set; best-effort with a 5s timeout — never blocks the flow it observes. |
+| D31-health | Doc 12 = `/health` + `/health/ready` | Added `/live`, `/ready`, `/status` (storage/wallet/disk/memory probes; signer + queue reported `worker_scoped` since they run only in the worker). Existing paths kept. | Client requested `/health` `/ready` `/live` `/status` (§12). New paths are root-level (excluded from the `api/v1` prefix) for conventional uptime/Prometheus probing. |
+| D31-signer | "Implement a dedicated signer service on a separate VPS" (§1) | **Design + prepare only; NOT deployed** (client deferred the 2nd VPS). Signer stays human-written per `backend/SIGNER.md`; this repo holds only the client interface + mock. | Client instruction (2026-07-15): purchase the signer VPS last, after all other readiness tasks. Also aligns with the standing rule that Claude never generates signer key-handling code. |
+
+Note: `sharp` + `clamscan` (upload EXIF-strip + AV, audit B28) and the full §9 country/IP-block +
+persisted-velocity admin editors remain deferred — the former needs a native dep + the ClamAV daemon,
+the latter is a self-contained admin feature scheduled as its own increment.
+
 ### Legal/commercial guardrails to settle in writing BEFORE building (from prior research)
 - Client owns the legal entity, any required licenses, treasury/cold keys, and the regulatory/legal risk. Developer is a contractor, not fund custodian.
 - The 30% revenue-share can reclassify the developer as an operator/partner (higher liability). Prefer paid milestones or a clear contract that isolates liability + indemnifies the developer.

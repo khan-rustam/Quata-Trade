@@ -1,0 +1,28 @@
+# Prometheus scrape config for QuataTrade.
+# On the app box (host networking), targets are on localhost. When migrating to a
+# dedicated monitoring box, replace 127.0.0.1 with the app host's PRIVATE ip and
+# scrape /metrics over the private network (never expose /metrics publicly).
+
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  external_labels:
+    project: quatatrade
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["127.0.0.1:9090"]
+
+  - job_name: node
+    static_configs:
+      - targets: ["127.0.0.1:9100"]
+        labels: { host: app-vps }
+
+  # QuataTrade API business + HTTP + process metrics. Adjust the port to the API's
+  # PORT (backend/.env, default 4000). The worker has no HTTP server (cron-only).
+  - job_name: quatatrade-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["127.0.0.1:4000"]
+        labels: { service: api }
