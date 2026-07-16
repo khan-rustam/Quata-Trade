@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { inter, plexMono, spaceGrotesk } from "@/lib/fonts";
+import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -28,6 +29,12 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: "QuataTrade",
+  // iOS standalone (Add to Home Screen) polish — full-screen, dark status bar.
+  appleWebApp: {
+    capable: true,
+    title: "QuataTrade",
+    statusBarStyle: "black-translucent",
+  },
   openGraph: {
     type: "website",
     siteName: "QuataTrade",
@@ -64,6 +71,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full">
+        <ServiceWorkerRegister />
         <NextIntlClientProvider locale={locale} messages={messages}>
           {/* Keyboard/SR users can jump past the header nav straight to the page
               body; hidden until focused (WCAG 2.4.1). Each shell's <main> carries

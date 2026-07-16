@@ -159,7 +159,8 @@
       "about": "À propos",
       "blog": "Blog",
       "careers": "Carrières"
-    }
+    },
+    "download": "Download app"
   },
   "trader": {
     "verified": "Vérifié",
@@ -2011,5 +2012,32 @@
     "unblockedToast": "Adresse débloquée",
     "errorBlock": "Impossible de bloquer l'adresse",
     "errorUnblock": "Impossible de débloquer l'adresse"
+  },
+  "download": {
+    "eyebrow": "App",
+    "title": "Get the QuataTrade app",
+    "subtitle": "Install QuataTrade on your phone or computer for one-tap access and a clean, full-screen experience — no app store needed.",
+    "noStoreNote": "Installs straight from your browser. Nothing to download from an app store.",
+    "installButton": "Install app",
+    "alreadyInstalled": "QuataTrade is installed on this device",
+    "manualHint": "To install, open your browser menu and choose “Install app” or “Add to Home Screen”.",
+    "iosTitle": "Add to Home Screen",
+    "iosSteps": "Tap the Share button in Safari, then choose “Add to Home Screen”.",
+    "feat1Title": "On your home screen",
+    "feat1Body": "Launch QuataTrade with one tap, just like a native app.",
+    "feat2Title": "Fast & full-screen",
+    "feat2Body": "Opens instantly in its own window — no browser bars, no clutter.",
+    "feat3Title": "Graceful offline",
+    "feat3Body": "A clean offline screen if your connection drops. Your funds stay safe on our servers.",
+    "feat4Title": "Same protection",
+    "feat4Body": "Escrow, 2FA and every safeguard work exactly as they do on the web.",
+    "howTitle": "How to install",
+    "howSubtitle": "It takes a few seconds — find your device below.",
+    "androidTitle": "Android (Chrome)",
+    "androidSteps": "Tap “Install app” above, or open the ⋮ menu and choose “Install app” / “Add to Home screen”.",
+    "iosTitle2": "iPhone & iPad (Safari)",
+    "iosSteps2": "Tap the Share button, scroll down, and choose “Add to Home Screen”.",
+    "desktopTitle": "Desktop (Chrome / Edge)",
+    "desktopSteps": "Click “Install app” above, or use the install icon in the address bar."
   }
 }
