@@ -60,6 +60,7 @@ export default function WithdrawPage(): React.JSX.Element {
     ? [
         !me.emailVerified && { key: "blockerEmail", href: "/account" },
         me.kycTier < 1 && { key: "blockerKyc", href: "/account/kyc" },
+        !me.pinSet && { key: "blockerPin", href: "/account/security" },
         !me.totpEnabled && { key: "blockerTotp", href: "/account/security" },
       ].filter((b): b is { key: string; href: string } => Boolean(b))
     : [];
@@ -85,6 +86,7 @@ export default function WithdrawPage(): React.JSX.Element {
     data: quote,
     isFetching: quoting,
     isError: quoteFailed,
+    refetch: refetchQuote,
   } = useQuery({
     queryKey: ["withdrawal-quote", debouncedUnits],
     queryFn: () => api.withdrawalQuote("USDT_TRC20", debouncedUnits),
@@ -389,7 +391,7 @@ export default function WithdrawPage(): React.JSX.Element {
 
         {/* The fee used to appear only in the receipt, i.e. after the money had
             already moved. It has to be visible before the user commits. */}
-        {quote && (
+        {quoteReady && quote && (
           <dl className="rounded-lg border border-border bg-surface-2 p-3 text-sm">
             <div className="flex justify-between gap-3">
               <dt className="text-text-3">{tx("rowPlatformFee")}</dt>
@@ -412,6 +414,20 @@ export default function WithdrawPage(): React.JSX.Element {
               </dd>
             </div>
           </dl>
+        )}
+
+        {/* validateAmount() cannot run while the button is disabled, so a failed
+            or pending quote would otherwise be a silent dead-end: greyed button,
+            no message, no retry. Say what is happening. */}
+        {amountUnits > 0n && quoteFailed && (
+          <Alert tone="danger" title={tx("quoteUnavailable")}>
+            <button type="button" onClick={() => void refetchQuote()} className="underline underline-offset-2">
+              {tx("quoteRetry")}
+            </button>
+          </Alert>
+        )}
+        {amountUnits > 0n && !quoteFailed && !quoteReady && (
+          <p className="text-xs text-text-3">{tx("quoteLoading")}</p>
         )}
 
         <Alert tone="info">{tx("feeNotice")}</Alert>

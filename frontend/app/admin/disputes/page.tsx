@@ -22,6 +22,7 @@ import { Usdt } from "@/components/ui/amount";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
 import { useAdminDisputes, useAdminMe } from "@/hooks/use-admin";
+import { usePageClamp } from "@/hooks/use-page-clamp";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime } from "@/lib/format";
 
@@ -31,6 +32,7 @@ export default function AdminDisputesPage(): React.JSX.Element {
   const tx = useTranslations("adminDisputes");
   const [page, setPage] = useState(1);
   const { data, isLoading, refetch, isFetching } = useAdminDisputes(page);
+  usePageClamp(page, data?.items.length, setPage);
   const { data: me } = useAdminMe();
   const [active, setActive] = useState<Row | null>(null);
 

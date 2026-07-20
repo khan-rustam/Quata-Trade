@@ -24,6 +24,7 @@ import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
 import { useAdminUsers, useAdminMe } from "@/hooks/use-admin";
 import { can } from "@/lib/admin-rbac";
+import { usePageClamp } from "@/hooks/use-page-clamp";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime } from "@/lib/format";
 
@@ -41,6 +42,7 @@ export default function AdminUsersPage(): React.JSX.Element {
   const { data, isLoading, refetch, isFetching } = useAdminUsers(page, debounced || undefined);
   const [active, setActive] = useState<Row | null>(null);
   const { data: me } = useAdminMe();
+  usePageClamp(page, data?.items.length, setPage);
   const mayModerate = can(me?.role, "freezeUser");
 
   return (

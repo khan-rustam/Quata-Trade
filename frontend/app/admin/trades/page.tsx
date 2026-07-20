@@ -13,6 +13,7 @@ import { Field } from "@/components/ui/field";
 import { Usdt } from "@/components/ui/amount";
 import { TradeStatusBadge } from "@/components/ui/status-badge";
 import { useAdminTrades } from "@/hooks/use-admin";
+import { usePageClamp } from "@/hooks/use-page-clamp";
 import { formatDateTime } from "@/lib/format";
 
 export default function AdminTradesPage(): React.JSX.Element {
@@ -24,6 +25,7 @@ export default function AdminTradesPage(): React.JSX.Element {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const { data, isLoading, refetch, isFetching } = useAdminTrades(page, pageSize, { status, from, to });
+  usePageClamp(page, data?.items.length, setPage);
   const hasFilters = Boolean(status || from || to);
   const reset = () => {
     setStatus("");

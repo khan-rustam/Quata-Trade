@@ -21,6 +21,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
 import { useAdminKycQueue, useAdminMe } from "@/hooks/use-admin";
+import { usePageClamp } from "@/hooks/use-page-clamp";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime } from "@/lib/format";
 
@@ -30,7 +31,8 @@ type Decision = "approve" | "reject" | "resubmit";
 export default function AdminKycPage(): React.JSX.Element {
   const tx = useTranslations("adminKyc");
   const [page, setPage] = useState(1);
-  const { data, isLoading, refetch, isFetching } = useAdminKycQueue(page);
+  const { data, isLoading, refetch, isFetching, isError } = useAdminKycQueue(page);
+  usePageClamp(page, data?.items.length, setPage);
   const [active, setActive] = useState<Row | null>(null);
   const { data: me } = useAdminMe();
 
@@ -59,7 +61,11 @@ export default function AdminKycPage(): React.JSX.Element {
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
-      ) : !data || data.items.length === 0 ? (
+      ) : isError || !data ? (
+        // A failed request is not an empty queue: telling an operator the queue
+        // is clear when it could not be read is how held money goes unreviewed.
+        <Alert tone="danger">{tx("queueLoadError")}</Alert>
+      ) : data.items.length === 0 ? (
         <EmptyState icon={BadgeCheck} title={tx("emptyTitle")} description={tx("emptyDescription")} />
       ) : (
         <>

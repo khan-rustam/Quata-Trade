@@ -22,6 +22,7 @@ import { useToast } from "@/components/ui/toast";
 import { useAdminMe } from "@/hooks/use-admin";
 import { useAdminHeldDeposits, useReviewHeldDeposit, type HoldFilter } from "@/hooks/use-held-deposits";
 import { can } from "@/lib/admin-rbac";
+import { usePageClamp } from "@/hooks/use-page-clamp";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime, shortHash, timeAgo } from "@/lib/format";
 
@@ -43,7 +44,8 @@ export default function AdminHeldDepositsPage(): React.JSX.Element {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [hold, setHold] = useState<HoldFilter>("all");
-  const { data, isLoading, refetch, isFetching } = useAdminHeldDeposits(page, pageSize, hold);
+  const { data, isLoading, refetch, isFetching, isError } = useAdminHeldDeposits(page, pageSize, hold);
+  usePageClamp(page, data?.items.length, setPage);
   const { data: me } = useAdminMe();
   const [action, setAction] = useState<{ row: Row; kind: Decision } | null>(null);
 
@@ -95,7 +97,11 @@ export default function AdminHeldDepositsPage(): React.JSX.Element {
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
-      ) : !data || data.items.length === 0 ? (
+      ) : isError || !data ? (
+        // A failed request is not an empty queue: telling an operator the queue
+        // is clear when it could not be read is how held money goes unreviewed.
+        <Alert tone="danger">{tx("queueLoadError")}</Alert>
+      ) : data.items.length === 0 ? (
         <EmptyState icon={PauseCircle} title={tx("emptyTitle")} description={tx("emptyDescription")} />
       ) : (
         <>

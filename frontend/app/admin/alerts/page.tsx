@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
+import { usePageClamp } from "@/hooks/use-page-clamp";
 import { apiErrorMessage } from "@/lib/api/errors";
 
 const REFRESH_MS = 20_000;
@@ -58,6 +59,7 @@ export default function AlertsPage(): React.JSX.Element {
     refetchInterval: REFRESH_MS,
   });
 
+  usePageClamp(page, data?.items.length, setPage);
   const acknowledge = async (id: string) => {
     setAckingId(id);
     try {

@@ -103,6 +103,11 @@ function TwoFactorSetup({ onEnabled }: { onEnabled: () => void }): React.JSX.Ele
   const start = async () => {
     setOpen(true);
     setError(null);
+    // refetch() mints a NEW secret, so a code left over from the previous attempt
+    // is not just stale, it is for a different secret — and "Verify & enable" was
+    // already enabled with it. The admin twin of this dialog already clears it
+    // (app/admin/profile/page.tsx); this side did not.
+    setCode("");
     await refetch();
   };
 
@@ -206,6 +211,20 @@ function SetPin({ onDone, pinSet }: { onDone: () => void; pinSet: boolean }): Re
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // The dialog is inside this component, so closing it unmounts only the Dialog —
+  // the PIN and the account password lived on. A failed attempt then reopened
+  // with both still filled, the stale error showing, and Save already enabled:
+  // one click sets the credential that authorises withdrawals, without the user
+  // re-entering it this round. Reset on the open transition (render-phase, so the
+  // stale values never reach the DOM).
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    setPin("");
+    setPassword("");
+    setError(null);
+  }
 
   const submit = async () => {
     setBusy(true);

@@ -14,12 +14,14 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/field";
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Usdt } from "@/components/ui/amount";
 import { WithdrawalStatusBadge } from "@/components/ui/status-badge";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
 import { useAdminMe, useAdminWithdrawals } from "@/hooks/use-admin";
+import { usePageClamp } from "@/hooks/use-page-clamp";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { shortHash } from "@/lib/format";
 
@@ -31,8 +33,9 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
   const [status, setStatus] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const { data, isLoading, refetch, isFetching } = useAdminWithdrawals(page, pageSize, { status, from, to });
+  const { data, isLoading, refetch, isFetching, isError } = useAdminWithdrawals(page, pageSize, { status, from, to });
   const { data: me } = useAdminMe();
+  usePageClamp(page, data?.items.length, setPage);
   const qc = useQueryClient();
   const toast = useToast();
   const tx = useTranslations("adminWithdrawals");
@@ -142,7 +145,11 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
-      ) : !data || data.items.length === 0 ? (
+      ) : isError || !data ? (
+        // A failed request is not an empty queue: telling an operator the queue
+        // is clear when it could not be read is how held money goes unreviewed.
+        <Alert tone="danger">{tx("queueLoadError")}</Alert>
+      ) : data.items.length === 0 ? (
         <>
           <EmptyState icon={Check} title={tx("emptyTitle")} description={tx("emptyDescription")} />
           {/* Without this an admin who filtered down to an empty page had no

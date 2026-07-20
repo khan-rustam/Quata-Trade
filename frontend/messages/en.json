@@ -691,7 +691,9 @@
     "newAddressAria": "TRON (TRC20) withdrawal address",
     "labelAria": "Label for this address",
     "quoteLoading": "Calculating the fee…",
-    "quoteUnavailable": "Could not calculate the fee right now. Check your connection and try again."
+    "quoteUnavailable": "Could not calculate the fee right now. Check your connection and try again.",
+    "quoteRetry": "Try again",
+    "blockerPin": "Set your transaction PIN"
   },
   "walletTransfer": {
     "emailInvalid": "Enter a valid email",
@@ -1123,7 +1125,8 @@
     "approvedToastBody": "The withdrawal moves to the signer pipeline.",
     "rejectedToastTitle": "Rejected",
     "rejectedToastBody": "Funds were refunded to the user.",
-    "actionFailed": "Action failed"
+    "actionFailed": "Action failed",
+    "queueLoadError": "Could not load this queue. It may not be empty — reload before assuming there is nothing to review."
   },
   "adminKyc": {
     "title": "KYC review",
@@ -1162,7 +1165,8 @@
     "cancel": "Cancel",
     "confirm": "Confirm {decision}",
     "authenticatorCodeLabel": "Your authenticator code",
-    "authenticatorCodeAria": "Authenticator code"
+    "authenticatorCodeAria": "Authenticator code",
+    "queueLoadError": "Could not load this queue. It may not be empty — reload before assuming there is nothing to review."
   },
   "adminHeldDeposits": {
     "title": "Held deposits",
@@ -1201,7 +1205,8 @@
     "rejectedToastTitle": "Deposit rejected",
     "actionFailed": "The decision could not be recorded",
     "authenticatorCodeLabel": "Your authenticator code",
-    "authenticatorCodeAria": "Authenticator code"
+    "authenticatorCodeAria": "Authenticator code",
+    "queueLoadError": "Could not load this queue. It may not be empty — reload before assuming there is nothing to review."
   },
   "adminDisputes": {
     "title": "Disputes",
@@ -1238,7 +1243,8 @@
     "opener": "party who opened the dispute",
     "counterparty": "counterparty",
     "evidenceFile": "Attachment {n}",
-    "evidenceError": "Could not load the evidence for this dispute. Do not resolve it until you can see what was submitted — reload and try again."
+    "evidenceError": "Could not load the evidence for this dispute. Do not resolve it until you can see what was submitted — reload and try again.",
+    "queueLoadError": "Could not load this queue. It may not be empty — reload before assuming there is nothing to review."
   },
   "adminTreasury": {
     "title": "Treasury",
@@ -1390,7 +1396,8 @@
     "actionFeesTitle": "Action fees",
     "actionFeesDesc": "Charged when a user posts an advertisement or opens a dispute.",
     "advertisementFee": "Advertisement fee (USDT)",
-    "disputeFee": "Dispute fee (USDT)"
+    "disputeFee": "Dispute fee (USDT)",
+    "tierZeroNote": "All amounts are in USDT. 0 BLOCKS that action entirely for the tier — it does not mean unlimited. Tier 0 is seeded at 0 so unverified users cannot trade or withdraw."
   },
   "adminAudit": {
     "title": "Audit log",

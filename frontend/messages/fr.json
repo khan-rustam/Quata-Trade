@@ -691,7 +691,9 @@
     "newAddressAria": "Adresse de retrait TRON (TRC20)",
     "labelAria": "Libellé de cette adresse",
     "quoteLoading": "Calcul des frais…",
-    "quoteUnavailable": "Impossible de calculer les frais pour le moment. Vérifiez votre connexion et réessayez."
+    "quoteUnavailable": "Impossible de calculer les frais pour le moment. Vérifiez votre connexion et réessayez.",
+    "quoteRetry": "Réessayer",
+    "blockerPin": "Définissez votre code PIN de transaction"
   },
   "walletTransfer": {
     "emailInvalid": "Saisissez une adresse e-mail valide",
@@ -1123,7 +1125,8 @@
     "approvedToastBody": "Le retrait passe au pipeline du signataire.",
     "rejectedToastTitle": "Rejeté",
     "rejectedToastBody": "Les fonds ont été remboursés à l'utilisateur.",
-    "actionFailed": "Échec de l'action"
+    "actionFailed": "Échec de l'action",
+    "queueLoadError": "Impossible de charger cette file. Elle n'est peut-être pas vide — rechargez avant de conclure qu'il n'y a rien à examiner."
   },
   "adminKyc": {
     "title": "Examen KYC",
@@ -1162,7 +1165,8 @@
     "cancel": "Annuler",
     "confirm": "Confirmer {decision}",
     "authenticatorCodeLabel": "Votre code d'authentification",
-    "authenticatorCodeAria": "Code d'authentification"
+    "authenticatorCodeAria": "Code d'authentification",
+    "queueLoadError": "Impossible de charger cette file. Elle n'est peut-être pas vide — rechargez avant de conclure qu'il n'y a rien à examiner."
   },
   "adminHeldDeposits": {
     "title": "Dépôts bloqués",
@@ -1201,7 +1205,8 @@
     "rejectedToastTitle": "Dépôt refusé",
     "actionFailed": "La décision n'a pas pu être enregistrée",
     "authenticatorCodeLabel": "Votre code d'authentification",
-    "authenticatorCodeAria": "Code d'authentification"
+    "authenticatorCodeAria": "Code d'authentification",
+    "queueLoadError": "Impossible de charger cette file. Elle n'est peut-être pas vide — rechargez avant de conclure qu'il n'y a rien à examiner."
   },
   "adminDisputes": {
     "title": "Litiges",
@@ -1238,7 +1243,8 @@
     "opener": "de la partie qui a ouvert le litige",
     "counterparty": "de la contrepartie",
     "evidenceFile": "Pièce jointe {n}",
-    "evidenceError": "Impossible de charger les preuves de ce litige. Ne le résolvez pas tant que vous ne pouvez pas voir ce qui a été soumis — rechargez et réessayez."
+    "evidenceError": "Impossible de charger les preuves de ce litige. Ne le résolvez pas tant que vous ne pouvez pas voir ce qui a été soumis — rechargez et réessayez.",
+    "queueLoadError": "Impossible de charger cette file. Elle n'est peut-être pas vide — rechargez avant de conclure qu'il n'y a rien à examiner."
   },
   "adminTreasury": {
     "title": "Trésorerie",
@@ -1390,7 +1396,8 @@
     "actionFeesTitle": "Frais par action",
     "actionFeesDesc": "Facturés lorsqu'un utilisateur publie une annonce ou ouvre un litige.",
     "advertisementFee": "Frais d'annonce (USDT)",
-    "disputeFee": "Frais de litige (USDT)"
+    "disputeFee": "Frais de litige (USDT)",
+    "tierZeroNote": "Tous les montants sont en USDT. 0 BLOQUE entièrement cette action pour le palier — cela ne signifie pas « illimité ». Le palier 0 est initialisé à 0 pour empêcher les utilisateurs non vérifiés d'échanger ou de retirer."
   },
   "adminAudit": {
     "title": "Journal d'audit",

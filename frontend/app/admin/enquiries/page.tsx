@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
+import { usePageClamp } from "@/hooks/use-page-clamp";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime } from "@/lib/format";
 
@@ -34,6 +35,7 @@ export default function AdminEnquiriesPage(): React.JSX.Element {
     queryFn: () => adminApi.adminEnquiries({ page, pageSize: PAGE_SIZE }),
   });
 
+  usePageClamp(page, data?.items.length, setPage);
   const setStatus = useMutation({
     mutationFn: (v: { id: string; status: EnquiryStatus }) =>
       adminApi.adminUpdateEnquiryStatus(v.id, { status: v.status }),

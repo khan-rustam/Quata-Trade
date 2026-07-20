@@ -605,7 +605,7 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
             </div>
           ))}
         </div>
-        <p className="text-xs text-text-3">{tx("limitsZeroNote")}</p>
+        <p className="text-xs text-text-3">{tx("tierZeroNote")}</p>
         <div>
           <Button size="sm" onClick={saveTierLimits}>
             {tx("saveChanges")}

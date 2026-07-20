@@ -16,6 +16,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
 import { useAdminAuditLogs } from "@/hooks/use-admin";
+import { usePageClamp } from "@/hooks/use-page-clamp";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime, shortHash } from "@/lib/format";
 
@@ -29,6 +30,7 @@ export default function AdminAuditPage(): React.JSX.Element {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const { data, isLoading, refetch, isFetching } = useAdminAuditLogs(page, pageSize, { actorType, action, from, to });
+  usePageClamp(page, data?.items.length, setPage);
   const hasFilters = Boolean(actorType || action || from || to);
   const resetFilters = () => {
     setActorType("");
