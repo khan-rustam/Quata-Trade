@@ -166,13 +166,11 @@ export function validateEnv(config: Record<string, unknown>): Env {
     if (parsed.data.MINIO_SECRET_KEY.trim() === "" || /dev_only/i.test(parsed.data.MINIO_SECRET_KEY)) {
       throw new Error(`MINIO_SECRET_KEY must be a real (non-dev) secret in ${env} (object store holds KYC/PII)`);
     }
-    if (!parsed.data.ADMIN_2FA_REQUIRED) {
-      throw new Error(`ADMIN_2FA_REQUIRED must be true in ${env} (admin step-up 2FA on money actions)`);
-    }
-    // NOTE: STORAGE_SSE_ENABLED is deliberately NOT here. At-rest SSE requires MinIO
-    // to have KMS provisioned — an infrastructure capability, not a config toggle.
-    // Demanding it on a staging box whose MinIO has no KMS would break every upload,
-    // the same category error as demanding mainnet. It stays a production hard-stop.
+    // NOTE: ADMIN_2FA_REQUIRED and STORAGE_SSE_ENABLED are deliberately NOT here.
+    // Both need groundwork before they can be switched on without breaking a box:
+    // 2FA needs every admin enrolled, SSE needs MinIO KMS provisioned. Forcing either
+    // on staging would take the site down. Both remain PRODUCTION hard-stops, so they
+    // must be satisfied before go-live — see Documents/ops/go-live-checklist.md.
   }
 
   // ── Tier B: PRODUCTION-ONLY facts (mainnet, real custody, paging) ──
@@ -219,6 +217,9 @@ export function validateEnv(config: Record<string, unknown>): Env {
     }
     if (!parsed.data.STORAGE_SSE_ENABLED) {
       throw new Error("STORAGE_SSE_ENABLED must be true in production (at-rest encryption of KYC/PII objects)");
+    }
+    if (!parsed.data.ADMIN_2FA_REQUIRED) {
+      throw new Error("ADMIN_2FA_REQUIRED must be true in production (admin step-up 2FA on money actions)");
     }
     // Critical ops/security alerts (reconciliation mismatch, reserve shortfall, AML
     // hit, kill-switch) are log-only when this is empty — nobody gets paged.

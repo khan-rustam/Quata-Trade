@@ -125,14 +125,13 @@ describe("validateEnv", () => {
     expect(() => validateEnv(base({ LOG_LEVEL: "verbose" }))).toThrow(/LOG_LEVEL/);
   });
 
-  /** A staging box: real secrets + 2FA + SSE, but still on testnet with a mock signer. */
+  /** A staging box: real secrets, but testnet + mock signer + 2FA/SSE not yet switched on. */
   const staging = (overrides: Record<string, unknown> = {}): Record<string, unknown> =>
     base({
       NODE_ENV: "staging",
       JWT_ACCESS_SECRET: "staging-jwt-secret-that-is-at-least-32-chars",
       MASTER_ENCRYPTION_KEY: PROD_KEY,
       MINIO_SECRET_KEY: "staging-minio-secret",
-      ADMIN_2FA_REQUIRED: "true",
       ...overrides,
     });
 
@@ -153,14 +152,15 @@ describe("validateEnv", () => {
       ).toThrow(/database password/);
     });
 
-    it("requires admin 2FA and no Swagger on staging", () => {
-      expect(() => validateEnv(staging({ ADMIN_2FA_REQUIRED: "false" }))).toThrow(/ADMIN_2FA_REQUIRED/);
+    it("forbids Swagger on staging", () => {
       expect(() => validateEnv(staging({ SWAGGER_ENABLED: "true" }))).toThrow(/Swagger/);
     });
 
-    it("does NOT demand infrastructure-dependent SSE on staging (MinIO may have no KMS)", () => {
-      expect(() => validateEnv(staging({ STORAGE_SSE_ENABLED: "false" }))).not.toThrow();
-      // ...but production still demands it
+    it("defers 2FA + SSE to production (they need admin enrolment / MinIO KMS first)", () => {
+      // Staging must still boot without them...
+      expect(() => validateEnv(staging({ ADMIN_2FA_REQUIRED: "false", STORAGE_SSE_ENABLED: "false" }))).not.toThrow();
+      // ...but production refuses without both.
+      expect(() => validateEnv(prod({ ADMIN_2FA_REQUIRED: "false" }))).toThrow(/ADMIN_2FA_REQUIRED/);
       expect(() => validateEnv(prod({ STORAGE_SSE_ENABLED: "false" }))).toThrow(/STORAGE_SSE_ENABLED/);
     });
 
