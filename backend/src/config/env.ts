@@ -169,9 +169,10 @@ export function validateEnv(config: Record<string, unknown>): Env {
     if (!parsed.data.ADMIN_2FA_REQUIRED) {
       throw new Error(`ADMIN_2FA_REQUIRED must be true in ${env} (admin step-up 2FA on money actions)`);
     }
-    if (!parsed.data.STORAGE_SSE_ENABLED) {
-      throw new Error(`STORAGE_SSE_ENABLED must be true in ${env} (at-rest encryption of KYC/PII objects)`);
-    }
+    // NOTE: STORAGE_SSE_ENABLED is deliberately NOT here. At-rest SSE requires MinIO
+    // to have KMS provisioned — an infrastructure capability, not a config toggle.
+    // Demanding it on a staging box whose MinIO has no KMS would break every upload,
+    // the same category error as demanding mainnet. It stays a production hard-stop.
   }
 
   // ── Tier B: PRODUCTION-ONLY facts (mainnet, real custody, paging) ──
@@ -215,6 +216,9 @@ export function validateEnv(config: Record<string, unknown>): Env {
       if (missing.length > 0) {
         throw new Error(`SIGNER_MODE=remote requires mTLS config in production — missing: ${missing.join(", ")}`);
       }
+    }
+    if (!parsed.data.STORAGE_SSE_ENABLED) {
+      throw new Error("STORAGE_SSE_ENABLED must be true in production (at-rest encryption of KYC/PII objects)");
     }
     // Critical ops/security alerts (reconciliation mismatch, reserve shortfall, AML
     // hit, kill-switch) are log-only when this is empty — nobody gets paged.

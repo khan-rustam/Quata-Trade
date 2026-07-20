@@ -133,7 +133,6 @@ describe("validateEnv", () => {
       MASTER_ENCRYPTION_KEY: PROD_KEY,
       MINIO_SECRET_KEY: "staging-minio-secret",
       ADMIN_2FA_REQUIRED: "true",
-      STORAGE_SSE_ENABLED: "true",
       ...overrides,
     });
 
@@ -154,10 +153,15 @@ describe("validateEnv", () => {
       ).toThrow(/database password/);
     });
 
-    it("requires admin 2FA, SSE and no Swagger on staging", () => {
+    it("requires admin 2FA and no Swagger on staging", () => {
       expect(() => validateEnv(staging({ ADMIN_2FA_REQUIRED: "false" }))).toThrow(/ADMIN_2FA_REQUIRED/);
-      expect(() => validateEnv(staging({ STORAGE_SSE_ENABLED: "false" }))).toThrow(/STORAGE_SSE_ENABLED/);
       expect(() => validateEnv(staging({ SWAGGER_ENABLED: "true" }))).toThrow(/Swagger/);
+    });
+
+    it("does NOT demand infrastructure-dependent SSE on staging (MinIO may have no KMS)", () => {
+      expect(() => validateEnv(staging({ STORAGE_SSE_ENABLED: "false" }))).not.toThrow();
+      // ...but production still demands it
+      expect(() => validateEnv(prod({ STORAGE_SSE_ENABLED: "false" }))).toThrow(/STORAGE_SSE_ENABLED/);
     });
 
     it("does NOT force production-only facts on staging", () => {
