@@ -55,7 +55,7 @@ const NAV: NavItem[] = [
   { href: "/admin/system", labelKey: "navSystem", icon: Activity },
   { href: "/admin/alerts", labelKey: "navAlerts", icon: BellRing },
   { href: "/admin/reports", labelKey: "navReports", icon: BarChart3 },
-  { href: "/admin/withdrawals", labelKey: "navWithdrawals", icon: ArrowUpFromLine, gate: "approveWithdrawal" },
+  { href: "/admin/withdrawals", labelKey: "navWithdrawals", icon: ArrowUpFromLine, gate: "secondApproveWithdrawal" },
   { href: "/admin/deposits/held", labelKey: "navHeldDeposits", icon: PauseCircle },
   { href: "/admin/disputes", labelKey: "navDisputes", icon: ShieldAlert, gate: "resolveDispute" },
   { href: "/admin/kyc", labelKey: "navKyc", icon: BadgeCheck, gate: "kycReview" },
@@ -206,8 +206,17 @@ export function AdminShell({
             onClick={() => setMobileNavOpen(false)}
             aria-hidden
           />
+          {/* Modal semantics + Escape: this is a full-screen overlay that traps the
+              admin visually, but assistive tech was told nothing about it and there
+              was no keyboard way out. */}
           <div
             id="admin-mobile-nav"
+            role="dialog"
+            aria-modal="true"
+            aria-label={tx("menu")}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setMobileNavOpen(false);
+            }}
             className="absolute left-0 top-0 flex h-full w-64 max-w-[80%] flex-col border-r border-border bg-surface-1"
           >
             <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">

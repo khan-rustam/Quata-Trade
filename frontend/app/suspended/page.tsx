@@ -1,11 +1,13 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { ShieldAlert } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { buttonClassName } from "@/components/ui/button";
 
 export const metadata = { title: "Account suspended — QuataTrade" };
 
-export default function SuspendedPage(): React.JSX.Element {
+export default async function SuspendedPage(): Promise<React.JSX.Element> {
+  const t = await getTranslations("statusPages");
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-5 px-6 text-center">
       <Logo size={22} />
@@ -13,14 +15,13 @@ export default function SuspendedPage(): React.JSX.Element {
         <ShieldAlert size={26} />
       </div>
       <div>
-        <h1 className="font-display text-2xl font-bold">Your account is on hold</h1>
+        <h1 className="font-display text-2xl font-bold">{t("suspendedTitle")}</h1>
         <p className="mx-auto mt-2 max-w-md text-text-2">
-          Access to this account is currently restricted. If you believe this is a mistake, contact support and we&rsquo;ll
-          review it with you.
+          {t("suspendedBody")}
         </p>
       </div>
       <Link href="/contact" className={buttonClassName()}>
-        Contact support
+        {t("contactSupport")}
       </Link>
     </main>
   );

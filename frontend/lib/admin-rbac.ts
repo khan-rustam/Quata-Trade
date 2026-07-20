@@ -8,6 +8,9 @@ import type { AdminRole } from "@quatatrade/shared";
 export const RBAC = {
   viewDashboards: ["SUPER_ADMIN", "FINANCE_ADMIN", "COMPLIANCE_ADMIN", "SUPPORT_ADMIN", "MODERATOR", "AUDITOR", "ANALYST"],
   approveWithdrawal: ["SUPER_ADMIN", "FINANCE_ADMIN"],
+  // The 2nd approval on a large withdrawal may also come from COMPLIANCE — the
+  // backend route admits all three and enforces the stage internally.
+  secondApproveWithdrawal: ["SUPER_ADMIN", "FINANCE_ADMIN", "COMPLIANCE_ADMIN"],
   resolveDispute: ["SUPER_ADMIN", "COMPLIANCE_ADMIN", "SUPPORT_ADMIN"],
   kycReview: ["SUPER_ADMIN", "COMPLIANCE_ADMIN"],
   reviewHeldDeposit: ["SUPER_ADMIN", "COMPLIANCE_ADMIN"], // release/reject an AML or policy hold

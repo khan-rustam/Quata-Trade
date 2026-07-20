@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Repeat } from "lucide-react";
-import { TRADE_STATUSES } from "@quatatrade/shared";
+import { toDisplay,TRADE_STATUSES } from "@quatatrade/shared";
 import { AdminTitle, ExportCsvButton, FilterBar, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -47,8 +47,8 @@ export default function AdminTradesPage(): React.JSX.Element {
                 { header: "Ref", value: (t) => t.shortRef },
                 { header: "Seller", value: (t) => t.sellerEmail },
                 { header: "Buyer", value: (t) => t.buyerEmail },
-                { header: "Amount", value: (t) => t.amount },
-                { header: "Fee", value: (t) => t.feeAmount },
+                { header: "Amount (USDT)", value: (t) => toDisplay(t.amount, "USDT_TRC20", 6) },
+                { header: "Fee (USDT)", value: (t) => toDisplay(t.feeAmount, "USDT_TRC20", 6) },
                 { header: "Status", value: (t) => t.status },
                 { header: "Created", value: (t) => t.createdAt },
               ]}

@@ -182,7 +182,11 @@
     "loading": "Loading…",
     "error": "Something went wrong",
     "retry": "Try again",
-    "skipToContent": "Skip to content"
+    "skipToContent": "Skip to content",
+    "close": "Close",
+    "copied": "Copied",
+    "addToWatchlist": "Add to watchlist",
+    "removeFromWatchlist": "Remove from watchlist"
   },
   "howItWorks": {
     "heroEyebrow": "How it works",
@@ -1773,7 +1777,8 @@
     "navWalletConfig": "Wallet config",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "navReleases": "Releases"
+    "navReleases": "Releases",
+    "menu": "Navigation menu"
   },
   "adminUi": {
     "pageStatus": "Page {page} of {pages} · {total} total",
@@ -1870,7 +1875,12 @@
     "cancel": "Cancel",
     "edit": "Edit",
     "delete": "Delete",
-    "draft": "Draft"
+    "draft": "Draft",
+    "visibility": "Visibility",
+    "visiblePublished": "Published",
+    "visibleDraft": "Draft",
+    "sortOrder": "Sort order",
+    "sortOrderHint": "Lower numbers appear first."
   },
   "adminEnquiries": {
     "pageTitle": "Enquiries",
@@ -2206,5 +2216,12 @@
     "artifactUrlHint": "Direct download link to the signed build. Required for Android and iOS.",
     "checksum": "SHA-256 checksum",
     "checksumHint": "Optional. Lets the client verify the download before installing."
+  },
+  "statusPages": {
+    "suspendedTitle": "Your account is on hold",
+    "suspendedBody": "Access to this account is currently restricted. Your balance is safe. If you believe this is a mistake, contact support and we'll review it with you.",
+    "contactSupport": "Contact support",
+    "maintenanceTitle": "We'll be right back",
+    "maintenanceBody": "QuataTrade is undergoing scheduled maintenance to keep your trades safe. Your funds are secure. Please check back shortly."
   }
 }

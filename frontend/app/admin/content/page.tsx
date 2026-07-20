@@ -165,6 +165,35 @@ function FaqSection(): React.JSX.Element {
             <Textarea {...p} value={draft.answer} rows={3} onChange={(e) => setDraft({ ...draft, answer: e.target.value })} />
           )}
         </Field>
+        {/* published/sortOrder were only ever carried through from the loaded row,
+            so a published item could never be taken down and ordering could not be
+            changed from the console at all. */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label={tx("visibility")}>
+            {() => (
+              <Segmented
+                value={draft.published ? "published" : "draft"}
+                onChange={(v) => setDraft({ ...draft, published: v === "published" })}
+                aria-label={tx("visibility")}
+                className="w-full"
+                options={[
+                  { value: "published", label: tx("visiblePublished"), tone: "success" },
+                  { value: "draft", label: tx("visibleDraft") },
+                ]}
+              />
+            )}
+          </Field>
+          <Field label={tx("sortOrder")} hint={tx("sortOrderHint")}>
+            {(p) => (
+              <Input
+                {...p}
+                inputMode="numeric"
+                value={String(draft.sortOrder ?? 0)}
+                onChange={(e) => setDraft({ ...draft, sortOrder: Number(e.target.value.replace(/\D/g, "") || 0) })}
+              />
+            )}
+          </Field>
+        </div>
         <div className="flex gap-2">
           <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending || draft.question.length < 3 || draft.answer.length < 3}>
             {editing ? tx("save") : tx("addFaq")}
@@ -264,6 +293,35 @@ function ReviewSection(): React.JSX.Element {
         <Field label={tx("reviewBody")}>
           {(p) => <Textarea {...p} value={draft.body} rows={3} onChange={(e) => setDraft({ ...draft, body: e.target.value })} />}
         </Field>
+        {/* published/sortOrder were only ever carried through from the loaded row,
+            so a published item could never be taken down and ordering could not be
+            changed from the console at all. */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label={tx("visibility")}>
+            {() => (
+              <Segmented
+                value={draft.published ? "published" : "draft"}
+                onChange={(v) => setDraft({ ...draft, published: v === "published" })}
+                aria-label={tx("visibility")}
+                className="w-full"
+                options={[
+                  { value: "published", label: tx("visiblePublished"), tone: "success" },
+                  { value: "draft", label: tx("visibleDraft") },
+                ]}
+              />
+            )}
+          </Field>
+          <Field label={tx("sortOrder")} hint={tx("sortOrderHint")}>
+            {(p) => (
+              <Input
+                {...p}
+                inputMode="numeric"
+                value={String(draft.sortOrder ?? 0)}
+                onChange={(e) => setDraft({ ...draft, sortOrder: Number(e.target.value.replace(/\D/g, "") || 0) })}
+              />
+            )}
+          </Field>
+        </div>
         <div className="flex gap-2">
           <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending || draft.authorName.length < 1 || draft.body.length < 3}>
             {editing ? tx("save") : tx("addReview")}

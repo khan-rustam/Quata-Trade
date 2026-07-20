@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,6 +25,7 @@ export function Dialog({
   children: ReactNode;
   className?: string;
 }): React.JSX.Element | null {
+  const t = useTranslations("common");
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -110,7 +113,7 @@ export function Dialog({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("close")}
             className="-mr-1 -mt-1 flex h-9 w-9 items-center justify-center rounded-lg text-text-2 hover:bg-surface-2 hover:text-text-1"
           >
             <X size={18} />

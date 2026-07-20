@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { PauseCircle, ShieldAlert, ShieldX, Check, X } from "lucide-react";
 import type { z } from "zod";
-import { zAdminHeldDepositDecision, zAdminHeldDepositRow } from "@quatatrade/shared";
+import { toDisplay,zAdminHeldDepositDecision, zAdminHeldDepositRow } from "@quatatrade/shared";
 import { AdminTitle, ExportCsvButton, FilterBar, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { Dialog } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -63,7 +63,7 @@ export default function AdminHeldDepositsPage(): React.JSX.Element {
               columns={[
                 { header: "User", value: (d) => d.userEmail },
                 { header: "Asset", value: (d) => d.asset },
-                { header: "Amount", value: (d) => d.amount },
+                { header: "Amount (USDT)", value: (d) => toDisplay(d.amount, "USDT_TRC20", 6) },
                 { header: "AML reason", value: (d) => d.amlReason ?? "" },
                 { header: "Policy reason", value: (d) => d.policyReason ?? "" },
                 { header: "From", value: (d) => d.fromAddress ?? "" },

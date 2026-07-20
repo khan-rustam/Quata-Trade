@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
 import type { z } from "zod";
-import { zAdminDisputeRow, type DisputeResolution } from "@quatatrade/shared";
+import { toDisplay,zAdminDisputeRow, type DisputeResolution } from "@quatatrade/shared";
 import { AdminTitle, ExportCsvButton, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { Dialog } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,7 +47,7 @@ export default function AdminDisputesPage(): React.JSX.Element {
               filename="quatatrade-disputes"
               columns={[
                 { header: "Trade", value: (d) => d.tradeShortRef },
-                { header: "Amount", value: (d) => d.amount },
+                { header: "Amount (USDT)", value: (d) => toDisplay(d.amount, "USDT_TRC20", 6) },
                 { header: "Reason", value: (d) => d.reason },
                 { header: "Status", value: (d) => d.status },
                 { header: "Opened by", value: (d) => d.openedBy },

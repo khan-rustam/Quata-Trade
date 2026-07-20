@@ -50,7 +50,8 @@ const LABELS: Record<string, string> = {
 };
 
 /** Parents with no index page — shown as plain text, not links. */
-const NON_LINK = new Set(["legal"]);
+// Segments that group routes but have no page of their own — linking them 404s.
+const NON_LINK = new Set(["legal", "deposits"]);
 
 /** A dynamic id segment (UUID or numeric) → shown as a generic "Details". */
 const isDynamic = (seg: string): boolean => /^[0-9a-f]{8}-[0-9a-f-]{8,}$/i.test(seg) || /^\d+$/.test(seg);

@@ -19,6 +19,13 @@ export default function AppLayout({ children }: { children: ReactNode }): React.
   useEffect(() => {
     if (ready && !isLoading && (isError || !me)) {
       router.replace("/login");
+      return;
+    }
+    // /suspended existed but nothing ever routed to it: a frozen or suspended
+    // user was let into the app and simply found every money action failing,
+    // with no explanation and no route to support.
+    if (me && me.status !== "active") {
+      router.replace("/suspended");
     }
   }, [ready, isLoading, isError, me, router]);
 

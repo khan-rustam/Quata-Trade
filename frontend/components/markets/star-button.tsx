@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Star } from "lucide-react";
 
 /**
@@ -7,10 +9,13 @@ import { Star } from "lucide-react";
  * it stops propagation + prevents default to avoid navigating on toggle.
  */
 export function StarButton({ active, onToggle, size = 16 }: { active: boolean; onToggle: () => void; size?: number }): React.JSX.Element {
+  const t = useTranslations("common");
   return (
     <button
       type="button"
-      aria-label="watchlist"
+      // State-agnostic before: a screen reader announced "watchlist" whether the
+      // action was to add or remove.
+      aria-label={active ? t("removeFromWatchlist") : t("addToWatchlist")}
       aria-pressed={active}
       onClick={(e) => {
         e.preventDefault();

@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ShieldAlert, X } from "lucide-react";
 import type { z } from "zod";
-import { WITHDRAWAL_STATUSES, zAdminWithdrawalRow } from "@quatatrade/shared";
+import { toDisplay,WITHDRAWAL_STATUSES, zAdminWithdrawalRow } from "@quatatrade/shared";
 import { AdminTitle, ExportCsvButton, FilterBar, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { TotpActionDialog } from "@/components/admin/totp-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -86,8 +86,8 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
               columns={[
                 { header: "User", value: (w) => w.userEmail },
                 { header: "Asset", value: (w) => w.asset },
-                { header: "Amount", value: (w) => w.amount },
-                { header: "Fee", value: (w) => w.fee },
+                { header: "Amount (USDT)", value: (w) => toDisplay(w.amount, "USDT_TRC20", 6) },
+                { header: "Fee (USDT)", value: (w) => toDisplay(w.fee, "USDT_TRC20", 6) },
                 { header: "Destination", value: (w) => w.toAddress },
                 { header: "Risk", value: (w) => w.riskScore ?? "" },
                 { header: "Status", value: (w) => w.status },
@@ -143,7 +143,14 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
       ) : !data || data.items.length === 0 ? (
-        <EmptyState icon={Check} title={tx("emptyTitle")} description={tx("emptyDescription")} />
+        <>
+          <EmptyState icon={Check} title={tx("emptyTitle")} description={tx("emptyDescription")} />
+          {/* Without this an admin who filtered down to an empty page had no
+              control to get back to page 1. */}
+          {data && data.page > 1 && (
+            <Pagination page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} />
+          )}
+        </>
       ) : (
         <>
           <TableFrame

@@ -182,7 +182,11 @@
     "loading": "Chargement…",
     "error": "Une erreur est survenue",
     "retry": "Réessayer",
-    "skipToContent": "Aller au contenu"
+    "skipToContent": "Aller au contenu",
+    "close": "Fermer",
+    "copied": "Copié",
+    "addToWatchlist": "Ajouter à la liste de suivi",
+    "removeFromWatchlist": "Retirer de la liste de suivi"
   },
   "howItWorks": {
     "heroEyebrow": "Comment ça marche",
@@ -1773,7 +1777,8 @@
     "navWalletConfig": "Portefeuille",
     "openMenu": "Ouvrir le menu",
     "closeMenu": "Fermer le menu",
-    "navReleases": "Releases"
+    "navReleases": "Releases",
+    "menu": "Menu de navigation"
   },
   "adminUi": {
     "pageStatus": "Page {page} sur {pages} · {total} au total",
@@ -1870,7 +1875,12 @@
     "cancel": "Annuler",
     "edit": "Modifier",
     "delete": "Supprimer",
-    "draft": "Brouillon"
+    "draft": "Brouillon",
+    "visibility": "Visibilité",
+    "visiblePublished": "Publié",
+    "visibleDraft": "Brouillon",
+    "sortOrder": "Ordre d'affichage",
+    "sortOrderHint": "Les plus petits numéros apparaissent en premier."
   },
   "adminEnquiries": {
     "pageTitle": "Demandes",
@@ -2206,5 +2216,12 @@
     "artifactUrlHint": "Lien de téléchargement direct vers la version signée. Obligatoire pour Android et iOS.",
     "checksum": "Somme de contrôle SHA-256",
     "checksumHint": "Facultatif. Permet au client de vérifier le téléchargement avant l'installation."
+  },
+  "statusPages": {
+    "suspendedTitle": "Votre compte est suspendu",
+    "suspendedBody": "L'accès à ce compte est actuellement restreint. Votre solde est en sécurité. Si vous pensez qu'il s'agit d'une erreur, contactez le support et nous examinerons votre situation.",
+    "contactSupport": "Contacter le support",
+    "maintenanceTitle": "Nous revenons très vite",
+    "maintenanceBody": "QuataTrade est en maintenance planifiée afin de protéger vos transactions. Vos fonds sont en sécurité. Merci de revenir dans quelques instants."
   }
 }
