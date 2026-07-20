@@ -9,7 +9,7 @@ import { DB } from "../../db/database.module";
 import type { Database, WalletConfigsTable } from "../../db/types";
 import { newId } from "../../common/ids";
 import { AuditService } from "../../common/audit/audit.service";
-import { deriveTronAddress, TRON_ACCOUNT_PATH } from "./derivation";
+import { deriveTronAddress, xpubFingerprint, TRON_ACCOUNT_PATH } from "./derivation";
 import { WALLET_XPUB } from "./wallet.tokens";
 import { WalletConfigInvalidXpubError, WalletConfigRotationBlockedError } from "./wallet.errors";
 
@@ -127,7 +127,12 @@ export class WalletConfigService {
             sampleAddress,
             label: dto.label ?? null,
             reason: dto.reason,
-            rotatedFrom: current?.xpub ?? null,
+            // Fingerprint, NOT the key: audit rows are readable by SUPER, COMPLIANCE
+            // and AUDITOR, a wider set than manageWalletConfig (SUPER only). The xpub
+            // is watch-only (cannot spend) but it derives EVERY user deposit address,
+            // so leaking it into a broadly-readable table is a privacy exposure.
+            // The fingerprint still proves which key was rotated away from.
+            rotatedFrom: current ? xpubFingerprint(current.xpub) : null,
             acknowledgeReset: dto.acknowledgeReset ?? false,
             derivedAddressCount: derivedCount,
           },

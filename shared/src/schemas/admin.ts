@@ -11,7 +11,16 @@ import {
   USER_STATUSES,
   WITHDRAWAL_STATUSES,
 } from "../constants.js";
-import { zAmount, zEmail, zIdempotencyKey, zPassword, zPaginated, zTotpCode, zUuid } from "./common.js";
+import {
+  zAmount,
+  zEmail,
+  zIdempotencyKey,
+  zPassword,
+  zPaginated,
+  zPagination,
+  zTotpCode,
+  zUuid,
+} from "./common.js";
 
 export const zAdminLoginRequest = z
   .object({
@@ -564,6 +573,50 @@ export const zAdminKycDocumentsResponse = z.object({
   documents: z.array(zAdminKycDocument),
 });
 export type AdminKycDocumentsResponse = z.infer<typeof zAdminKycDocumentsResponse>;
+
+// ---- held-deposit review queue (AML / policy holds) ----
+// A deposit parked by source screening (aml_hold) or by the amount/limit policy
+// (policy_hold) is skipped by the confirmation job forever. Without an explicit
+// human decision the funds are on-chain but permanently uncreditable, so these
+// two routes are the ONLY exit from a hold.
+export const zAdminHeldDepositRow = z.object({
+  id: zUuid,
+  userId: zUuid,
+  userEmail: z.string(),
+  asset: z.string(),
+  /** GROSS on-chain amount, smallest units as a string (never a JS number). */
+  amount: zAmount,
+  address: z.string(),
+  txHash: z.string(),
+  /** On-chain sender — the address source screening flagged. */
+  fromAddress: z.string().nullable(),
+  confirmations: z.number().int(),
+  amlHold: z.boolean(),
+  amlReason: z.string().nullable(),
+  policyHold: z.boolean(),
+  policyReason: z.string().nullable(),
+  createdAt: z.string(),
+});
+export type AdminHeldDepositRow = z.infer<typeof zAdminHeldDepositRow>;
+export const zAdminHeldDepositsResponse = zPaginated(zAdminHeldDepositRow);
+export type AdminHeldDepositsResponse = z.infer<typeof zAdminHeldDepositsResponse>;
+
+export const zAdminHeldDepositQuery = zPagination.extend({
+  hold: z.enum(["all", "aml", "policy"]).default("all"),
+});
+export type AdminHeldDepositQuery = z.infer<typeof zAdminHeldDepositQuery>;
+
+/**
+ * A reason is REQUIRED (not optional like KYC notes): releasing a screening hold
+ * moves real money on a compliance officer's say-so, and the reason is the
+ * audit record regulators will ask for.
+ */
+export const zAdminHeldDepositDecision = z
+  .object({
+    reason: z.string().trim().min(10).max(4000),
+  })
+  .strict();
+export type AdminHeldDepositDecision = z.infer<typeof zAdminHeldDepositDecision>;
 
 // ---- dispute queue ----
 export const zAdminDisputeRow = z.object({

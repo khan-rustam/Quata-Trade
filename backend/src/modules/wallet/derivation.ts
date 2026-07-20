@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import * as ecc from "@bitcoinerlab/secp256k1";
 import { BIP32Factory, type BIP32Interface } from "bip32";
 import { TronWeb, utils as tronUtils } from "tronweb";
@@ -20,6 +21,18 @@ const bip32 = BIP32Factory(ecc);
 
 /** BIP44 account-level path the configured xpub must correspond to. */
 export const TRON_ACCOUNT_PATH = "m/44'/195'/0'";
+
+/**
+ * Short, non-reversible identifier for an extended public key: the first 8
+ * bytes of SHA-256, hex. Lets logs, audit rows and ops output say WHICH key is
+ * in use, and prove two keys match, without reproducing the key itself (an
+ * xpub cannot spend, but it derives every user's deposit address).
+ *
+ * Reproduce out-of-band with: printf '%s' "$XPUB" | sha256sum | cut -c1-16
+ */
+export function xpubFingerprint(xpub: string): string {
+  return createHash("sha256").update(xpub).digest("hex").slice(0, 16);
+}
 
 /** Non-hardened derivation limit (BIP32: indexes >= 2^31 are hardened). */
 const MAX_NON_HARDENED_INDEX = 0x80000000;

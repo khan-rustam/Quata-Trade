@@ -195,6 +195,15 @@ export interface DepositsTable {
   /** Policy hold: gross below the min / above the max → held for manual review. */
   policy_hold: Generated<boolean>;
   policy_reason: string | null;
+  /**
+   * Admin decision that ends a hold (migration 0032). null = still in the review
+   * queue. RELEASED also instructs the credit path to skip re-screening/policy,
+   * otherwise the rule that created the hold would immediately re-apply it.
+   */
+  hold_resolution: "RELEASED" | "REJECTED" | null;
+  hold_resolution_reason: string | null;
+  hold_resolved_by: string | null;
+  hold_resolved_at: ColumnType<Date | null, Date | string | undefined, Date | string>;
   created_at: Timestamp;
   updated_at: ColumnType<Date | null, never, Date | string>;
 }

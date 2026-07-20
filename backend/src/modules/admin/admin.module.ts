@@ -12,6 +12,7 @@ import { SystemHealthService } from "./system-health.service";
 import { AdminTeamService } from "./admin-team.service";
 import { AlertsAdminService } from "./alerts-admin.service";
 import { WalletAdminService } from "./wallet-admin.service";
+import { HeldDepositsService } from "./held-deposits.service";
 import { AdminAuthController } from "./admin-auth.controller";
 import { AdminController } from "./admin.controller";
 
@@ -25,7 +26,7 @@ import { AdminController } from "./admin.controller";
 @Module({
   imports: [AuditModule, SettingsModule, LedgerModule, KycModule, DisputesModule, WithdrawalsModule, WalletModule],
   controllers: [AdminAuthController, AdminController],
-  providers: [AdminAuthService, AdminService, SystemHealthService, AdminTeamService, AlertsAdminService, WalletAdminService],
+  providers: [AdminAuthService, AdminService, SystemHealthService, AdminTeamService, AlertsAdminService, WalletAdminService, HeldDepositsService],
   exports: [AdminAuthService, AdminService],
 })
 export class AdminModule {}

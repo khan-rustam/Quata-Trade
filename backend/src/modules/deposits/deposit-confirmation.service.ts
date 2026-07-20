@@ -191,7 +191,12 @@ export class DepositConfirmationService {
       // AML inbound (item 4b): screen the on-chain sender before crediting. A
       // blocked source is HELD for manual compliance review — tainted funds are
       // never auto-credited. Deterministic lookup; no LLM in the AML path.
-      if (deposit.from_address && screened) {
+      // An admin RELEASE is an explicit override of exactly these two gates. Without
+      // this the release would clear the flags, the deterministic rule would fire
+      // again on the next tick, and the deposit would re-hold forever.
+      const released = deposit.hold_resolution === "RELEASED";
+
+      if (!released && deposit.from_address && screened) {
         const res = screened;
         if (res.blocked) {
           await trx
@@ -223,7 +228,7 @@ export class DepositConfirmationService {
       // ceilings. A deposit outside any of these is HELD for manual review — never
       // auto-credited, never silently dropped. The ceilings were previously stored
       // and displayed but never enforced; they are real controls now.
-      const policyReason = await this.holdReason(trx, deposit, policy, limits);
+      const policyReason = released ? null : await this.holdReason(trx, deposit, policy, limits);
       if (policyReason) {
         await trx
           .updateTable("deposits")

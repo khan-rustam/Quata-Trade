@@ -29,6 +29,12 @@ export const RBAC = {
   secondApproveWithdrawal: ["SUPER_ADMIN", "FINANCE_ADMIN", "COMPLIANCE_ADMIN"] as const,
   resolveDispute: ["SUPER_ADMIN", "COMPLIANCE_ADMIN", "SUPPORT_ADMIN"] as const,
   kycReview: ["SUPER_ADMIN", "COMPLIANCE_ADMIN"] as const,
+  /**
+   * Release/reject a held deposit. Same tier as KYC review: an AML hold is a
+   * compliance call, and releasing one credits real money. Deliberately NOT
+   * given to FINANCE — the hold exists because screening flagged the source.
+   */
+  reviewHeldDeposit: ["SUPER_ADMIN", "COMPLIANCE_ADMIN"] as const,
   freezeUser: ["SUPER_ADMIN", "COMPLIANCE_ADMIN", "SUPPORT_ADMIN", "MODERATOR"] as const,
   killSwitch: ["SUPER_ADMIN", "FINANCE_ADMIN"] as const,
   /** Enable/disable a market (phased country rollout) — same tier as the kill switch. */

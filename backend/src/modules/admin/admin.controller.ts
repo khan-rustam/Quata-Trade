@@ -59,6 +59,12 @@ import {
   type AlertsQuery,
   type AlertsResponse,
   type AlertItem,
+  zAdminHeldDepositQuery,
+  zAdminHeldDepositDecision,
+  type AdminHeldDepositQuery,
+  type AdminHeldDepositDecision,
+  type AdminHeldDepositRow,
+  type AdminHeldDepositsResponse,
 } from "@quatatrade/shared";
 import { ZodPipe } from "../../common/zod.pipe";
 import { CurrentAdminId, CurrentAuth, Roles } from "../../common/auth/decorators";
@@ -88,6 +94,7 @@ import { SystemHealthService } from "./system-health.service";
 import { AdminTeamService } from "./admin-team.service";
 import { AlertsAdminService } from "./alerts-admin.service";
 import { WalletAdminService } from "./wallet-admin.service";
+import { HeldDepositsService } from "./held-deposits.service";
 import { RBAC } from "./admin.rbac";
 import {
   zAdminAuditQuery,
@@ -107,6 +114,8 @@ import {
   AdminEmailExistsError,
   AdminManagementError,
   AlertNotFoundError,
+  HeldDepositNotFoundError,
+  HeldDepositAlreadyResolvedError,
   AdminNotFoundError,
   AdminVerificationError,
   CountryNotFoundError,
@@ -140,6 +149,8 @@ function mapAdminError(err: unknown): Error {
   if (err instanceof CountryNotFoundError) return new NotFoundException(err.message);
   if (err instanceof AdminAccountNotFoundError) return new NotFoundException(err.message);
   if (err instanceof AlertNotFoundError) return new NotFoundException(err.message);
+  if (err instanceof HeldDepositNotFoundError) return new NotFoundException(err.message);
+  if (err instanceof HeldDepositAlreadyResolvedError) return new ConflictException(err.message);
   if (err instanceof AdminEmailExistsError) return new ConflictException(err.message);
   if (err instanceof AdminManagementError) return new ConflictException(err.message);
   if (err instanceof WalletConfigInvalidXpubError) return new BadRequestException(err.message);
@@ -178,6 +189,7 @@ export class AdminController {
     private readonly walletProvisioning: WalletProvisioningService,
     private readonly coldWallet: ColdWalletService,
     private readonly walletAdmin: WalletAdminService,
+    private readonly heldDeposits: HeldDepositsService,
     private readonly systemHealth: SystemHealthService,
     private readonly team: AdminTeamService,
     private readonly alerts: AlertsAdminService,
@@ -273,6 +285,52 @@ export class AdminController {
   @Get("disputes")
   async disputeQueue(@Query(new ZodPipe(zPagination)) query: Pagination): Promise<DisputeQueuePage> {
     return this.disputesAdmin.queue(query);
+  }
+
+  // ── held-deposit review (SUPER / COMPLIANCE) ─────────────────────────────
+  // The ONLY exit from an aml_hold / policy_hold. Without these routes a held
+  // deposit is skipped by the confirmation job forever and the user's on-chain
+  // funds are permanently uncreditable.
+
+  @Roles(...RBAC.viewDashboards)
+  @Get("deposits/held")
+  async heldDepositQueue(
+    @Query(new ZodPipe(zAdminHeldDepositQuery)) query: AdminHeldDepositQuery,
+  ): Promise<AdminHeldDepositsResponse> {
+    const { items, total } = await this.heldDeposits.queue(query);
+    return { items, page: query.page, pageSize: query.pageSize, total };
+  }
+
+  @Roles(...RBAC.reviewHeldDeposit)
+  @Post("deposits/held/:id/release")
+  @HttpCode(HttpStatus.OK)
+  async heldDepositRelease(
+    @CurrentAdminId() adminId: string,
+    @Param("id", new ZodPipe(zUuid)) depositId: string,
+    @Body(new ZodPipe(zAdminHeldDepositDecision)) dto: AdminHeldDepositDecision,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AdminHeldDepositRow> {
+    try {
+      return await this.heldDeposits.release(depositId, adminId, dto.reason, this.ip(req));
+    } catch (err) {
+      throw mapAdminError(err);
+    }
+  }
+
+  @Roles(...RBAC.reviewHeldDeposit)
+  @Post("deposits/held/:id/reject")
+  @HttpCode(HttpStatus.OK)
+  async heldDepositReject(
+    @CurrentAdminId() adminId: string,
+    @Param("id", new ZodPipe(zUuid)) depositId: string,
+    @Body(new ZodPipe(zAdminHeldDepositDecision)) dto: AdminHeldDepositDecision,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AdminHeldDepositRow> {
+    try {
+      return await this.heldDeposits.reject(depositId, adminId, dto.reason, this.ip(req));
+    } catch (err) {
+      throw mapAdminError(err);
+    }
   }
 
   // ── user moderation (SUPER / COMPLIANCE / SUPPORT / MOD) ─────────────────

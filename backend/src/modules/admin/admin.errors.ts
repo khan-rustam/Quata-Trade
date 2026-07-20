@@ -86,3 +86,22 @@ export class AlertNotFoundError extends AdminError {
     super("alert not found");
   }
 }
+
+// ---- held-deposit review (AML / policy holds) ----
+
+/** Release/reject targeting a deposit that is not held (or does not exist). */
+export class HeldDepositNotFoundError extends AdminError {
+  constructor(id: string) {
+    super(`held deposit not found: ${id}`);
+  }
+}
+
+/**
+ * The hold was already decided (double-click, or a second admin got there
+ * first). Never silently re-decide: the first decision stands.
+ */
+export class HeldDepositAlreadyResolvedError extends AdminError {
+  constructor(resolution: string) {
+    super(`this hold was already resolved: ${resolution}`);
+  }
+}
