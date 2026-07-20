@@ -8,6 +8,7 @@ import {
   zLedgerAdjustmentRequest,
   zPagination,
   zPromoCampaignsValue,
+  zKycTierLimitsValue,
   zHotWalletValue,
   zLaunchLimitsValue,
   zUuid,
@@ -61,8 +62,6 @@ const zAmountStr = z.string().regex(/^\d{1,30}$/, "must be an integer amount str
 // same schema); re-exported so existing backend imports keep resolving here.
 export { zLedgerAdjustmentRequest, type LedgerAdjustmentRequest };
 
-const zTierLimitValue = z.object({ maxTrade: zAmountStr, dailyWithdrawal: zAmountStr }).strict();
-
 /**
  * PATCH /admin/settings whitelist: key → value schema. Each schema mirrors
  * what SettingsService parses at read time, so an edit can never brick the
@@ -88,12 +87,7 @@ export const SETTING_VALUE_SCHEMAS: Readonly<Record<string, ZodTypeAny>> = {
   seller_fee_bps: z.number().int().min(0).max(MAX_FEE_BPS),
   // Promotional fee campaigns (time + country + reduced/zero fee).
   promo_campaigns: zPromoCampaignsValue,
-  kyc_tier_limits: z
-    .record(z.string().regex(/^\d{1,2}$/), zTierLimitValue)
-    .refine(
-      (v) => ["0", "1", "2", "3"].every((tier) => v[tier] !== undefined),
-      "kyc_tier_limits must define tiers 0-3",
-    ),
+  kyc_tier_limits: zKycTierLimitsValue,
   // min/max (gross) + platform deposit fee (fixed + percentage), with the refine
   // guaranteeing the fee never zeroes the smallest allowed deposit.
   deposit_policy: zDepositPolicyValue,

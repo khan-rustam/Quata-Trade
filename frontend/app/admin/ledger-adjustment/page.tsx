@@ -107,7 +107,7 @@ export default function LedgerAdjustmentPage(): React.JSX.Element {
     setConfirmOpen(true);
   };
 
-  const confirm = async (v: { totpCode: string }) => {
+  const confirm = async (v: { totpCode?: string }) => {
     if (!target || amt === null || !idemKey) return;
     setBusy(true);
     setError(null);

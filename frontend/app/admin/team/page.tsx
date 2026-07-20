@@ -59,7 +59,7 @@ export default function TeamPage(): React.JSX.Element {
     setPending({ kind: "create", email: parsed.data.email, role: parsed.data.role, password: parsed.data.password });
   };
 
-  const confirm = async (v: { totpCode: string }) => {
+  const confirm = async (v: { totpCode?: string }) => {
     if (!pending) return;
     setBusy(true);
     setDialogError(null);

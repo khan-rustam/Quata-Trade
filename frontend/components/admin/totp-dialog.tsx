@@ -45,7 +45,14 @@ export function TotpActionDialog({
   requireTotp?: boolean;
   busy?: boolean;
   error?: string | null;
-  onConfirm: (v: { totpCode: string; reason?: string }) => void;
+  /**
+   * `totpCode` is undefined — never "" — when the acting admin has no 2FA. An
+   * empty string is a VALUE to zod and fails the 6-digit rule, so emitting it
+   * turned "no code needed" into a hard 400. Most callers papered over that with
+   * `|| undefined`; two did not, and one of those was the key ceremony, where the
+   * error surfaced inside a dialog that renders no code input at all.
+   */
+  onConfirm: (v: { totpCode?: string; reason?: string }) => void;
 }): React.JSX.Element {
   const tx = useTranslations("totpDialog");
   const [totp, setTotp] = useState("");
@@ -103,7 +110,7 @@ export function TotpActionDialog({
             variant={destructive ? "danger" : "primary"}
             className="flex-1"
             disabled={busy || !totpOk || !reasonOk}
-            onClick={() => onConfirm({ totpCode: requireTotp ? totp : "", reason: reasonLabel ? reason.trim() : undefined })}
+            onClick={() => onConfirm({ totpCode: requireTotp && totp ? totp : undefined, reason: reasonLabel ? reason.trim() : undefined })}
           >
             {busy ? <Spinner /> : actionLabel}
           </Button>

@@ -49,16 +49,16 @@ export default function AdminWithdrawalsPage(): React.JSX.Element {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const submit = async (v: { totpCode: string; reason?: string }) => {
+  const submit = async (v: { totpCode?: string; reason?: string }) => {
     if (!action) return;
     setBusy(true);
     setError(null);
     try {
       if (action.kind === "approve") {
-        await adminApi.adminApproveWithdrawal(action.row.id, { totpCode: v.totpCode || undefined });
+        await adminApi.adminApproveWithdrawal(action.row.id, { totpCode: v.totpCode });
         toast.success(tx("approvedToastTitle"), tx("approvedToastBody"));
       } else {
-        await adminApi.adminRejectWithdrawal(action.row.id, { totpCode: v.totpCode || undefined, reason: v.reason ?? "" });
+        await adminApi.adminRejectWithdrawal(action.row.id, { totpCode: v.totpCode, reason: v.reason ?? "" });
         toast.success(tx("rejectedToastTitle"), tx("rejectedToastBody"));
       }
       setAction(null);

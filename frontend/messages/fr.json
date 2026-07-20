@@ -1364,7 +1364,11 @@
     "tierLimitsDesc": "Appliquées à chaque transaction et retrait selon le palier de vérification de l'utilisateur.",
     "tierLabel": "Palier {tier}",
     "tierMaxTrade": "Max par transaction (USDT)",
-    "tierDailyWithdrawal": "Retrait quotidien (USDT)"
+    "tierDailyWithdrawal": "Retrait quotidien (USDT)",
+    "actionFeesTitle": "Frais par action",
+    "actionFeesDesc": "Facturés lorsqu'un utilisateur publie une annonce ou ouvre un litige.",
+    "advertisementFee": "Frais d'annonce (USDT)",
+    "disputeFee": "Frais de litige (USDT)"
   },
   "adminAudit": {
     "title": "Journal d'audit",

@@ -60,7 +60,7 @@ export default function WalletConfigPage(): React.JSX.Element {
     if (canReview) setConfirmOpen(true);
   };
 
-  const confirm = async (v: { totpCode: string }) => {
+  const confirm = async (v: { totpCode?: string }) => {
     setBusy(true);
     setSubmitError(null);
     const parsed = zActivateWalletConfigRequest.safeParse({

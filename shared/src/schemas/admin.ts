@@ -296,6 +296,21 @@ export const zWithdrawalFeeValue = z
 export type WithdrawalFeeValue = z.infer<typeof zWithdrawalFeeValue>;
 
 /**
+ * kyc_tier_limits write value — per-tier ceilings enforced on every trade and
+ * withdrawal. Tiers 0-3 must all be present: SettingsService.kycTierLimits(tier)
+ * throws on a missing tier, so a partial save would brick trading for the users
+ * on it. Lifted out of the backend-only gate because the console edits it — with
+ * the schema in one place the two cannot disagree about the field names again.
+ */
+const zTierLimitValue = z.object({ maxTrade: zCapAmount, dailyWithdrawal: zCapAmount }).strict();
+export const zKycTierLimitsValue = z
+  .record(z.string().regex(/^\d{1,2}$/), zTierLimitValue)
+  .refine((v) => ["0", "1", "2", "3"].every((tier) => v[tier] !== undefined), {
+    message: "kyc_tier_limits must define tiers 0-3",
+  });
+export type KycTierLimitsValue = z.infer<typeof zKycTierLimitsValue>;
+
+/**
  * withdrawal_network_fee write value — a per-asset ESTIMATE of the on-chain (TRON)
  * network cost, shown to the user before confirming. Informational/display; the
  * platform absorbs the actual on-chain cost unless the platform fee is set to cover it.

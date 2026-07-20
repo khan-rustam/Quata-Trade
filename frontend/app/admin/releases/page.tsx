@@ -66,7 +66,7 @@ export default function AdminReleasesPage(): React.JSX.Element {
     minCode > 0 &&
     minCode <= code;
 
-  const doPublish = async (totpCode: string): Promise<void> => {
+  const doPublish = async (totpCode?: string): Promise<void> => {
     setError(null);
     try {
       await publish.mutateAsync({
@@ -78,7 +78,7 @@ export default function AdminReleasesPage(): React.JSX.Element {
         minSupportedCode: minCode,
         artifactUrl: artifactUrl.trim() || undefined,
         checksumSha256: checksum.trim() || undefined,
-        totpCode: totpCode || undefined,
+        totpCode,
       });
       toast.success(tx("publishedToastTitle"), tx("publishedToastBody"));
       setConfirmPublish(false);
@@ -93,10 +93,10 @@ export default function AdminReleasesPage(): React.JSX.Element {
     }
   };
 
-  const doRollback = async (id: string, totpCode: string, reason: string): Promise<void> => {
+  const doRollback = async (id: string, totpCode: string | undefined, reason: string): Promise<void> => {
     setError(null);
     try {
-      await setStatus.mutateAsync({ id, body: { status: "rolled_back", reason, totpCode: totpCode || undefined } });
+      await setStatus.mutateAsync({ id, body: { status: "rolled_back", reason, totpCode } });
       toast.success(tx("rolledBackToastTitle"), tx("rolledBackToastBody"));
       setRollbackId(null);
     } catch (err) {

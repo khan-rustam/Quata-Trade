@@ -1364,7 +1364,11 @@
     "tierLimitsDesc": "Enforced on every trade and withdrawal by the user's verification tier.",
     "tierLabel": "Tier {tier}",
     "tierMaxTrade": "Max per trade (USDT)",
-    "tierDailyWithdrawal": "Daily withdrawal (USDT)"
+    "tierDailyWithdrawal": "Daily withdrawal (USDT)",
+    "actionFeesTitle": "Action fees",
+    "actionFeesDesc": "Charged when a user posts an advertisement or opens a dispute.",
+    "advertisementFee": "Advertisement fee (USDT)",
+    "disputeFee": "Dispute fee (USDT)"
   },
   "adminAudit": {
     "title": "Audit log",

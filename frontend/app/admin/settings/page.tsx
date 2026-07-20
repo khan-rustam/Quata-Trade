@@ -14,6 +14,7 @@ import {
   zWithdrawalCapsValue,
   zWithdrawalFeeValue,
   zWithdrawalNetworkFeeValue,
+  zKycTierLimitsValue,
 } from "@quatatrade/shared";
 import { AdminTitle } from "@/components/admin/admin-ui";
 import { TotpActionDialog } from "@/components/admin/totp-dialog";
@@ -44,7 +45,7 @@ export default function AdminSettingsPage(): React.JSX.Element {
   const targetLabel = (target: Target) =>
     tx(target === "withdrawals" ? "targetWithdrawals" : "targetTrades");
 
-  const submit = async (v: { totpCode: string; reason?: string }) => {
+  const submit = async (v: { totpCode?: string; reason?: string }) => {
     if (!pending) return;
     setBusy(true);
     setError(null);
@@ -52,7 +53,7 @@ export default function AdminSettingsPage(): React.JSX.Element {
       await adminApi.adminSetKillSwitch({
         target: pending.target,
         paused: pending.paused,
-        totpCode: v.totpCode || undefined,
+        totpCode: v.totpCode,
         reason: v.reason ?? "",
       });
       toast.success(
@@ -126,9 +127,15 @@ function SettingsConfigEditor(): React.JSX.Element {
   const depKey = Object.values(data.depositPolicy).join(",");
   const hotKey = Object.values(data.hotWallet).join(",");
   const limitsKey = Object.values(data.launchLimits).join(",");
+  // The new editors must be in the key too. Without them the form kept stale
+  // values after a refetch while saveWithdrawalFee spreads the FRESH snapshot and
+  // overrides one asset with the stale field — silently reverting another admin's
+  // concurrent change.
+  const wFeeKey = JSON.stringify(data.withdrawalFee) + JSON.stringify(data.withdrawalNetworkFee);
+  const tierKey = JSON.stringify(data.kycTierLimits);
   return (
     <ConfigForm
-      key={`${data.paymentWindowMinutes}:${depKey}:${feeKey}:${capsKey}:${data.sellerFeeBps}:${hotKey}:${limitsKey}`}
+      key={`${data.paymentWindowMinutes}:${depKey}:${feeKey}:${capsKey}:${data.sellerFeeBps}:${hotKey}:${limitsKey}:${wFeeKey}:${tierKey}`}
       data={data}
     />
   );
@@ -167,6 +174,12 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
     fixed: usdt(data.withdrawalFee.USDT_TRC20?.fixed ?? "0"),
     bps: String(data.withdrawalFee.USDT_TRC20?.bps ?? 0),
     network: usdt(data.withdrawalNetworkFee.USDT_TRC20 ?? "0"),
+  });
+  // Single smallest-unit amounts; both are whitelisted for PATCH and were being
+  // returned in the snapshot with nothing rendering them.
+  const [actionFees, setActionFees] = useState({
+    advertisement: usdt(data.advertisementFee),
+    dispute: usdt(data.disputeFee),
   });
   const [tiers, setTiers] = useState(() =>
     Object.fromEntries(
@@ -297,16 +310,32 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
   const saveTierLimits = () => {
     setError(null);
     try {
+      // Field names must match the write gate exactly — snake_case here 400'd
+      // every save. Validated with the SAME shared schema the gate uses, so the
+      // two cannot drift again.
       const value = Object.fromEntries(
         Object.entries(tiers).map(([t, v]) => [
           t,
           {
-            max_trade: fromDisplay(v.maxTrade || "0").toString(),
-            daily_withdrawal: fromDisplay(v.dailyWithdrawal || "0").toString(),
+            maxTrade: fromDisplay(v.maxTrade || "0").toString(),
+            dailyWithdrawal: fromDisplay(v.dailyWithdrawal || "0").toString(),
           },
         ]),
       );
+      const parsed = zKycTierLimitsValue.safeParse(value);
+      if (!parsed.success) {
+        setError(parsed.error.issues[0]?.message ?? tx("errorUpdate"));
+        return;
+      }
       setPending({ key: "kyc_tier_limits", value });
+    } catch (err) {
+      setError(apiErrorMessage(err, tx("errorUpdate")));
+    }
+  };
+  const saveActionFee = (key: "advertisement_fee" | "dispute_fee", display: string) => {
+    setError(null);
+    try {
+      setPending({ key, value: fromDisplay(display || "0").toString() });
     } catch (err) {
       setError(apiErrorMessage(err, tx("errorUpdate")));
     }
@@ -353,7 +382,7 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
     }
   };
 
-  const confirm = async (v: { totpCode: string; reason?: string }) => {
+  const confirm = async (v: { totpCode?: string; reason?: string }) => {
     if (!pending) return;
     setBusy(true);
     setError(null);
@@ -362,7 +391,7 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
         key: pending.key,
         value: pending.value,
         reason: v.reason?.trim() || "(no reason given)",
-        totpCode: v.totpCode || undefined,
+        totpCode: v.totpCode,
       });
       toast.success(tx("settingSavedTitle"), tx("settingSavedBody"));
       setPending(null);
@@ -582,6 +611,37 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
             {tx("saveChanges")}
           </Button>
         </div>
+      </Card>
+
+      {/* editable: per-action fees (0 = free) */}
+      <Card className="space-y-3">
+        <div>
+          <p className="font-medium">{tx("actionFeesTitle")}</p>
+          <p className="text-sm text-text-2">{tx("actionFeesDesc")}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-2">
+            <CapInput
+              label={tx("advertisementFee")}
+              value={actionFees.advertisement}
+              onChange={(v) => setActionFees((s2) => ({ ...s2, advertisement: v }))}
+            />
+            <Button size="sm" variant="secondary" onClick={() => saveActionFee("advertisement_fee", actionFees.advertisement)}>
+              {tx("saveChanges")}
+            </Button>
+          </div>
+          <div className="space-y-2">
+            <CapInput
+              label={tx("disputeFee")}
+              value={actionFees.dispute}
+              onChange={(v) => setActionFees((s2) => ({ ...s2, dispute: v }))}
+            />
+            <Button size="sm" variant="secondary" onClick={() => saveActionFee("dispute_fee", actionFees.dispute)}>
+              {tx("saveChanges")}
+            </Button>
+          </div>
+        </div>
+        <p className="text-xs text-text-3">{tx("limitsZeroNote")}</p>
       </Card>
 
       {/* editable: hot-wallet operating thresholds */}
