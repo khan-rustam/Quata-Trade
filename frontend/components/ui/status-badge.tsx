@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import type { TradeStatus, WithdrawalStatus, DepositStatus } from "@quatatrade/shared";
 import { Badge } from "./badge";
 
@@ -60,8 +63,12 @@ export function DepositStatusBadge({
   onHold?: boolean;
   holdResolution?: "RELEASED" | "REJECTED" | null;
 }): React.JSX.Element {
-  if (holdResolution === "REJECTED") return <Badge tone="danger">Not credited</Badge>;
-  if (onHold) return <Badge tone="warning">Under review</Badge>;
+  const t = useTranslations("wallet");
+  // Unlike the status labels above (a pre-existing English-only convention),
+  // these two are the ONLY thing telling a user their money is stuck — they have
+  // to work in French too.
+  if (holdResolution === "REJECTED") return <Badge tone="danger">{t("notCredited")}</Badge>;
+  if (onHold) return <Badge tone="warning">{t("underReview")}</Badge>;
   const s = DEPOSIT[status];
   return <Badge tone={s.tone}>{s.label}</Badge>;
 }

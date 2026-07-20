@@ -71,12 +71,19 @@ function DepositBody({ d }: { d: Deposit }): React.JSX.Element {
         <Usdt value={d.fee} size="sm" />
       </Row>
       <hr className="border-border" />
-      <Row label={tx("netCredited")}>
+      {/* "Net credited" is a lie for money that was refused or is still under
+          review — label it for what it actually is. */}
+      <Row label={d.holdResolution === "REJECTED" || d.onHold ? tx("netWouldCredit") : tx("netCredited")}>
         <Usdt value={d.net} size="sm" />
       </Row>
       <Row label={tx("status")}>
-        <DepositStatusBadge status={d.status} />
+        <DepositStatusBadge status={d.status} onHold={d.onHold} holdResolution={d.holdResolution} />
       </Row>
+      {(d.onHold || d.holdResolution === "REJECTED") && (
+        <p className="text-xs text-text-3">
+          {d.holdResolution === "REJECTED" ? tx("receiptRejectedNote") : tx("receiptOnHoldNote")}
+        </p>
+      )}
       <Row label={tx("confirmations")}>{d.confirmations}</Row>
       <Row label={tx("txId")}>
         <TxId hash={d.txHash} />

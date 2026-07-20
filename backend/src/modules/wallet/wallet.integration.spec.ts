@@ -94,6 +94,43 @@ describe("WalletService (Gate 3 — watch-only wallet)", () => {
     expect(balances).toEqual([{ asset: "USDT_TRC20", available: 3_000_000n, inEscrow: 0n }]);
   });
 
+  /**
+   * A hold keeps the deposit at SEEN/CONFIRMING (holds are flags, not a status),
+   * so the "pending" figure has to distinguish "still confirming" from "an admin
+   * already refused this". Without the exclusion a REJECTED deposit sat in the
+   * user's pending balance forever — money the platform had decided never arrives.
+   */
+  it("pending EXCLUDES a compliance-rejected deposit but keeps one still under review", async () => {
+    const userId = await createUser(t.db);
+    const addr = await service().getOrCreateDepositAddress(userId, "USDT_TRC20");
+
+    const seed = async (txHash: string, amount: bigint, hold: Partial<{ aml_hold: boolean; hold_resolution: "RELEASED" | "REJECTED" }>) => {
+      await t.db
+        .insertInto("deposits")
+        .values({
+          id: newId(),
+          user_id: userId,
+          asset: "USDT_TRC20",
+          address: addr.address,
+          tx_hash: txHash,
+          log_index: 0,
+          amount,
+          token_contract: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          status: "CONFIRMING",
+          ...hold,
+        })
+        .execute();
+    };
+
+    await seed("tx-plain", 1_000_000n, {});
+    await seed("tx-held", 2_000_000n, { aml_hold: true });
+    await seed("tx-refused", 4_000_000n, { aml_hold: true, hold_resolution: "REJECTED" });
+
+    const [bal] = await service().getBalances(userId);
+    // 1 (confirming) + 2 (under review) — the 4 an admin refused must not appear.
+    expect(bal?.pending).toBe(3_000_000n);
+  });
+
   it("internal transfer moves available → available; replaying the key applies once", async () => {
     const sender = await createUser(t.db);
     const recipient = await createUser(t.db);

@@ -575,7 +575,9 @@
     "depositRejectedNote": "This deposit was not credited after review. Contact support for details.",
     "prev": "Previous",
     "next": "Next",
-    "pageOf": "Page {page} of {pages}"
+    "pageOf": "Page {page} of {pages}",
+    "notCredited": "Not credited",
+    "underReview": "Under review"
   },
   "walletReceipt": {
     "titleDeposit": "Deposit receipt",
@@ -595,7 +597,10 @@
     "txId": "Transaction ID",
     "date": "Date",
     "pending": "Pending",
-    "failure": "Failure reason"
+    "failure": "Failure reason",
+    "netWouldCredit": "Net if credited",
+    "receiptOnHoldNote": "This deposit is under manual review by our compliance team. No action is needed from you.",
+    "receiptRejectedNote": "This deposit was not credited after review. Contact support for details."
   },
   "walletDeposit": {
     "title": "Deposit USDT",

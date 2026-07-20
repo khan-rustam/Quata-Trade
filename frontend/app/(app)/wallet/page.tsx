@@ -31,7 +31,9 @@ const DEPOSIT_CSV: readonly CsvColumn<Deposit>[] = [
   { header: "Amount (USDT)", value: (d) => usdtCell(d.amount) },
   { header: "Fee (USDT)", value: (d) => usdtCell(d.fee) },
   { header: "Net (USDT)", value: (d) => usdtCell(d.net) },
-  { header: "Status", value: (d) => d.status },
+  // Raw status alone exported a REJECTED deposit as "CONFIRMING" with the Net
+  // column populated — the same defect the badge fixes, in the file people file.
+  { header: "Status", value: (d) => (d.holdResolution === "REJECTED" ? "NOT CREDITED" : d.onHold ? "UNDER REVIEW" : d.status) },
   { header: "Tx hash", value: (d) => d.txHash },
 ];
 const WITHDRAWAL_CSV: readonly CsvColumn<Withdrawal>[] = [

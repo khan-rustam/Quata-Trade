@@ -575,7 +575,9 @@
     "depositRejectedNote": "Ce dépôt n'a pas été crédité après vérification. Contactez le support pour plus de détails.",
     "prev": "Précédent",
     "next": "Suivant",
-    "pageOf": "Page {page} sur {pages}"
+    "pageOf": "Page {page} sur {pages}",
+    "notCredited": "Non crédité",
+    "underReview": "En cours de vérification"
   },
   "walletReceipt": {
     "titleDeposit": "Reçu de dépôt",
@@ -595,7 +597,10 @@
     "txId": "ID de transaction",
     "date": "Date",
     "pending": "En attente",
-    "failure": "Motif de l'échec"
+    "failure": "Motif de l'échec",
+    "netWouldCredit": "Net si crédité",
+    "receiptOnHoldNote": "Ce dépôt fait l'objet d'une vérification manuelle par notre équipe conformité. Aucune action n'est requise de votre part.",
+    "receiptRejectedNote": "Ce dépôt n'a pas été crédité après vérification. Contactez le support pour plus de détails."
   },
   "walletDeposit": {
     "title": "Déposer des USDT",
