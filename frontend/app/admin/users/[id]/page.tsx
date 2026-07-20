@@ -49,7 +49,7 @@ export default function AdminUserDetailPage(): React.JSX.Element {
   const tx = useTranslations("adminUserDetail");
   const params = useParams();
   const id = String(params.id ?? "");
-  const { data, isLoading, refetch, isFetching } = useAdminUserDetail(id);
+  const { data, isLoading, refetch, isFetching, isError } = useAdminUserDetail(id);
   const [moderating, setModerating] = useState(false);
   const { data: me } = useAdminMe();
 
@@ -69,6 +69,12 @@ export default function AdminUserDetailPage(): React.JSX.Element {
           </div>
           <Skeleton className="h-64 w-full rounded-xl" />
         </div>
+      ) : isError ? (
+        // "This user may have been removed" is a claim about the data; a failed
+        // request is not evidence for it.
+        <Card className="text-center">
+          <p className="font-medium">{tx("loadFailed")}</p>
+        </Card>
       ) : !data ? (
         <Card className="text-center">
           <p className="font-medium">{tx("notFound")}</p>

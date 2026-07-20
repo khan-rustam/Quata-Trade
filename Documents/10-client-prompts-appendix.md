@@ -192,6 +192,10 @@ the latter is a self-contained admin feature scheduled as its own increment.
 - **`pending` sums the GROSS deposit amount**, not `amount − fee`, so the figure a user sees
   overstates what will actually be credited. Pre-existing; not changed here because it is a
   money-display decision (show gross-in-flight or net-expected?) the client should make.
-- The public fee **prose** no longer asserts a value, but **which withdrawal fee the business
-  intends (0 or 1 USDT) is still unconfirmed** — the page now publishes whatever is configured.
+- ~~Which withdrawal fee the business intends~~ — **RESOLVED 2026-07-20: 1 USDT.** The seeded
+  `withdrawal_fee` is `{"USDT_TRC20":"1000000"}` (1 USDT at 6 decimals), which is what
+  `WithdrawalsService` already charges, so no config change was needed. The /fees page, the
+  calculator and the simulator all render the live configured value, and the FAQ claiming
+  "withdrawals pay only the network fee" was corrected by migration 0033. Changing it later is
+  an admin settings edit; the published page follows automatically.
 - `promo_campaigns` still has no admin editor (see the 2026-07-20 entry above).

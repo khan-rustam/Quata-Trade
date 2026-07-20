@@ -110,7 +110,11 @@ export default function TransferPage(): React.JSX.Element {
           )}
         </Field>
         <Alert tone="info">{tx("infoAlert")}</Alert>
-        <Button className="w-full" onClick={() => validate() && setConfirmOpen(true)} disabled={!email || !amount}>
+        <Button className="w-full" onClick={() => {
+            if (!validate()) return;
+            setDialogError(null); // no stale failure over freshly-emptied inputs
+            setConfirmOpen(true);
+          }} disabled={!email || !amount}>
           <Send size={16} /> {tx("reviewTransfer")}
         </Button>
       </Card>

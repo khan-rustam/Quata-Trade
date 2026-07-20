@@ -86,13 +86,13 @@ export default function AdminSettingsPage(): React.JSX.Element {
           <KillCard
             title={tx("withdrawalsTitle")}
             description={tx("withdrawalsDesc")}
-            paused={data?.withdrawalsPaused ?? false}
+            paused={data?.withdrawalsPaused}
             onToggle={(paused) => { setError(null); setPending({ target: "withdrawals", paused }); }}
           />
           <KillCard
             title={tx("tradingTitle")}
             description={tx("tradingDesc")}
-            paused={data?.tradesPaused ?? false}
+            paused={data?.tradesPaused}
             onToggle={(paused) => { setError(null); setPending({ target: "trades", paused }); }}
           />
         </div>
@@ -757,10 +757,15 @@ function KillCard({
 }: {
   title: string;
   description: string;
-  paused: boolean;
+  /** undefined = state could not be read. NOT the same as "running". */
+  paused: boolean | undefined;
   onToggle: (paused: boolean) => void;
 }): React.JSX.Element {
   const tx = useTranslations("adminSettings");
+  // `?? false` painted a green LIVE badge whenever the read failed — telling an
+  // operator trading is running when the console has no idea whether it is, on
+  // the control they reach for in an incident.
+  const unknown = paused === undefined;
   return (
     <Card className={paused ? "border-danger/30 bg-danger/5" : ""}>
       <div className="flex items-start justify-between">
@@ -768,12 +773,17 @@ function KillCard({
           <p className="font-medium">{title}</p>
           <p className="mt-0.5 text-sm text-text-2">{description}</p>
         </div>
-        <Badge tone={paused ? "danger" : "success"} icon={paused ? <Ban size={11} /> : undefined}>
-          {paused ? tx("badgePaused") : tx("badgeLive")}
+        <Badge
+          tone={unknown ? "neutral" : paused ? "danger" : "success"}
+          icon={paused ? <Ban size={11} /> : undefined}
+        >
+          {unknown ? tx("badgeUnknown") : paused ? tx("badgePaused") : tx("badgeLive")}
         </Badge>
       </div>
       <div className="mt-4">
-        {paused ? (
+        {unknown ? (
+          <p className="text-xs text-text-3">{tx("killStateUnknown")}</p>
+        ) : paused ? (
           <Button size="sm" onClick={() => onToggle(false)}>
             <Play size={14} /> {tx("resumeAction", { target: title.toLowerCase() })}
           </Button>

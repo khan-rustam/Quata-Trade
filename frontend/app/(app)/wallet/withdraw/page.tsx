@@ -175,7 +175,12 @@ export default function WithdrawPage(): React.JSX.Element {
   };
 
   const openConfirm = () => {
-    if (selected && isUsable(selected) && validateAmount()) setConfirmOpen(true);
+    if (!selected || !isUsable(selected) || !validateAmount()) return;
+    // The dialog is permanently mounted, so a previous failure banner would sit
+    // above freshly-emptied PIN/OTP boxes — which the reset renders red via
+    // invalid={Boolean(error)}. Clear it as the dialog opens.
+    setDialogError(null);
+    setConfirmOpen(true);
   };
 
   const submit = async (creds: { pin?: string; totpCode?: string }) => {

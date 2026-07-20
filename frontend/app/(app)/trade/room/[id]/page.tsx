@@ -162,7 +162,10 @@ export default function TradeRoomPage(): React.JSX.Element {
             <Button variant="secondary" className="flex-1" onClick={() => setDisputeOpen(true)}>
               {tx("notReceived")}
             </Button>
-            <Button className="flex-1" onClick={() => setConfirmOpen(true)}>
+            <Button className="flex-1" onClick={() => {
+              setDialogError(null);
+              setConfirmOpen(true);
+            }}>
               {tx("paymentReceived")}
             </Button>
           </div>
@@ -463,6 +466,17 @@ function DisputeDialog({
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Permanently mounted (the render site toggles `open`), so a failed dispute
+  // attempt came back with its old text and old error still on screen.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setReason("");
+      setError(null);
+    }
+  }
 
   const submit = async () => {
     setBusy(true);

@@ -29,7 +29,7 @@ const TRON_ADDRESS = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
 export default function AdminScreeningPage(): React.JSX.Element {
   const tx = useTranslations("adminScreening");
   const toast = useToast();
-  const { data, isLoading } = useBlockedAddresses();
+  const { data, isLoading, isError } = useBlockedAddresses();
   const block = useBlockAddress();
   const unblock = useUnblockAddress();
 
@@ -66,6 +66,8 @@ export default function AdminScreeningPage(): React.JSX.Element {
       onError: (err) => toast.error(tx("errorUnblock"), apiErrorMessage(err)),
     });
 
+  // A failed read must not render as "nothing is blocked" — that is the AML
+  // blocklist, and an empty one reads as permission to proceed.
   const addresses = (data?.addresses ?? []).filter((a) => a.active);
 
   return (
@@ -143,6 +145,10 @@ export default function AdminScreeningPage(): React.JSX.Element {
         <h2 className="mb-3 font-display text-base font-semibold">{tx("blockedTitle")}</h2>
         {isLoading ? (
           <Skeleton className="h-40 w-full rounded-xl" />
+        ) : isError ? (
+          // An empty AML blocklist reads as "nothing is blocked, proceed" — which
+          // a failed read must never be allowed to say.
+          <Alert tone="danger">{tx("loadFailed")}</Alert>
         ) : addresses.length === 0 ? (
           <Card>
             <p className="text-sm text-text-2">{tx("empty")}</p>

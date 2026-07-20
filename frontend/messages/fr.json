@@ -1059,7 +1059,8 @@
     "riskFlags24h": "signalements de risque au cours des dernières 24 h.",
     "chartSignups": "Nouveaux utilisateurs (30 j)",
     "chartTrades": "Transactions terminées (30 j)",
-    "viewReport": "Rapport complet"
+    "viewReport": "Rapport complet",
+    "kpiLoadError": "Impossible de charger les chiffres du tableau de bord. Les compteurs et soldes ci-dessous sont indisponibles — ne les interprétez pas comme des zéros."
   },
   "adminUsers": {
     "title": "Utilisateurs",
@@ -1403,7 +1404,9 @@
     "actionFeesDesc": "Facturés lorsqu'un utilisateur publie une annonce ou ouvre un litige.",
     "advertisementFee": "Frais d'annonce (USDT)",
     "disputeFee": "Frais de litige (USDT)",
-    "tierZeroNote": "Tous les montants sont en USDT. 0 BLOQUE entièrement cette action pour le palier — cela ne signifie pas « illimité ». Le palier 0 est initialisé à 0 pour empêcher les utilisateurs non vérifiés d'échanger ou de retirer."
+    "tierZeroNote": "Tous les montants sont en USDT. 0 BLOQUE entièrement cette action pour le palier — cela ne signifie pas « illimité ». Le palier 0 est initialisé à 0 pour empêcher les utilisateurs non vérifiés d'échanger ou de retirer.",
+    "badgeUnknown": "Inconnu",
+    "killStateUnknown": "Impossible de lire l'état actuel — rechargez avant d'agir sur cet interrupteur."
   },
   "adminAudit": {
     "title": "Journal d'audit",
@@ -2078,7 +2081,8 @@
     "authenticatorCodeLabel": "Votre code d'authentification",
     "authenticatorCodeAria": "Code d'authentification",
     "depositNotCredited": "Non crédité",
-    "depositUnderReview": "En cours de vérification"
+    "depositUnderReview": "En cours de vérification",
+    "loadFailed": "Impossible de charger cet utilisateur. Rechargez avant de tirer une conclusion sur ce compte."
   },
   "adminReports": {
     "title": "Rapports et analyses",
@@ -2205,7 +2209,8 @@
     "blockedToastBody": "Elle sera rejetée lors des dépôts et retraits.",
     "unblockedToast": "Adresse débloquée",
     "errorBlock": "Impossible de bloquer l'adresse",
-    "errorUnblock": "Impossible de débloquer l'adresse"
+    "errorUnblock": "Impossible de débloquer l'adresse",
+    "loadFailed": "Impossible de charger la liste de blocage. Ne la considérez pas comme vide — rechargez avant tout contrôle."
   },
   "download": {
     "eyebrow": "App",

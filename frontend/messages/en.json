@@ -1059,7 +1059,8 @@
     "riskFlags24h": "risk flags in the last 24h.",
     "chartSignups": "New users (30d)",
     "chartTrades": "Completed trades (30d)",
-    "viewReport": "Full report"
+    "viewReport": "Full report",
+    "kpiLoadError": "Could not load the dashboard figures. The counts and balances below are unavailable — do not read them as zero."
   },
   "adminUsers": {
     "title": "Users",
@@ -1403,7 +1404,9 @@
     "actionFeesDesc": "Charged when a user posts an advertisement or opens a dispute.",
     "advertisementFee": "Advertisement fee (USDT)",
     "disputeFee": "Dispute fee (USDT)",
-    "tierZeroNote": "All amounts are in USDT. 0 BLOCKS that action entirely for the tier — it does not mean unlimited. Tier 0 is seeded at 0 so unverified users cannot trade or withdraw."
+    "tierZeroNote": "All amounts are in USDT. 0 BLOCKS that action entirely for the tier — it does not mean unlimited. Tier 0 is seeded at 0 so unverified users cannot trade or withdraw.",
+    "badgeUnknown": "Unknown",
+    "killStateUnknown": "Could not read the current state — reload before acting on this switch."
   },
   "adminAudit": {
     "title": "Audit log",
@@ -2078,7 +2081,8 @@
     "authenticatorCodeLabel": "Your authenticator code",
     "authenticatorCodeAria": "Authenticator code",
     "depositNotCredited": "Not credited",
-    "depositUnderReview": "Under review"
+    "depositUnderReview": "Under review",
+    "loadFailed": "Could not load this user. Reload before concluding anything about the account."
   },
   "adminReports": {
     "title": "Reports & analytics",
@@ -2205,7 +2209,8 @@
     "blockedToastBody": "It will be rejected on deposits and withdrawals.",
     "unblockedToast": "Address unblocked",
     "errorBlock": "Could not block the address",
-    "errorUnblock": "Could not unblock the address"
+    "errorUnblock": "Could not unblock the address",
+    "loadFailed": "Could not load the blocklist. Do not treat this as an empty list — reload before screening anything."
   },
   "download": {
     "eyebrow": "App",

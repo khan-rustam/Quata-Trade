@@ -49,7 +49,15 @@ function RevTile({ label, value, loading, highlight }: { label: string; value?: 
   return (
     <Card className={highlight ? "border-accent-400/30" : ""}>
       <p className="text-sm text-text-2">{label}</p>
-      {loading ? <Skeleton className="mt-2 h-6 w-24" /> : <div className="mt-1"><Usdt value={value ?? "0"} size="lg" className={highlight ? "text-accent-400" : ""} /></div>}
+      {loading ? (
+        <Skeleton className="mt-2 h-6 w-24" />
+      ) : value === undefined ? (
+        // Never print 0.00 USDT for a figure we could not read — an operator
+        // reading "revenue: 0" as fact is worse than showing nothing.
+        <p className="mt-1 text-lg text-text-3">—</p>
+      ) : (
+        <div className="mt-1"><Usdt value={value} size="lg" className={highlight ? "text-accent-400" : ""} /></div>
+      )}
     </Card>
   );
 }

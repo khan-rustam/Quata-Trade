@@ -31,7 +31,7 @@ type Row = z.infer<typeof zAdminDisputeRow>;
 export default function AdminDisputesPage(): React.JSX.Element {
   const tx = useTranslations("adminDisputes");
   const [page, setPage] = useState(1);
-  const { data, isLoading, refetch, isFetching } = useAdminDisputes(page);
+  const { data, isLoading, refetch, isFetching, isError } = useAdminDisputes(page);
   usePageClamp(page, data?.items.length, setPage);
   const { data: me } = useAdminMe();
   const [active, setActive] = useState<Row | null>(null);
@@ -62,7 +62,10 @@ export default function AdminDisputesPage(): React.JSX.Element {
 
       {isLoading ? (
         <Skeleton className="h-64 w-full rounded-xl" />
-      ) : !data || data.items.length === 0 ? (
+      ) : isError || !data ? (
+        // "Escrows are flowing normally" is a claim; a failed read is not evidence for it.
+        <Alert tone="danger">{tx("queueLoadError")}</Alert>
+      ) : data.items.length === 0 ? (
         <EmptyState icon={ShieldCheck} title={tx("emptyTitle")} description={tx("emptyDescription")} />
       ) : (
         <>

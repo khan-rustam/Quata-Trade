@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { AlertTriangle, ArrowRight, ArrowUpFromLine, BadgeCheck, Coins, ShieldAlert, TrendingUp, Users } from "lucide-react";
+import { Alert } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Usdt } from "@/components/ui/amount";
@@ -11,7 +12,7 @@ import { useAdminKpis, useAdminMetrics } from "@/hooks/use-admin";
 
 export default function AdminDashboard(): React.JSX.Element {
   const tx = useTranslations("adminDash");
-  const { data, isLoading } = useAdminKpis();
+  const { data, isLoading, isError } = useAdminKpis();
   const { data: metrics } = useAdminMetrics(30);
   const signups: ChartPoint[] = (metrics?.points ?? []).map((p) => ({ label: p.date.slice(5), value: p.signups }));
   const trades: ChartPoint[] = (metrics?.points ?? []).map((p) => ({ label: p.date.slice(5), value: p.trades }));
@@ -40,18 +41,22 @@ export default function AdminDashboard(): React.JSX.Element {
             <p className="flex items-center gap-1.5 text-sm text-text-2">
               <Coins size={14} className="text-accent-400" /> {tx("escrowLocked")}
             </p>
-            {isLoading ? <Skeleton className="mt-1 h-6 w-28" /> : <div className="mt-1"><Usdt value={data?.escrowLockedTotal ?? "0"} size="lg" /></div>}
+            {isLoading ? <Skeleton className="mt-1 h-6 w-28" /> : isError ? <p className="mt-1 text-lg text-text-3">—</p> : <div className="mt-1"><Usdt value={data?.escrowLockedTotal ?? "0"} size="lg" /></div>}
           </div>
           <div className="text-right">
             <p className="text-sm text-text-2">{tx("treasury")}</p>
-            {isLoading ? <Skeleton className="mt-1 h-6 w-24" /> : <div className="mt-1"><Usdt value={data?.treasuryBalance ?? "0"} size="lg" /></div>}
+            {isLoading ? <Skeleton className="mt-1 h-6 w-24" /> : isError ? <p className="mt-1 text-lg text-text-3">—</p> : <div className="mt-1"><Usdt value={data?.treasuryBalance ?? "0"} size="lg" /></div>}
           </div>
         </Card>
 
-        <div className="grid grid-cols-3 gap-3">
-          <ActionTile href="/admin/withdrawals" label={tx("pending")} value={data?.pendingWithdrawals} loading={isLoading} icon={<ArrowUpFromLine size={16} />} tone="warning" />
-          <ActionTile href="/admin/disputes" label={tx("disputes")} value={data?.openDisputes} loading={isLoading} icon={<ShieldAlert size={16} />} tone="danger" />
-          <ActionTile href="/admin/kyc" label={tx("kycQueue")} value={data?.pendingKyc} loading={isLoading} icon={<BadgeCheck size={16} />} tone="info" />
+        {/* A failed KPI read used to render 0 pending withdrawals, 0 disputes,
+          0 KYC and 0.00 USDT held — "nothing needs you" is the single most
+          dangerous thing to tell an operator when the console cannot see. */}
+      {isError && <Alert tone="danger" className="mb-3">{tx("kpiLoadError")}</Alert>}
+      <div className="grid grid-cols-3 gap-3">
+          <ActionTile href="/admin/withdrawals" label={tx("pending")} value={isError ? undefined : data?.pendingWithdrawals} loading={isLoading} icon={<ArrowUpFromLine size={16} />} tone="warning" />
+          <ActionTile href="/admin/disputes" label={tx("disputes")} value={isError ? undefined : data?.openDisputes} loading={isLoading} icon={<ShieldAlert size={16} />} tone="danger" />
+          <ActionTile href="/admin/kyc" label={tx("kycQueue")} value={isError ? undefined : data?.pendingKyc} loading={isLoading} icon={<BadgeCheck size={16} />} tone="info" />
         </div>
       </div>
 
