@@ -1287,7 +1287,20 @@
     "changeReasonLabel": "Motif de cette modification",
     "confirmChangeTitle": "Confirmer la modification",
     "confirmChangeDesc": "Ceci met à jour la configuration métier en direct.",
-    "applyChange": "Appliquer"
+    "applyChange": "Appliquer",
+    "wFeeTitle": "Frais de retrait",
+    "wFeeDesc": "Facturés à l'utilisateur sur chaque retrait, en plus du montant envoyé. Ce sont les frais réellement appliqués — gardez-les cohérents avec la grille tarifaire publiée.",
+    "wFeeFixed": "Frais fixes (USDT)",
+    "wFeeBps": "Frais en pourcentage (bps)",
+    "wFeeBpsHint": "100 bps = 1 %. Max {max}.",
+    "networkFeeTitle": "Estimation des frais réseau",
+    "networkFeeDesc": "Affichage uniquement — montré à l'utilisateur avant confirmation. Ne modifie pas ce qui est facturé.",
+    "networkFeeEstimate": "Frais TRON estimés (USDT)",
+    "tierLimitsTitle": "Limites par palier KYC",
+    "tierLimitsDesc": "Appliquées à chaque transaction et retrait selon le palier de vérification de l'utilisateur.",
+    "tierLabel": "Palier {tier}",
+    "tierMaxTrade": "Max par transaction (USDT)",
+    "tierDailyWithdrawal": "Retrait quotidien (USDT)"
   },
   "adminAudit": {
     "title": "Journal d'audit",

@@ -152,6 +152,17 @@ export const zAdminSettingsResponse = z.object({
     maxPendingWithdrawalQueue: z.number().int(),
     maxWithdrawalsPerDay: z.number().int(),
   }),
+  /**
+   * Live money knobs PATCH /admin/settings already accepted while the snapshot
+   * returned nothing, so the console could neither show nor change them — the
+   * platform charged a withdrawal fee no admin could see. Raw stored shape, so an
+   * editor round-trips exactly what the write-gate value schema expects.
+   */
+  withdrawalFee: z.record(z.string(), z.object({ fixed: zAmount, bps: z.number().int() })),
+  withdrawalNetworkFee: z.record(z.string(), zAmount),
+  kycTierLimits: z.record(z.string(), z.object({ maxTrade: zAmount, dailyWithdrawal: zAmount })),
+  advertisementFee: zAmount,
+  disputeFee: zAmount,
 });
 export type AdminSettingsResponse = z.infer<typeof zAdminSettingsResponse>;
 

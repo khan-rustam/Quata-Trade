@@ -4,7 +4,17 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, Pause, Play } from "lucide-react";
-import { fromDisplay, MAX_FEE_BPS, toDisplay, zFeeBpsValue, zHotWalletValue, zLaunchLimitsValue, zWithdrawalCapsValue } from "@quatatrade/shared";
+import {
+  fromDisplay,
+  MAX_FEE_BPS,
+  toDisplay,
+  zFeeBpsValue,
+  zHotWalletValue,
+  zLaunchLimitsValue,
+  zWithdrawalCapsValue,
+  zWithdrawalFeeValue,
+  zWithdrawalNetworkFeeValue,
+} from "@quatatrade/shared";
 import { AdminTitle } from "@/components/admin/admin-ui";
 import { TotpActionDialog } from "@/components/admin/totp-dialog";
 import { Card } from "@/components/ui/card";
@@ -150,6 +160,25 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
     dual_approval_threshold: capToDisplay(data.withdrawalCaps.dualApprovalThreshold),
     auto_approve_below: capToDisplay(data.withdrawalCaps.autoApproveBelow),
   });
+  // Withdrawal fee actually charged on every withdrawal, and the per-tier KYC
+  // ceilings. Both are enforced in the money path but had no console surface at
+  // all — changing either meant a direct DB write.
+  const [wfee, setWfee] = useState({
+    fixed: usdt(data.withdrawalFee.USDT_TRC20?.fixed ?? "0"),
+    bps: String(data.withdrawalFee.USDT_TRC20?.bps ?? 0),
+    network: usdt(data.withdrawalNetworkFee.USDT_TRC20 ?? "0"),
+  });
+  const [tiers, setTiers] = useState(() =>
+    Object.fromEntries(
+      ["0", "1", "2", "3"].map((t) => [
+        t,
+        {
+          maxTrade: usdt(data.kycTierLimits[t]?.maxTrade ?? "0"),
+          dailyWithdrawal: usdt(data.kycTierLimits[t]?.dailyWithdrawal ?? "0"),
+        },
+      ]),
+    ),
+  );
   // Hot-wallet operating thresholds + launch-protection ceilings (D30-limits). 0 = disabled.
   const [hot, setHot] = useState({
     max_balance: usdt(data.hotWallet.maxBalance),
@@ -228,6 +257,56 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
         return;
       }
       setPending({ key: "withdrawal_caps", value });
+    } catch (err) {
+      setError(apiErrorMessage(err, tx("errorUpdate")));
+    }
+  };
+  const saveWithdrawalFee = () => {
+    setError(null);
+    try {
+      // Full-value replace, like every other settings write: send the whole map so
+      // a save can never silently drop an asset.
+      const value = {
+        ...data.withdrawalFee,
+        USDT_TRC20: { fixed: fromDisplay(wfee.fixed || "0").toString(), bps: Number(wfee.bps || "0") },
+      };
+      const parsed = zWithdrawalFeeValue.safeParse(value);
+      if (!parsed.success) {
+        setError(parsed.error.issues[0]?.message ?? tx("errorUpdate"));
+        return;
+      }
+      setPending({ key: "withdrawal_fee", value });
+    } catch (err) {
+      setError(apiErrorMessage(err, tx("errorUpdate")));
+    }
+  };
+  const saveNetworkFee = () => {
+    setError(null);
+    try {
+      const value = { ...data.withdrawalNetworkFee, USDT_TRC20: fromDisplay(wfee.network || "0").toString() };
+      const parsed = zWithdrawalNetworkFeeValue.safeParse(value);
+      if (!parsed.success) {
+        setError(parsed.error.issues[0]?.message ?? tx("errorUpdate"));
+        return;
+      }
+      setPending({ key: "withdrawal_network_fee", value });
+    } catch (err) {
+      setError(apiErrorMessage(err, tx("errorUpdate")));
+    }
+  };
+  const saveTierLimits = () => {
+    setError(null);
+    try {
+      const value = Object.fromEntries(
+        Object.entries(tiers).map(([t, v]) => [
+          t,
+          {
+            max_trade: fromDisplay(v.maxTrade || "0").toString(),
+            daily_withdrawal: fromDisplay(v.dailyWithdrawal || "0").toString(),
+          },
+        ]),
+      );
+      setPending({ key: "kyc_tier_limits", value });
     } catch (err) {
       setError(apiErrorMessage(err, tx("errorUpdate")));
     }
@@ -434,6 +513,73 @@ function ConfigForm({ data }: { data: Awaited<ReturnType<typeof adminApi.adminSe
         <div>
           <Button size="sm" onClick={saveCaps}>
             {tx("saveCaps")}
+          </Button>
+        </div>
+      </Card>
+
+      {/* editable: the withdrawal fee actually charged, + the displayed network estimate */}
+      <Card className="space-y-3">
+        <div>
+          <p className="font-medium">{tx("wFeeTitle")}</p>
+          <p className="text-sm text-text-2">{tx("wFeeDesc")}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <CapInput label={tx("wFeeFixed")} value={wfee.fixed} onChange={(v) => setWfee((s2) => ({ ...s2, fixed: v }))} />
+          <Field label={tx("wFeeBps")} hint={tx("wFeeBpsHint", { max: MAX_FEE_BPS })}>
+            {(p) => (
+              <Input
+                {...p}
+                inputMode="numeric"
+                value={wfee.bps}
+                onChange={(e) => setWfee((s2) => ({ ...s2, bps: e.target.value.replace(/\D/g, "") }))}
+              />
+            )}
+          </Field>
+        </div>
+        <div>
+          <Button size="sm" onClick={saveWithdrawalFee}>
+            {tx("saveChanges")}
+          </Button>
+        </div>
+        <div className="border-t border-border pt-3">
+          <p className="text-sm font-medium">{tx("networkFeeTitle")}</p>
+          <p className="mb-2 text-xs text-text-3">{tx("networkFeeDesc")}</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <CapInput label={tx("networkFeeEstimate")} value={wfee.network} onChange={(v) => setWfee((s2) => ({ ...s2, network: v }))} />
+          </div>
+          <Button size="sm" variant="secondary" className="mt-3" onClick={saveNetworkFee}>
+            {tx("saveChanges")}
+          </Button>
+        </div>
+      </Card>
+
+      {/* editable: per-tier KYC ceilings enforced on trades and withdrawals */}
+      <Card className="space-y-3">
+        <div>
+          <p className="font-medium">{tx("tierLimitsTitle")}</p>
+          <p className="text-sm text-text-2">{tx("tierLimitsDesc")}</p>
+        </div>
+        <div className="space-y-3">
+          {["0", "1", "2", "3"].map((t) => (
+            <div key={t} className="grid gap-3 sm:grid-cols-[6rem_1fr_1fr] sm:items-end">
+              <p className="text-sm font-medium text-text-2">{tx("tierLabel", { tier: t })}</p>
+              <CapInput
+                label={tx("tierMaxTrade")}
+                value={tiers[t]?.maxTrade ?? "0"}
+                onChange={(v) => setTiers((s2) => ({ ...s2, [t]: { ...s2[t]!, maxTrade: v } }))}
+              />
+              <CapInput
+                label={tx("tierDailyWithdrawal")}
+                value={tiers[t]?.dailyWithdrawal ?? "0"}
+                onChange={(v) => setTiers((s2) => ({ ...s2, [t]: { ...s2[t]!, dailyWithdrawal: v } }))}
+              />
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-text-3">{tx("limitsZeroNote")}</p>
+        <div>
+          <Button size="sm" onClick={saveTierLimits}>
+            {tx("saveChanges")}
           </Button>
         </div>
       </Card>

@@ -1287,7 +1287,20 @@
     "changeReasonLabel": "Reason for this change",
     "confirmChangeTitle": "Confirm change",
     "confirmChangeDesc": "This updates live business configuration.",
-    "applyChange": "Apply change"
+    "applyChange": "Apply change",
+    "wFeeTitle": "Withdrawal fee",
+    "wFeeDesc": "Charged to the user on every withdrawal, on top of the amount sent. This is the fee the money path actually applies — keep it in step with the published fee schedule.",
+    "wFeeFixed": "Fixed fee (USDT)",
+    "wFeeBps": "Percentage fee (bps)",
+    "wFeeBpsHint": "100 bps = 1%. Max {max}.",
+    "networkFeeTitle": "Network fee estimate",
+    "networkFeeDesc": "Display only — shown to the user before they confirm. Does not change what is charged.",
+    "networkFeeEstimate": "Estimated TRON fee (USDT)",
+    "tierLimitsTitle": "KYC tier limits",
+    "tierLimitsDesc": "Enforced on every trade and withdrawal by the user's verification tier.",
+    "tierLabel": "Tier {tier}",
+    "tierMaxTrade": "Max per trade (USDT)",
+    "tierDailyWithdrawal": "Daily withdrawal (USDT)"
   },
   "adminAudit": {
     "title": "Audit log",

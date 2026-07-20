@@ -277,8 +277,32 @@ export class SettingsService {
       maxPendingWithdrawalQueue: number;
       maxWithdrawalsPerDay: number;
     };
+    /**
+     * Live money knobs that PATCH /admin/settings already accepted but the
+     * snapshot never returned, so the console could neither show nor edit them.
+     * Returned in their RAW stored shape so an editor round-trips exactly what
+     * the write-gate value schema expects.
+     */
+    withdrawalFee: Record<string, { fixed: string; bps: number }>;
+    withdrawalNetworkFee: Record<string, string>;
+    kycTierLimits: Record<string, { maxTrade: string; dailyWithdrawal: string }>;
+    advertisementFee: string;
+    disputeFee: string;
   }> {
-    const [window, deposit, caps, feeBps, sellerFeeBps, hotWallet, launchLimits] = await Promise.all([
+    const [
+      window,
+      deposit,
+      caps,
+      feeBps,
+      sellerFeeBps,
+      hotWallet,
+      launchLimits,
+      withdrawalFeeRaw,
+      networkFeeRaw,
+      tierLimitsRaw,
+      advertisementFee,
+      disputeFee,
+    ] = await Promise.all([
       this.tradePaymentWindowMinutes(),
       this.depositPolicy(),
       this.withdrawalCaps(),
@@ -286,6 +310,15 @@ export class SettingsService {
       this.sellerFeeBps(),
       this.hotWallet(),
       this.launchLimits(),
+      this.raw("withdrawal_fee").then((v) => zWithdrawalFeeRead.parse(v)),
+      // Not every deployment has seeded these — an absent key must render an
+      // empty editor, never break the whole settings page.
+      this.raw("withdrawal_network_fee")
+        .then((v) => z.record(z.string(), zAmountStr).parse(v))
+        .catch(() => ({}) as Record<string, string>),
+      this.raw("kyc_tier_limits").then((v) => zTierLimits.parse(v)),
+      this.advertisementFee(),
+      this.disputeFee(),
     ]);
     return {
       paymentWindowMinutes: window,
@@ -319,6 +352,21 @@ export class SettingsService {
         maxPendingWithdrawalQueue: launchLimits.maxPendingWithdrawalQueue,
         maxWithdrawalsPerDay: launchLimits.maxWithdrawalsPerDay,
       },
+      withdrawalFee: Object.fromEntries(
+        Object.entries(withdrawalFeeRaw).map(([asset, v]) => [
+          asset,
+          typeof v === "string" ? { fixed: v, bps: 0 } : { fixed: v.fixed, bps: v.bps },
+        ]),
+      ),
+      withdrawalNetworkFee: networkFeeRaw,
+      kycTierLimits: Object.fromEntries(
+        Object.entries(tierLimitsRaw).map(([tier, v]) => [
+          tier,
+          { maxTrade: String(v.maxTrade), dailyWithdrawal: String(v.dailyWithdrawal) },
+        ]),
+      ),
+      advertisementFee: advertisementFee.toString(),
+      disputeFee: disputeFee.toString(),
     };
   }
 
