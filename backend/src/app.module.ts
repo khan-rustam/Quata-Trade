@@ -80,7 +80,14 @@ import { MarketsModule } from "./modules/markets/markets.module";
         signOptions: { expiresIn: config.get("JWT_ACCESS_TTL_SECONDS", { infer: true }) },
       }),
     }),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]), // global baseline; auth endpoints add stricter buckets
+    // Global baseline; auth endpoints add stricter buckets.
+    // NOTE: this uses throttler's default IN-MEMORY storage, which is correct
+    // ONLY because the API runs as a single process (ecosystem.config.cjs:
+    // exec_mode "fork", instances 1). Raising `instances` gives each worker its
+    // own counter and silently multiplies every limit by the instance count —
+    // switch to a Redis storage provider (ioredis is already a dependency)
+    // BEFORE scaling out.
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     DatabaseModule,
     SettingsModule,
     PromoModule,

@@ -28,6 +28,9 @@ const WEB_PORT = process.env.QT_WEB_PORT || "3800";
 
 const common = {
   exec_mode: "fork",
+  // Must stay 1 until the rate limiter uses shared storage: throttler's default
+  // in-memory counters are per-process, so N instances = N x every rate limit
+  // (see backend/src/app.module.ts).
   instances: 1,
   autorestart: true,
   max_restarts: 10,
