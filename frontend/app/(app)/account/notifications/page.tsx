@@ -41,6 +41,12 @@ const TEMPLATE_KEYS: Record<string, string> = {
   password_reset: "templatePasswordReset",
 };
 
+/** "withdrawal_rejected" -> "Withdrawal rejected". Last-resort only. */
+function humanize(template: string): string {
+  const words = template.replace(/_/g, " ").trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 export default function NotificationsPage(): React.JSX.Element {
   const qc = useQueryClient();
   const toast = useToast();
@@ -127,7 +133,11 @@ export default function NotificationsPage(): React.JSX.Element {
               >
                 <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", isUnread ? "bg-accent-400" : "bg-transparent")} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-text-1">{templateKey ? tx(templateKey) : n.template}</p>
+                  {/* A template added backend-side that nobody maps here used to
+                      render its raw id ("withdrawal_rejected"). Degrade to a
+                      readable sentence instead, so future drift is untidy rather
+                      than broken. */}
+                  <p className="text-sm font-medium text-text-1">{templateKey ? tx(templateKey) : humanize(n.template)}</p>
                   <p className="text-xs text-text-3">{timeAgo(n.createdAt)}</p>
                 </div>
               </button>

@@ -168,7 +168,7 @@ export function Hero(): React.JSX.Element {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-400"></span>
                 </span>
-                <span className="text-[11px] font-bold tracking-wider text-text-1 uppercase">ESCROW ACTIVE</span>
+                <span className="text-[11px] font-bold tracking-wider text-text-1 uppercase">{t("escrowActive")}</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-accent-200 font-bold font-money">
                 <Sparkles size={13} className="text-accent-400" />

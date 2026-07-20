@@ -109,7 +109,8 @@
       "step3Title": "3. Release USDT",
       "step3Desc": "Once payment is verified, the escrow releases the USDT to your wallet.",
       "feeBadge": "{pct}% fee"
-    }
+    },
+    "escrowActive": "ESCROW ACTIVE"
   },
   "status": {
     "metaTitle": "System Status",
@@ -2284,6 +2285,7 @@
     "version": "Version {version}",
     "draftSuffix": "(draft)",
     "draftBannerTitle": "Draft — pending legal review.",
-    "draftBannerBody": "This page describes how QuataTrade works and marks every detail the operator and a Cameroon-qualified lawyer must confirm. It is not yet legally binding."
+    "draftBannerBody": "This page describes how QuataTrade works and marks every detail the operator and a Cameroon-qualified lawyer must confirm. It is not yet legally binding.",
+    "toSupply": "To supply:"
   }
 }

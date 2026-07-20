@@ -109,7 +109,8 @@
       "step3Title": "3. Libération de l'USDT",
       "step3Desc": "Une fois le paiement confirmé, l'escrow libère l'USDT vers votre portefeuille.",
       "feeBadge": "{pct} % de frais"
-    }
+    },
+    "escrowActive": "SÉQUESTRE ACTIF"
   },
   "status": {
     "metaTitle": "État du système",
@@ -2284,6 +2285,7 @@
     "version": "Version {version}",
     "draftSuffix": "(brouillon)",
     "draftBannerTitle": "Brouillon — en attente de revue juridique.",
-    "draftBannerBody": "Cette page décrit le fonctionnement de QuataTrade et signale chaque point que l'exploitant et un avocat qualifié au Cameroun doivent confirmer. Elle n'a pas encore de valeur juridique."
+    "draftBannerBody": "Cette page décrit le fonctionnement de QuataTrade et signale chaque point que l'exploitant et un avocat qualifié au Cameroun doivent confirmer. Elle n'a pas encore de valeur juridique.",
+    "toSupply": "À fournir :"
   }
 }

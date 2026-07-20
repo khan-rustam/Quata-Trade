@@ -59,7 +59,7 @@ export function LegalPage({ doc }: { doc: LegalDoc }): React.JSX.Element {
                   );
                 return (
                   <div key={j} className="rounded-lg border border-dashed border-accent-400/40 bg-accent-400/5 px-3 py-2 text-sm">
-                    <span className="font-semibold text-accent-400">To supply: </span>
+                    <span className="font-semibold text-accent-400">{t("toSupply")} </span>
                     <span className="text-text-2">{block.label}</span>
                   </div>
                 );
