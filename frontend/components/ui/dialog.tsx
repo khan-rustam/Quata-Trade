@@ -64,7 +64,10 @@ export function Dialog({
     document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    panel?.focus();
+    // Prefer an element that asked for focus (e.g. the first OTP box) — focusing the
+    // panel unconditionally stole it, forcing the user to click into the field.
+    const autoTarget = panel?.querySelector<HTMLElement>("[data-autofocus]");
+    (autoTarget ?? panel)?.focus();
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;

@@ -36,10 +36,17 @@ export function OtpInput({
 
   const focusBox = (i: number) => {
     const el = refs.current[i];
-    if (el) {
-      el.focus();
-      el.select();
-    }
+    if (!el) return;
+    el.focus();
+    el.select();
+    // Belt and braces: if a re-render or a modal focus-trap steals focus in the same
+    // tick, re-assert it on the next frame so auto-advance can't silently fail.
+    requestAnimationFrame(() => {
+      if (document.activeElement !== el) {
+        el.focus();
+        el.select();
+      }
+    });
   };
 
   const emit = (next: string): string => {
@@ -94,6 +101,8 @@ export function OtpInput({
           maxLength={1}
           disabled={disabled}
           autoFocus={autoFocus && i === 0}
+          // Lets Dialog hand initial focus here instead of the panel (see dialog.tsx).
+          data-autofocus={autoFocus && i === 0 ? "" : undefined}
           aria-label={`Digit ${i + 1}`}
           aria-invalid={invalid}
           value={chars[i] ?? ""}

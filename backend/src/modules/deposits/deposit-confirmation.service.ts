@@ -65,6 +65,9 @@ export class DepositConfirmationService {
       return;
     }
 
+    // ONE source of truth for the threshold: the admin setting, floored by env.
+    const requiredConfirmations = await this.settings.depositConfirmations(this.cfg.confirmations);
+
     const pending = await this.db
       .selectFrom("deposits")
       .select(["id", "block_number"])
@@ -83,7 +86,7 @@ export class DepositConfirmationService {
       if (height < deposit.block_number) continue; // node behind / reorg in progress
 
       const confirmations = this.toIntConfirmations(height - deposit.block_number);
-      if (confirmations < this.cfg.confirmations) {
+      if (confirmations < requiredConfirmations) {
         await this.db
           .updateTable("deposits")
           .set({ confirmations, status: "CONFIRMING", updated_at: new Date() })
@@ -94,7 +97,7 @@ export class DepositConfirmationService {
       }
 
       try {
-        await this.credit(deposit.id, confirmations);
+        await this.credit(deposit.id, confirmations, requiredConfirmations);
       } catch (err) {
         // isolated failure must not block the rest of the batch; retried next tick
         this.logger.error(
@@ -108,7 +111,7 @@ export class DepositConfirmationService {
    * Credit exactly once. Row lock + status guard + the UNIQUE idempotency key
    * on the journal make this safe under replays, crashes and races.
    */
-  private async credit(depositId: string, confirmations: number): Promise<void> {
+  private async credit(depositId: string, confirmations: number, requiredConfirmations: number): Promise<void> {
     // ── Pre-flight, OUTSIDE the money transaction ────────────────────────────
     // Every network/second-connection call happens here. Doing them inside the
     // transaction held a pool slot while acquiring another (pool max 20), which
@@ -130,7 +133,7 @@ export class DepositConfirmationService {
       this.logger.error(`deposit ${pre.id}: tx ${pre.tx_hash} reverted on-chain — never crediting`);
       return;
     }
-    if (onChain.confirmations < this.cfg.confirmations) return; // depth regressed (reorg) — wait
+    if (onChain.confirmations < requiredConfirmations) return; // depth regressed (reorg) — wait
 
     const screened = pre.from_address ? await this.screening.check(pre.asset, pre.from_address) : null;
     const policy = await this.settings.depositPolicy();

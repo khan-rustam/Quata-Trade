@@ -116,7 +116,11 @@ export class WalletController {
         address: row.address,
         network: "TRON (TRC20)",
         minDeposit: serializeAmount(policy.minAmount),
-        confirmationsRequired: policy.confirmations,
+        // Same effective value the credit gate enforces (settings floored by env),
+        // so what the user is told can never disagree with what actually happens.
+        confirmationsRequired: await this.settings.depositConfirmations(
+          this.config.get("DEPOSIT_CONFIRMATIONS", { infer: true }),
+        ),
       };
     } catch (err) {
       this.rethrow(err);

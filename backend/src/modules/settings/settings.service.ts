@@ -85,6 +85,20 @@ export class SettingsService {
     return z.coerce.number().int().min(5).max(1440).parse(await this.raw("trade_payment_window_minutes"));
   }
 
+  /**
+   * Effective deposit confirmations: the admin-configured value, but NEVER weaker
+   * than the deployment floor (env `DEPOSIT_CONFIRMATIONS`, ≥19 in production).
+   *
+   * Previously the credit gate used the env value while the UI advertised the
+   * settings value, so the two could disagree and an admin raising confirmations
+   * after a reorg scare would see no effect. One number now, everywhere: admins can
+   * make it stricter, never weaker than the reorg-safety floor.
+   */
+  async depositConfirmations(envFloor: number): Promise<number> {
+    const policy = await this.depositPolicy().catch(() => null);
+    return Math.max(policy?.confirmations ?? envFloor, envFloor);
+  }
+
   async killSwitches(): Promise<{ withdrawalsPaused: boolean; tradesPaused: boolean }> {
     const v = zKillSwitches.parse(await this.raw("kill_switches"));
     return { withdrawalsPaused: v.withdrawals_paused, tradesPaused: v.trades_paused };

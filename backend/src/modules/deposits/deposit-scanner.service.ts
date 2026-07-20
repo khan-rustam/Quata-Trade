@@ -5,6 +5,7 @@ import type { AssetCode, DepositStatus } from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
 import type { Database } from "../../db/types";
 import { newId } from "../../common/ids";
+import { SettingsService } from "../settings/settings.service";
 import { DEPOSITS_CONFIG, type DepositsConfig } from "./deposits.config";
 import { TRONGRID_CLIENT, type TronGridClient, type Trc20Transfer } from "./trongrid.client";
 
@@ -35,6 +36,7 @@ export class DepositScannerService {
     @Inject(DB) private readonly db: Kysely<Database>,
     @Inject(TRONGRID_CLIENT) private readonly client: TronGridClient,
     @Inject(DEPOSITS_CONFIG) private readonly cfg: DepositsConfig,
+    private readonly settings: SettingsService,
   ) {}
 
   @Cron(CronExpression.EVERY_30_SECONDS)
@@ -48,27 +50,54 @@ export class DepositScannerService {
     }
   }
 
-  /** One full pass over all active deposit addresses. Aborts the pass on RPC failure. */
+  /**
+   * One full pass over all active deposit addresses.
+   *
+   * A failure on ONE address must not abort the pass: previously the first RPC
+   * error `return`ed, and because the address list had no ORDER BY, the addresses
+   * after it could go unscanned indefinitely (a rate-limited address would
+   * permanently starve everyone behind it). Now each address is isolated, the order
+   * is stable, and the circuit breaker only trips when the whole pass fails.
+   */
   async scanOnce(): Promise<void> {
     const addresses: WatchedAddress[] = await this.db
       .selectFrom("deposit_addresses")
       .select(["address", "user_id", "asset"])
       .where("active", "=", true)
+      .orderBy("created_at", "asc") // stable: no address can be starved by ordering churn
       .execute();
 
+    // Dust cutoff = the LOWER of the env floor and the admin policy minimum. Using
+    // only the env value meant that lowering the policy minimum stranded deposits in
+    // the gap as IGNORED_DUST — never re-examined, never creditable.
+    const policyMin = await this.settings
+      .depositPolicy()
+      .then((p) => p.minAmount)
+      .catch(() => this.cfg.minAmount);
+    const dustFloor = policyMin < this.cfg.minAmount ? policyMin : this.cfg.minAmount;
+
+    let failures = 0;
     for (const watched of addresses) {
       let transfers: Trc20Transfer[];
       try {
         transfers = await this.client.getTrc20TransfersTo(watched.address);
-        this.noteSuccess();
       } catch (err) {
-        this.noteFailure(err);
-        return; // circuit-breaker-lite: skip the rest of this pass
+        failures += 1;
+        this.logger.warn(
+          `scan failed for one address (continuing): ${err instanceof Error ? err.message : "unknown error"}`,
+        );
+        continue; // isolate: never let one address block the rest of the pass
       }
       for (const transfer of transfers) {
-        await this.recordTransfer(watched, transfer);
+        await this.recordTransfer(watched, transfer, dustFloor);
       }
     }
+
+    // Only a pass where EVERY address failed indicates the provider is down; a
+    // partial failure must not reset the breaker (the old code called noteSuccess()
+    // inside the loop, so an alternating ok/fail pattern never tripped it).
+    if (addresses.length > 0 && failures === addresses.length) this.noteFailure(new Error("all addresses failed"));
+    else this.noteSuccess();
   }
 
   /**
@@ -79,7 +108,7 @@ export class DepositScannerService {
    * 4. dust (< min) recorded as IGNORED_DUST so it is visible but never credited,
    * 5. idempotent upsert via ON CONFLICT (tx_hash, log_index) DO NOTHING.
    */
-  private async recordTransfer(watched: WatchedAddress, transfer: Trc20Transfer): Promise<void> {
+  private async recordTransfer(watched: WatchedAddress, transfer: Trc20Transfer, dustFloor: bigint): Promise<void> {
     if (transfer.to !== watched.address) return;
     if (transfer.contract !== this.cfg.usdtContract) {
       this.logger.warn(`rejected non-canonical token contract (tx=${transfer.txHash} log=${transfer.logIndex})`);
@@ -87,7 +116,7 @@ export class DepositScannerService {
     }
     if (transfer.amount <= 0n) return;
 
-    const status: DepositStatus = transfer.amount < this.cfg.minAmount ? "IGNORED_DUST" : "SEEN";
+    const status: DepositStatus = transfer.amount < dustFloor ? "IGNORED_DUST" : "SEEN";
     const result = await this.db
       .insertInto("deposits")
       .values({

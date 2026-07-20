@@ -119,8 +119,8 @@ describe("deposits pipeline (Gate 3)", () => {
     t = await startTestDb();
     ledger = new LedgerService(t.db);
     grid = new FakeTronGrid();
-    scanner = new DepositScannerService(t.db, grid, CONFIG);
     settings = new SettingsService(t.db);
+    scanner = new DepositScannerService(t.db, grid, CONFIG, settings);
     confirmer = new DepositConfirmationService(t.db, grid, CONFIG, ledger, new AuditService(t.db), new ScreeningService(t.db), settings, new PromoService(settings));
   });
 
