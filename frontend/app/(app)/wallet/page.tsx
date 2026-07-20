@@ -132,9 +132,42 @@ function WalletAction({ href, icon, label }: { href: string; icon: React.ReactNo
   );
 }
 
+/**
+ * Prev/next for the wallet history. Both lists were pinned to page 1, so with the
+ * API's 20-row page a user with more history simply could not reach it — and the
+ * CSV export inherited the same cap while presenting itself as "your transactions".
+ */
+function Pager({
+  page,
+  pageSize,
+  total,
+  onPage,
+}: {
+  page: number;
+  pageSize: number;
+  total: number;
+  onPage: (p: number) => void;
+}): React.JSX.Element | null {
+  const tx = useTranslations("wallet");
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  if (pages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3">
+      <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => onPage(page - 1)}>
+        {tx("prev")}
+      </Button>
+      <span className="text-xs text-text-3">{tx("pageOf", { page, pages })}</span>
+      <Button size="sm" variant="secondary" disabled={page >= pages} onClick={() => onPage(page + 1)}>
+        {tx("next")}
+      </Button>
+    </div>
+  );
+}
+
 function DepositsList(): React.JSX.Element {
   const tx = useTranslations("wallet");
-  const { data, isLoading } = useDeposits(1);
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useDeposits(page);
   const [receipt, setReceipt] = useState<Deposit | null>(null);
   if (isLoading) return <ListSkeleton />;
   if (!data || data.items.length === 0) {
@@ -189,6 +222,7 @@ function DepositsList(): React.JSX.Element {
             </div>
           </button>
         ))}
+        <Pager page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} />
       </div>
       {receipt && <TransactionReceipt kind="deposit" data={receipt} open onClose={() => setReceipt(null)} />}
     </>
@@ -197,7 +231,8 @@ function DepositsList(): React.JSX.Element {
 
 function WithdrawalsList(): React.JSX.Element {
   const tx = useTranslations("wallet");
-  const { data, isLoading } = useWithdrawals(1);
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useWithdrawals(page);
   const [receipt, setReceipt] = useState<Withdrawal | null>(null);
   if (isLoading) return <ListSkeleton />;
   if (!data || data.items.length === 0) {
@@ -229,6 +264,7 @@ function WithdrawalsList(): React.JSX.Element {
             </div>
           </button>
         ))}
+        <Pager page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} />
       </div>
       {receipt && <TransactionReceipt kind="withdrawal" data={receipt} open onClose={() => setReceipt(null)} />}
     </>

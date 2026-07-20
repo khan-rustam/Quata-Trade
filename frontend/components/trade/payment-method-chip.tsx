@@ -18,6 +18,13 @@ const META: Record<PaymentMethod, { label: string; dot: string }> = {
   PALMPAY: { label: "PalmPay", dot: "bg-[#6C2BD9]" },
 };
 
+/** The display name for a rail. Exported so no surface has to re-derive it —
+ *  the offer page used to fall back to "QuataPay" for every rail it did not
+ *  special-case, mislabelling 8 of the 11. */
+export function paymentMethodLabel(method: PaymentMethod): string {
+  return META[method].label;
+}
+
 export function PaymentMethodChip({ method, className }: { method: PaymentMethod; className?: string }): React.JSX.Element {
   const m = META[method];
   return (

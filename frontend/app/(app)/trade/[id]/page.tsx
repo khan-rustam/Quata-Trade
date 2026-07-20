@@ -17,7 +17,7 @@ import { Alert } from "@/components/ui/alert";
 import { Avatar } from "@/components/ui/avatar";
 import { Usdt, Xaf } from "@/components/ui/amount";
 import { Spinner } from "@/components/ui/spinner";
-import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
+import { PaymentMethodChip, paymentMethodLabel } from "@/components/trade/payment-method-chip";
 import { useToast } from "@/components/ui/toast";
 import { useOffer, useOpenTrade } from "@/hooks/use-trade";
 import { api } from "@/lib/api/client";
@@ -150,7 +150,7 @@ export default function OfferDetailPage(): React.JSX.Element {
               aria-label={tx("paymentMethod")}
               options={offer.paymentMethods.map((m) => ({
                 value: m,
-                label: m === "MTN_MOMO" ? "MTN" : m === "ORANGE_MONEY" ? "Orange" : "QuataPay",
+                label: paymentMethodLabel(m),
               }))}
             />
           </div>

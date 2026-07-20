@@ -536,7 +536,10 @@
     "noWithdrawalsDescription": "Your withdrawal history will appear here.",
     "viewReceipt": "View receipt",
     "depositOnHoldNote": "Under manual review by our compliance team — no action needed from you. Contact support if this takes more than 24 hours.",
-    "depositRejectedNote": "This deposit was not credited after review. Contact support for details."
+    "depositRejectedNote": "This deposit was not credited after review. Contact support for details.",
+    "prev": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {pages}"
   },
   "walletReceipt": {
     "titleDeposit": "Deposit receipt",

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Plus, ShieldCheck, Star } from "lucide-react";
-import type { OfferSide, PaymentMethod } from "@quatatrade/shared";
+import { PAYMENT_METHODS, type OfferSide, type PaymentMethod } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
 import { buttonClassName } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
-import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
+import { PaymentMethodChip, paymentMethodLabel } from "@/components/trade/payment-method-chip";
 import { Xaf } from "@/components/ui/amount";
 import { useOffers } from "@/hooks/use-trade";
 import { formatUsdt } from "@/lib/format";
@@ -64,11 +64,12 @@ function TradeBrowser(): React.JSX.Element {
             value={method}
             onChange={(e) => setMethod(e.target.value as PaymentMethod | "")}
             placeholder={tx("allPaymentMethods")}
+            // Derived from the domain, not a hand-written subset: the hardcoded
+            // three meant offers on the other 8 rails could not be filtered for at
+            // all, and a new rail would silently go missing here.
             options={[
               { value: "", label: tx("allMethods") },
-              { value: "MTN_MOMO", label: "MTN MoMo" },
-              { value: "ORANGE_MONEY", label: "Orange Money" },
-              { value: "QUATAPAY", label: "QuataPay" },
+              ...PAYMENT_METHODS.map((m) => ({ value: m, label: paymentMethodLabel(m) })),
             ]}
           />
         </div>

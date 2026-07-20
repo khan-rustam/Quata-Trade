@@ -536,7 +536,10 @@
     "noWithdrawalsDescription": "Votre historique de retraits apparaîtra ici.",
     "viewReceipt": "Voir le reçu",
     "depositOnHoldNote": "En cours de vérification manuelle par notre équipe conformité — aucune action requise de votre part. Contactez le support si cela dépasse 24 heures.",
-    "depositRejectedNote": "Ce dépôt n'a pas été crédité après vérification. Contactez le support pour plus de détails."
+    "depositRejectedNote": "Ce dépôt n'a pas été crédité après vérification. Contactez le support pour plus de détails.",
+    "prev": "Précédent",
+    "next": "Suivant",
+    "pageOf": "Page {page} sur {pages}"
   },
   "walletReceipt": {
     "titleDeposit": "Reçu de dépôt",
