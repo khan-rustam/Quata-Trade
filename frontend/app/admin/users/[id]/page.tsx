@@ -37,6 +37,7 @@ import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
+import { can } from "@/lib/admin-rbac";
 import { useAdminUserDetail, useAdminMe } from "@/hooks/use-admin";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime, formatUsdt, formatXaf } from "@/lib/format";
@@ -94,9 +95,12 @@ export default function AdminUserDetailPage(): React.JSX.Element {
               <Button size="sm" variant="secondary" onClick={() => void refetch()} disabled={isFetching}>
                 <RefreshCw size={14} className={isFetching ? "animate-spin" : ""} /> {tx("refresh")}
               </Button>
-              <Button size="sm" onClick={() => setModerating(true)}>
-                {tx("moderate")}
-              </Button>
+              {/* Same server gate as the list — RBAC.freezeUser. */}
+              {can(me?.role, "freezeUser") && (
+                <Button size="sm" onClick={() => setModerating(true)}>
+                  {tx("moderate")}
+                </Button>
+              )}
             </div>
           </div>
 

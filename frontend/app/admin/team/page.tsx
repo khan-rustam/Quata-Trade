@@ -240,7 +240,7 @@ export default function TeamPage(): React.JSX.Element {
         description={copy.description}
         actionLabel={copy.title}
         destructive={copy.destructive}
-        requireTotp
+        requireTotp={Boolean(me?.totpEnabled)}
         busy={busy}
         error={dialogError}
         onConfirm={confirm}

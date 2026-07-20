@@ -23,6 +23,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
 import { useAdminUsers, useAdminMe } from "@/hooks/use-admin";
+import { can } from "@/lib/admin-rbac";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime } from "@/lib/format";
 
@@ -40,6 +41,7 @@ export default function AdminUsersPage(): React.JSX.Element {
   const { data, isLoading, refetch, isFetching } = useAdminUsers(page, debounced || undefined);
   const [active, setActive] = useState<Row | null>(null);
   const { data: me } = useAdminMe();
+  const mayModerate = can(me?.role, "freezeUser");
 
   return (
     <div className="space-y-5">
@@ -120,16 +122,21 @@ export default function AdminUsersPage(): React.JSX.Element {
                 <td className="px-4 py-3 text-xs text-text-3">{formatDateTime(u.createdAt)}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActive(u);
-                      }}
-                    >
-                      {tx("manage")}
-                    </Button>
+                    {/* Server gate is RBAC.freezeUser; showing this to FINANCE /
+                        AUDITOR / ANALYST only walks them into a 403 after they have
+                        typed a reason and a TOTP code. */}
+                    {mayModerate && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActive(u);
+                        }}
+                      >
+                        {tx("manage")}
+                      </Button>
+                    )}
                     <ChevronRight size={16} className="text-text-3" aria-hidden />
                   </div>
                 </td>

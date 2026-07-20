@@ -37,6 +37,10 @@ export default function WalletConfigPage(): React.JSX.Element {
     queryKey: ["admin", "wallet-config"],
     queryFn: () => adminApi.adminWalletConfig(),
   });
+  // requireTotp must follow the acting admin's own 2FA state: hardcoding it left
+  // the freshly-seeded SUPER_ADMIN (totp_secret_enc null) staring at a permanently
+  // greyed-out confirm button, unable to run the key ceremony at all.
+  const { data: me } = useQuery({ queryKey: ["admin", "me"], queryFn: () => adminApi.adminMe() });
 
   const [xpub, setXpub] = useState("");
   const [label, setLabel] = useState("");
@@ -247,7 +251,7 @@ export default function WalletConfigPage(): React.JSX.Element {
         title={tx("confirmTitle")}
         description={tx("confirmEcho")}
         actionLabel={tx("confirmAction")}
-        requireTotp
+        requireTotp={Boolean(me?.totpEnabled)}
         busy={busy}
         error={submitError}
         onConfirm={confirm}

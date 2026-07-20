@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertOctagon, AlertTriangle, Info, CheckCircle2, Check } from "lucide-react";
 import type { AlertItem, AlertSeverity } from "@quatatrade/shared";
-import { AdminTitle, RefreshButton } from "@/components/admin/admin-ui";
+import { AdminTitle, RefreshButton, Pagination } from "@/components/admin/admin-ui";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,13 +41,19 @@ export default function AlertsPage(): React.JSX.Element {
   const [severity, setSeverity] = useState<SeverityFilter>("all");
   const [ack, setAck] = useState<AckFilter>("all");
   const [ackingId, setAckingId] = useState<string | null>(null);
+  // The API defaults to page 1 / 50 and applies LIMIT-OFFSET. Without a control,
+  // the 51st-and-older alerts matching a filter were unreachable — including
+  // unacknowledged criticals, which kept inflating the "unacknowledged" count
+  // with no way to ever clear them.
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
-  const query: Record<string, string> = {};
+  const query: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
   if (severity !== "all") query.severity = severity;
   if (ack === "unacked") query.acknowledged = "false";
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ["admin", "alerts", severity, ack],
+    queryKey: ["admin", "alerts", severity, ack, page, pageSize],
     queryFn: () => adminApi.adminAlerts(query),
     refetchInterval: REFRESH_MS,
   });
@@ -81,7 +87,10 @@ export default function AlertsPage(): React.JSX.Element {
       <div className="flex flex-wrap items-center gap-3">
         <Segmented
           value={severity}
-          onChange={(v) => setSeverity(v as SeverityFilter)}
+          onChange={(v) => {
+            setSeverity(v as SeverityFilter);
+            setPage(1); // a filter change invalidates the current offset
+          }}
           aria-label={tx("severityFilter")}
           options={[
             { value: "all", label: tx("fAll") },
@@ -92,7 +101,10 @@ export default function AlertsPage(): React.JSX.Element {
         />
         <Segmented
           value={ack}
-          onChange={(v) => setAck(v as AckFilter)}
+          onChange={(v) => {
+            setAck(v as AckFilter);
+            setPage(1);
+          }}
           aria-label={tx("ackFilter")}
           options={[
             { value: "all", label: tx("fAllAck") },
@@ -139,6 +151,16 @@ export default function AlertsPage(): React.JSX.Element {
               )}
             </Card>
           ))}
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={data.total}
+            onPage={setPage}
+            onPageSize={(n) => {
+              setPageSize(n);
+              setPage(1);
+            }}
+          />
         </div>
       )}
     </div>

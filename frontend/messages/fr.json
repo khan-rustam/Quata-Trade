@@ -2170,6 +2170,10 @@
     "rolledBackToastTitle": "Release rolled back",
     "rolledBackToastBody": "Clients will fall back to the previous published release.",
     "errorPublish": "Could not publish the release",
-    "errorRollback": "Could not roll back the release"
+    "errorRollback": "Could not roll back the release",
+    "artifactUrl": "URL de l'artefact",
+    "artifactUrlHint": "Lien de téléchargement direct vers la version signée. Obligatoire pour Android et iOS.",
+    "checksum": "Somme de contrôle SHA-256",
+    "checksumHint": "Facultatif. Permet au client de vérifier le téléchargement avant l'installation."
   }
 }

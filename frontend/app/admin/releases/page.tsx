@@ -45,14 +45,21 @@ export default function AdminReleasesPage(): React.JSX.Element {
   const [versionCode, setVersionCode] = useState("");
   const [minSupportedCode, setMinSupportedCode] = useState("");
   const [notes, setNotes] = useState("");
+  // Binary platforms are rejected server-side without an artifactUrl
+  // (zPublishReleaseRequest refine), and the form had no field for it — so every
+  // android/ios publish 400'd after the admin had already passed the TOTP dialog.
+  const [artifactUrl, setArtifactUrl] = useState("");
+  const [checksum, setChecksum] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [confirmPublish, setConfirmPublish] = useState(false);
   const [rollbackId, setRollbackId] = useState<string | null>(null);
 
   const code = Number(versionCode);
   const minCode = Number(minSupportedCode);
+  const isBinary = platform === "android" || platform === "ios";
   const canSubmit =
     SEMVER.test(version.trim()) &&
+    (!isBinary || artifactUrl.trim().length > 0) &&
     Number.isInteger(code) &&
     code > 0 &&
     Number.isInteger(minCode) &&
@@ -69,6 +76,8 @@ export default function AdminReleasesPage(): React.JSX.Element {
         updateType,
         releaseNotes: notes.trim(),
         minSupportedCode: minCode,
+        artifactUrl: artifactUrl.trim() || undefined,
+        checksumSha256: checksum.trim() || undefined,
         totpCode: totpCode || undefined,
       });
       toast.success(tx("publishedToastTitle"), tx("publishedToastBody"));
@@ -76,6 +85,8 @@ export default function AdminReleasesPage(): React.JSX.Element {
       setVersion("");
       setVersionCode("");
       setMinSupportedCode("");
+      setArtifactUrl("");
+      setChecksum("");
       setNotes("");
     } catch (err) {
       setError(apiErrorMessage(err, tx("errorPublish")));
@@ -150,6 +161,33 @@ export default function AdminReleasesPage(): React.JSX.Element {
             )}
           </Field>
         </div>
+
+        {/* Only meaningful for binaries: web/pwa releases ship through the deploy,
+            not an artifact the client downloads. */}
+        {isBinary && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label={tx("artifactUrl")} hint={tx("artifactUrlHint")} required>
+              {(p) => (
+                <Input
+                  {...p}
+                  value={artifactUrl}
+                  onChange={(e) => setArtifactUrl(e.target.value)}
+                  placeholder="https://…/quatatrade-1.2.3.apk"
+                />
+              )}
+            </Field>
+            <Field label={tx("checksum")} hint={tx("checksumHint")}>
+              {(p) => (
+                <Input
+                  {...p}
+                  value={checksum}
+                  onChange={(e) => setChecksum(e.target.value.trim())}
+                  placeholder="sha256…"
+                />
+              )}
+            </Field>
+          </div>
+        )}
 
         <Field label={tx("releaseNotes")}>
           {(p) => (

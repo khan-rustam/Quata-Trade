@@ -50,6 +50,25 @@ export function TotpActionDialog({
   const tx = useTranslations("totpDialog");
   const [totp, setTotp] = useState("");
   const [reason, setReason] = useState("");
+
+  // Callers keep this component permanently mounted and toggle `open`, so only
+  // the inner Dialog unmounts — this state survived between actions. An admin who
+  // rejected withdrawal A with a reason then opened the dialog for withdrawal B
+  // found A's reason pre-filled AND A's code still entered, with the confirm
+  // button already enabled: one click filed the wrong reason against B's audit
+  // record, and if the code was still inside its TOTP window it verified.
+  //
+  // Reset during render (React's documented "adjusting state when a prop
+  // changes") rather than in an effect, so the stale values never reach the DOM.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setTotp("");
+      setReason("");
+    }
+  }
+
   const reasonOk = !reasonRequired || reason.trim().length >= 5;
   const totpOk = !requireTotp || totp.length >= 6;
 
