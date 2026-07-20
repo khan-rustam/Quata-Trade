@@ -79,6 +79,11 @@ export class WalletService {
         .where("user_id", "=", userId)
         .where("asset", "=", asset)
         .where("status", "in", ["SEEN", "CONFIRMING"])
+        // A compliance-REJECTED deposit keeps its SEEN/CONFIRMING status (the
+        // hold flags are what stop it crediting), so without this it would sit in
+        // the user's "pending" balance forever — money the platform has already
+        // decided will never arrive.
+        .where((eb) => eb.or([eb("hold_resolution", "is", null), eb("hold_resolution", "!=", "REJECTED")]))
         .executeTakeFirst();
       balances.push({
         asset,

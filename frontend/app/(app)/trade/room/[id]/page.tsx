@@ -43,6 +43,7 @@ export default function TradeRoomPage(): React.JSX.Element {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [disputeOpen, setDisputeOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dialogError, setDialogError] = useState<string | null>(null);
 
@@ -84,6 +85,7 @@ export default function TradeRoomPage(): React.JSX.Element {
     setBusy(true);
     try {
       await api.cancelTrade(id, { idempotencyKey: crypto.randomUUID() });
+      setCancelOpen(false);
       toast.success(tx("cancelledTitle"), tx("cancelledBody"));
       refresh();
     } catch (err) {
@@ -187,7 +189,7 @@ export default function TradeRoomPage(): React.JSX.Element {
       {!terminal && trade.status !== "DISPUTED" && (
         <div className="flex flex-wrap gap-2">
           {isBuyer && (trade.status === "ESCROW_LOCKED" || trade.status === "PAYMENT_SUBMITTED") && (
-            <Button variant="ghost" size="sm" onClick={cancel} disabled={busy} className="text-text-2">
+            <Button variant="ghost" size="sm" onClick={() => setCancelOpen(true)} disabled={busy} className="text-text-2">
               {tx("cancelTrade")}
             </Button>
           )}
@@ -211,6 +213,52 @@ export default function TradeRoomPage(): React.JSX.Element {
         error={dialogError}
         onConfirm={confirmRelease}
       />
+
+      {/*
+        Cancelling at PAYMENT_SUBMITTED refunds the escrow to the SELLER, and the
+        buyer only reaches that status by declaring they already sent the fiat
+        off-platform. Firing that straight off a ghost button — the only money
+        action in this room without a confirmation — meant one stray tap could
+        hand back the crypto after the money had left the buyer's bank. The
+        warning is status-specific because at ESCROW_LOCKED nothing has been paid
+        yet and cancelling is genuinely harmless.
+      */}
+      <Dialog
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        title={tx("cancelDialogTitle")}
+        description={
+          trade.status === "PAYMENT_SUBMITTED" ? tx("cancelDialogDescPaid") : tx("cancelDialogDesc")
+        }
+      >
+        <div className="space-y-4">
+          {trade.status === "PAYMENT_SUBMITTED" && (
+            <Alert tone="danger" title={tx("cancelWarnTitle")}>
+              {tx("cancelWarnBody")}
+            </Alert>
+          )}
+          <div className="flex gap-2">
+            <Button variant="secondary" className="flex-1" onClick={() => setCancelOpen(false)} disabled={busy}>
+              {tx("cancelDialogBack")}
+            </Button>
+            <Button variant="danger" className="flex-1" onClick={cancel} disabled={busy}>
+              {busy ? <Spinner /> : tx("cancelDialogConfirm")}
+            </Button>
+          </div>
+          {trade.status === "PAYMENT_SUBMITTED" && (
+            <button
+              type="button"
+              className="w-full text-center text-xs text-text-3 underline underline-offset-2"
+              onClick={() => {
+                setCancelOpen(false);
+                setDisputeOpen(true);
+              }}
+            >
+              {tx("cancelDialogDisputeInstead")}
+            </button>
+          )}
+        </div>
+      </Dialog>
 
       <DisputeDialog
         open={disputeOpen}

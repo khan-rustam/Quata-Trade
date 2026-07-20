@@ -175,10 +175,17 @@ function DepositsList(): React.JSX.Element {
                   {tx("depositFeeNote", { fee: toDisplay(d.fee, "USDT_TRC20", 2), net: toDisplay(d.net, "USDT_TRC20", 2) })}
                 </p>
               )}
+              {/* A badge alone doesn't tell someone why their money has stopped
+                  moving or whether they need to do anything. */}
+              {d.holdResolution === "REJECTED" ? (
+                <p className="text-xs text-danger">{tx("depositRejectedNote")}</p>
+              ) : d.onHold ? (
+                <p className="text-xs text-warning">{tx("depositOnHoldNote")}</p>
+              ) : null}
             </div>
             <div className="flex items-center gap-3">
               <Usdt value={d.amount} size="sm" showUnit={false} />
-              <DepositStatusBadge status={d.status} />
+              <DepositStatusBadge status={d.status} onHold={d.onHold} holdResolution={d.holdResolution} />
             </div>
           </button>
         ))}

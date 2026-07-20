@@ -534,7 +534,9 @@
     "getDepositAddress": "Obtenir une adresse de dépôt",
     "noWithdrawalsTitle": "Aucun retrait pour le moment",
     "noWithdrawalsDescription": "Votre historique de retraits apparaîtra ici.",
-    "viewReceipt": "Voir le reçu"
+    "viewReceipt": "Voir le reçu",
+    "depositOnHoldNote": "En cours de vérification manuelle par notre équipe conformité — aucune action requise de votre part. Contactez le support si cela dépasse 24 heures.",
+    "depositRejectedNote": "Ce dépôt n'a pas été crédité après vérification. Contactez le support pour plus de détails."
   },
   "walletReceipt": {
     "titleDeposit": "Reçu de dépôt",
@@ -802,7 +804,15 @@
     "evidenceUploadError": "Impossible d'envoyer le fichier",
     "filesCount": "{count} fichier(s) joint(s)",
     "youLabel": "Vous",
-    "otherPartyLabel": "Autre partie"
+    "otherPartyLabel": "Autre partie",
+    "cancelDialogTitle": "Annuler cette transaction ?",
+    "cancelDialogDesc": "Les cryptos bloquées en séquestre retournent au vendeur et cette transaction se termine. Vous pouvez en démarrer une nouvelle à tout moment.",
+    "cancelDialogDescPaid": "Vous avez déjà indiqué avoir envoyé le paiement. Lisez ceci avant de continuer.",
+    "cancelWarnTitle": "Vous pourriez perdre l'argent envoyé",
+    "cancelWarnBody": "L'annulation renvoie les cryptos au vendeur. Si vous avez déjà envoyé le paiement, QuataTrade ne pourra pas vous le restituer. N'annulez que si vous n'avez PAS envoyé l'argent. Si vous avez payé et que le vendeur n'a pas libéré les cryptos, ouvrez plutôt un litige.",
+    "cancelDialogBack": "Garder la transaction",
+    "cancelDialogConfirm": "Annuler la transaction",
+    "cancelDialogDisputeInstead": "J'ai déjà payé — ouvrir un litige"
   },
   "account": {
     "title": "Compte",

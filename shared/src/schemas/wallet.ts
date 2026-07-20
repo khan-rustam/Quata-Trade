@@ -70,6 +70,16 @@ export const zDeposit = z.object({
   txHash: z.string(),
   confirmations: z.number().int(),
   status: z.enum(DEPOSIT_STATUSES),
+  /**
+   * Parked for manual review (source screening or the amount/limit policy). The
+   * row keeps its SEEN/CONFIRMING status — holds are deliberately not a status
+   * value — so without this flag a held deposit is indistinguishable from one
+   * that is simply still confirming, and the user waits forever with no idea a
+   * human has to act.
+   */
+  onHold: z.boolean(),
+  /** Set once an admin decides: RELEASED (will credit) or REJECTED (never will). */
+  holdResolution: z.enum(["RELEASED", "REJECTED"]).nullable(),
   createdAt: z.string(),
 });
 export type Deposit = z.infer<typeof zDeposit>;

@@ -45,7 +45,23 @@ export function WithdrawalStatusBadge({ status }: { status: WithdrawalStatus }):
   return <Badge tone={s.tone}>{s.label}</Badge>;
 }
 
-export function DepositStatusBadge({ status }: { status: DepositStatus }): React.JSX.Element {
+/**
+ * A held deposit keeps its SEEN/CONFIRMING status by design (holds are flags, not
+ * a status value), so rendering `status` alone told the user "Confirming" for
+ * money that is actually parked awaiting a human — or, once REJECTED, for money
+ * that is never coming. The hold state has to win over the raw status.
+ */
+export function DepositStatusBadge({
+  status,
+  onHold,
+  holdResolution,
+}: {
+  status: DepositStatus;
+  onHold?: boolean;
+  holdResolution?: "RELEASED" | "REJECTED" | null;
+}): React.JSX.Element {
+  if (holdResolution === "REJECTED") return <Badge tone="danger">Not credited</Badge>;
+  if (onHold) return <Badge tone="warning">Under review</Badge>;
   const s = DEPOSIT[status];
   return <Badge tone={s.tone}>{s.label}</Badge>;
 }

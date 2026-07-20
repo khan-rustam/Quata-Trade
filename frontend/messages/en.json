@@ -534,7 +534,9 @@
     "getDepositAddress": "Get deposit address",
     "noWithdrawalsTitle": "No withdrawals yet",
     "noWithdrawalsDescription": "Your withdrawal history will appear here.",
-    "viewReceipt": "View receipt"
+    "viewReceipt": "View receipt",
+    "depositOnHoldNote": "Under manual review by our compliance team — no action needed from you. Contact support if this takes more than 24 hours.",
+    "depositRejectedNote": "This deposit was not credited after review. Contact support for details."
   },
   "walletReceipt": {
     "titleDeposit": "Deposit receipt",
@@ -802,7 +804,15 @@
     "evidenceUploadError": "Could not upload the file",
     "filesCount": "{count} file(s) attached",
     "youLabel": "You",
-    "otherPartyLabel": "Other party"
+    "otherPartyLabel": "Other party",
+    "cancelDialogTitle": "Cancel this trade?",
+    "cancelDialogDesc": "The crypto held in escrow goes back to the seller and this trade closes. You can start a new trade at any time.",
+    "cancelDialogDescPaid": "You have already marked the payment as sent. Read this before continuing.",
+    "cancelWarnTitle": "You may lose the money you sent",
+    "cancelWarnBody": "Cancelling returns the crypto to the seller. If you have already sent the payment, you will not get it back through QuataTrade. Only cancel if you did NOT send the money. If you paid and the seller has not released the crypto, open a dispute instead.",
+    "cancelDialogBack": "Keep trade open",
+    "cancelDialogConfirm": "Cancel trade",
+    "cancelDialogDisputeInstead": "I already paid — open a dispute instead"
   },
   "account": {
     "title": "Account",

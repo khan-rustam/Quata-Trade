@@ -150,6 +150,8 @@ export class WalletController {
       txHash: d.tx_hash,
       confirmations: d.confirmations,
       status: d.status,
+      onHold: d.aml_hold || d.policy_hold,
+      holdResolution: d.hold_resolution,
       createdAt: d.created_at.toISOString(),
     };
   }
