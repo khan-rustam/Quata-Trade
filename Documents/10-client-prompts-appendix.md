@@ -199,3 +199,17 @@ the latter is a self-contained admin feature scheduled as its own increment.
   "withdrawals pay only the network fee" was corrected by migration 0033. Changing it later is
   an admin settings edit; the published page follows automatically.
 - `promo_campaigns` still has no admin editor (see the 2026-07-20 entry above).
+- **`/trades/fee-preview` omits the seller fee.** It calls `split()` (buyer side only), so if
+  `seller_fee_bps` is ever raised above 0 — an existing admin toggle with a shipped editor —
+  sellers would be charged a fee no pre-confirm screen discloses, contradicting the published
+  fee note. Currently latent (the setting is 0), but it is a contract change
+  (`zFeePreviewResponse` + `splitPerSide()` + a seller row in the trade UI), so it is logged
+  rather than done unattended. **Do not raise `seller_fee_bps` until this ships.**
+- **User-facing withdrawal limits are invisible.** `perTxMax`, `min(dailyMax, tier.dailyWithdrawal)`
+  and the 24h `withdrawal_hold_until` after a 2FA/password change are all enforced server-side
+  but exposed by no API and named in no UI copy — a user can hit them with no warning. Needs a
+  limits surface on the withdraw screen plus a field on `zUserProfile`.
+- **Legal documents are English-only** (`frontend/lib/legal-content.ts`, ~2,200 lines across 8
+  documents). Defensible while the text is explicitly non-binding pending review by a
+  Cameroon-qualified lawyer, but it must be translated before those pages can be relied on in a
+  French-speaking market.

@@ -20,6 +20,12 @@ const DIRECT_EVENTS: Readonly<Record<string, TemplateName>> = {
   // EmailSendJob (they carry the code/token in the payload); they are NOT
   // dispatched here (safeContext would strip the code, and it would double-send).
   "deposit.credited": "deposit_credited",
+  // A held deposit that an admin decides on is a money outcome the user must be
+  // told about. Both events were already emitted and consumed as internal ops
+  // alerts, but had no user mapping — so a refusal was silent, while the
+  // equivalent withdrawal.rejected has always notified.
+  "deposit.hold_released": "deposit_hold_released",
+  "deposit.hold_rejected": "deposit_hold_rejected",
   "withdrawal.requested": "withdrawal_requested",
   "withdrawal.approved": "withdrawal_approved",
   "withdrawal.rejected": "withdrawal_rejected",

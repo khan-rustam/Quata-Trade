@@ -204,7 +204,10 @@ export default function AdminReleasesPage(): React.JSX.Element {
         </Field>
 
         <div className="flex items-center gap-3">
-          <Button onClick={() => setConfirmPublish(true)} disabled={!canSubmit || publish.isPending}>
+          <Button onClick={() => {
+              setError(null); // a failed publish must not surface inside the rollback dialog
+              setConfirmPublish(true);
+            }} disabled={!canSubmit || publish.isPending}>
             {publish.isPending ? <Spinner /> : <Rocket size={16} aria-hidden />} {tx("publish")}
           </Button>
           {!canSubmit && <span className="text-xs text-text-3">{tx("validationHint")}</span>}
@@ -245,7 +248,10 @@ export default function AdminReleasesPage(): React.JSX.Element {
                 <td className="p-3 text-text-2">{new Date(r.releasedAt).toLocaleString()}</td>
                 <td className="p-3 text-right">
                   {r.status === "published" && (
-                    <Button size="sm" variant="secondary" onClick={() => setRollbackId(r.id)}>
+                    <Button size="sm" variant="secondary" onClick={() => {
+                        setError(null);
+                        setRollbackId(r.id);
+                      }}>
                       <Undo2 size={14} aria-hidden /> {tx("rollback")}
                     </Button>
                   )}

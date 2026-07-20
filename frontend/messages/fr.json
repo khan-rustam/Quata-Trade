@@ -286,10 +286,10 @@
     "subtitle": "Tout frais de plateforme applicable est affiché avant votre confirmation — vous savez donc toujours exactement ce que vous paierez ou recevrez. Aucun frais caché.",
     "promoNote": "Promotion de lancement : les frais de transaction peuvent être offerts sur votre marché — les taux ci-dessous constituent la grille standard, et les frais réellement appliqués sont toujours affichés avant la confirmation. Tout changement est annoncé à l'avance et publié sur cette page avant son entrée en vigueur.",
     "buyerFeeLabel": "Frais de transaction acheteur",
-    "buyerFeeValue": "0 %",
+    "buyerFeeValue": "Voir ci-dessus",
     "buyerFeeNote": "Les acheteurs ne paient aucun frais de transaction QuataTrade pendant la promotion de lancement.",
     "sellerFeeLabel": "Frais de transaction vendeur",
-    "sellerFeeValue": "0 %",
+    "sellerFeeValue": "Voir ci-dessus",
     "sellerFeeNote": "Les vendeurs ne paient aucun frais de transaction QuataTrade pendant la promotion de lancement.",
     "depositFeeLabel": "Frais de dépôt USDT",
     "depositFeeValue": "1 USDT",
@@ -1042,7 +1042,9 @@
     "templateWithdrawalFailed": "Le retrait n'a pas pu aboutir — montant restitué",
     "templateInternalTransferReceived": "Vous avez reçu des USDT",
     "templatePriceAlertTriggered": "Alerte de prix déclenchée",
-    "templatePasswordReset": "Réinitialisation du mot de passe demandée"
+    "templatePasswordReset": "Réinitialisation du mot de passe demandée",
+    "templateDepositHoldReleased": "Dépôt approuvé après vérification",
+    "templateDepositHoldRejected": "Dépôt non crédité"
   },
   "adminDash": {
     "title": "Tableau de bord",

@@ -286,10 +286,10 @@
     "subtitle": "Any applicable platform fee is shown before you confirm — so you always know exactly what you'll pay or receive. No hidden fees.",
     "promoNote": "Launch promotion: trading fees may be waived in your market — the rates shown below are the standard schedule and the fee you will actually pay is always displayed before you confirm a trade. Any change is announced in advance and published on this page before it takes effect.",
     "buyerFeeLabel": "Buyer trading fee",
-    "buyerFeeValue": "0%",
+    "buyerFeeValue": "See above",
     "buyerFeeNote": "Buyers pay no QuataTrade trading fee during the launch promotion.",
     "sellerFeeLabel": "Seller trading fee",
-    "sellerFeeValue": "0%",
+    "sellerFeeValue": "See above",
     "sellerFeeNote": "Sellers pay no QuataTrade trading fee during the launch promotion.",
     "depositFeeLabel": "USDT deposit fee",
     "depositFeeValue": "1 USDT",
@@ -1042,7 +1042,9 @@
     "templateWithdrawalFailed": "Withdrawal could not be completed — amount returned",
     "templateInternalTransferReceived": "You received USDT",
     "templatePriceAlertTriggered": "Price alert triggered",
-    "templatePasswordReset": "Password reset requested"
+    "templatePasswordReset": "Password reset requested",
+    "templateDepositHoldReleased": "Deposit approved after review",
+    "templateDepositHoldRejected": "Deposit not credited"
   },
   "adminDash": {
     "title": "Dashboard",

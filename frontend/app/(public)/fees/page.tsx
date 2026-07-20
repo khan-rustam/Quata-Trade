@@ -13,7 +13,7 @@ export function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/fees", {
     title: "Fees — QuataTrade",
     description:
-      "QuataTrade's launch fee structure: 0% trading for buyers and sellers, and a low flat deposit fee. Current rates are published live on this page. No hidden fees.",
+      "QuataTrade's fee schedule — trading, deposit and withdrawal fees, published live from the rates we actually charge. No hidden fees.",
   });
 }
 

@@ -21,6 +21,8 @@ export const TEMPLATE_NAMES = [
   "email_verify",
   "password_reset",
   "deposit_credited",
+  "deposit_hold_released",
+  "deposit_hold_rejected",
   "withdrawal_requested",
   "withdrawal_approved",
   "withdrawal_rejected",
@@ -59,6 +61,14 @@ const TEMPLATE_SOURCES: Record<TemplateName, TemplateSource> = {
   deposit_credited: {
     subject: "Deposit credited",
     body: "Your deposit{{#if amountDisplay}} of {{amountDisplay}} USDT{{/if}} has been confirmed and credited to your QuataTrade balance.",
+  },
+  deposit_hold_released: {
+    subject: "Deposit approved after review",
+    body: "Your deposit{{#if amountDisplay}} of {{amountDisplay}} USDT{{/if}} has passed review and is being credited to your QuataTrade balance.",
+  },
+  deposit_hold_rejected: {
+    subject: "Deposit not credited",
+    body: "Your deposit{{#if amountDisplay}} of {{amountDisplay}} USDT{{/if}} was not credited after review. Contact support if you believe this is a mistake.",
   },
   withdrawal_requested: {
     subject: "Withdrawal requested",
@@ -179,6 +189,23 @@ const EMAIL_CONTENT: Record<TemplateName, (ctx: Record<string, string>, appUrl: 
     paragraphs: ["Your deposit has been confirmed on-chain and added to your QuataTrade balance."],
     facts: amountFact(ctx),
     button: button(appUrl, "/wallet", "View wallet"),
+  }),
+  deposit_hold_released: (ctx, appUrl) => ({
+    preheader: "Your deposit passed review",
+    heading: "Deposit approved after review",
+    paragraphs: ["Your deposit has passed our compliance review and is being credited to your balance."],
+    facts: amountFact(ctx),
+    button: button(appUrl, "/wallet", "View wallet"),
+  }),
+  deposit_hold_rejected: (ctx, appUrl) => ({
+    preheader: "Your deposit was not credited",
+    heading: "Deposit not credited",
+    paragraphs: [
+      "After review, this deposit was not credited to your balance.",
+      "If you believe this is a mistake, contact support and we'll look at it with you.",
+    ],
+    facts: amountFact(ctx),
+    button: button(appUrl, "/contact", "Contact support"),
   }),
   withdrawal_requested: (ctx, appUrl) => ({
     preheader: "We've received your withdrawal request",

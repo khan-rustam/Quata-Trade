@@ -49,7 +49,16 @@ export class WalletAdminService {
       this.db.selectFrom("deposit_addresses").select((eb) => eb.fn.countAll<bigint>().as("n")).executeTakeFirst(),
       this.db.selectFrom("deposit_addresses").select((eb) => eb.fn.countAll<bigint>().as("n")).where("active", "=", true).executeTakeFirst(),
       this.db.selectFrom("users").select((eb) => eb.fn.countAll<bigint>().as("n")).where("status", "in", ["frozen", "suspended"]).executeTakeFirst(),
-      this.db.selectFrom("deposits").select((eb) => eb.fn.countAll<bigint>().as("n")).where("status", "in", ["SEEN", "CONFIRMING"]).executeTakeFirst(),
+      // A compliance-REJECTED deposit keeps its SEEN/CONFIRMING status (the hold
+      // flags are what stop it crediting), so without this filter the custody
+      // overview reports it as pending forever — the same defect fixed on the
+      // user's wallet balance, on the page treasury uses to reconcile.
+      this.db
+        .selectFrom("deposits")
+        .select((eb) => eb.fn.countAll<bigint>().as("n"))
+        .where("status", "in", ["SEEN", "CONFIRMING"])
+        .where((eb) => eb.or([eb("hold_resolution", "is", null), eb("hold_resolution", "!=", "REJECTED")]))
+        .executeTakeFirst(),
       this.db.selectFrom("deposits").select((eb) => eb.fn.countAll<bigint>().as("n")).where("status", "=", "CREDITED").executeTakeFirst(),
       this.db.selectFrom("deposits").select(sql<string>`COALESCE(SUM(amount),0)::text`.as("s")).where("status", "=", "CREDITED").executeTakeFirst(),
       this.db.selectFrom("withdrawals").select((eb) => eb.fn.countAll<bigint>().as("n")).where("status", "=", "PENDING_APPROVAL").executeTakeFirst(),

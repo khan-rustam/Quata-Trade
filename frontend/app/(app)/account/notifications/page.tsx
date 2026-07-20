@@ -28,6 +28,8 @@ const TEMPLATE_KEYS: Record<string, string> = {
   trade_disputed: "templateTradeDisputed",
   dispute_resolved: "templateDisputeResolved",
   kyc_reviewed: "templateKycReviewed",
+  deposit_hold_released: "templateDepositHoldReleased",
+  deposit_hold_rejected: "templateDepositHoldRejected",
   // These 8 existed in notify.templates.ts but not here, so the feed rendered the
   // raw id — a user whose withdrawal was rejected saw the literal text
   // "withdrawal_rejected".
