@@ -1146,7 +1146,13 @@
     "authenticatorCodeLabel": "Votre code d'authentification",
     "authenticatorCodeAria": "Code d'authentification",
     "cancel": "Annuler",
-    "resolveDispute": "Résoudre le litige"
+    "resolveDispute": "Résoudre le litige",
+    "evidenceTitle": "Preuves soumises",
+    "evidenceNone": "Aucune des parties n'a téléversé de preuve. Résoudre maintenant revient à décider sur la seule base du motif du litige.",
+    "evidenceFrom": "De la part {who}",
+    "opener": "de la partie qui a ouvert le litige",
+    "counterparty": "de la contrepartie",
+    "evidenceFile": "Pièce jointe {n}"
   },
   "adminTreasury": {
     "title": "Trésorerie",

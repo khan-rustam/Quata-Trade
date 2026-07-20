@@ -455,6 +455,8 @@ export class QuataApiClient {
     this.request("POST", `/api/v1/admin/kyc/${id}/${decision}`, zAnyRecord, body);
   adminDisputes = (query?: Query) =>
     this.request("GET", "/api/v1/admin/disputes", zAdminDisputesResponse, undefined, query);
+  /** Dispute + the parties' evidence (short-TTL presigned URLs) for the resolver. */
+  adminDisputeDetail = (id: string) => this.request("GET", `/api/v1/admin/disputes/${id}`, zDispute);
   adminResolveDispute = (id: string, body: ResolveDisputeRequest): Promise<unknown> =>
     this.request("POST", `/api/v1/admin/disputes/${id}/resolve`, zAnyRecord, body);
   adminSettings = () => this.request("GET", "/api/v1/admin/settings", zAdminSettingsResponse);

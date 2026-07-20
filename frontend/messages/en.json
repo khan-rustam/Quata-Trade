@@ -1146,7 +1146,13 @@
     "authenticatorCodeLabel": "Your authenticator code",
     "authenticatorCodeAria": "Authenticator code",
     "cancel": "Cancel",
-    "resolveDispute": "Resolve dispute"
+    "resolveDispute": "Resolve dispute",
+    "evidenceTitle": "Evidence submitted",
+    "evidenceNone": "Neither party has uploaded any evidence. Resolving now means deciding on the dispute reason alone.",
+    "evidenceFrom": "From the {who}",
+    "opener": "party who opened the dispute",
+    "counterparty": "counterparty",
+    "evidenceFile": "Attachment {n}"
   },
   "adminTreasury": {
     "title": "Treasury",

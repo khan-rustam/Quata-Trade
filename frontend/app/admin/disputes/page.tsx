@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
@@ -104,6 +105,12 @@ function ResolveDialog({ dispute, requireTotp, onClose }: { dispute: Row; requir
   const [resolution, setResolution] = useState<DisputeResolution>("RELEASE_TO_BUYER");
   const [notes, setNotes] = useState("");
   const [totp, setTotp] = useState("");
+  // The evidence the decision actually turns on. Loaded here rather than in the
+  // list so the presigned URLs are minted only when a resolver opens the case.
+  const { data: detail, isLoading: loadingEvidence } = useQuery({
+    queryKey: ["admin", "dispute", dispute.id],
+    queryFn: () => adminApi.adminDisputeDetail(dispute.id),
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -137,6 +144,46 @@ function ResolveDialog({ dispute, requireTotp, onClose }: { dispute: Row; requir
             <Usdt value={dispute.amount} size="sm" />
           </div>
           <p className="mt-1 text-xs text-text-3">{dispute.reason}</p>
+        </div>
+
+        {/* Releasing or refunding escrow is irreversible; deciding it without the
+            parties' proof was the whole defect. */}
+        <div>
+          <p className="mb-1.5 text-sm font-medium">{tx("evidenceTitle")}</p>
+          {loadingEvidence ? (
+            <Skeleton className="h-20 w-full rounded-lg" />
+          ) : !detail || detail.evidence.length === 0 ? (
+            <Alert tone="warning">{tx("evidenceNone")}</Alert>
+          ) : (
+            <ul className="space-y-2">
+              {detail.evidence.map((e) => (
+                <li key={e.id} className="rounded-lg border border-border bg-surface-2 p-3 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-text-2">
+                      {tx("evidenceFrom", { who: e.submittedBy === dispute.openedBy ? tx("opener") : tx("counterparty") })}
+                    </span>
+                    <span className="text-xs text-text-3">{formatDateTime(e.createdAt)}</span>
+                  </div>
+                  {e.note && <p className="mt-1 text-xs text-text-2">{e.note}</p>}
+                  {e.files.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {e.files.map((url, i) => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-medium text-accent-400 underline underline-offset-2"
+                        >
+                          {tx("evidenceFile", { n: i + 1 })}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div>
           <p className="mb-1.5 text-sm font-medium">{tx("outcome")}</p>

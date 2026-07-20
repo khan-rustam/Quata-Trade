@@ -221,6 +221,33 @@ export class DisputesService {
   }
 
   /**
+   * Admin read of a dispute — the same view the parties get, WITHOUT the party check.
+   *
+   * Resolving a dispute moves escrow irreversibly, and the only admin-visible
+   * fields were the free-text reason and the amount: every uploaded proof was
+   * unreachable, because GET /disputes/:id is party-scoped and admins hold an
+   * admin token, not a user token. Compliance was choosing RELEASE_TO_BUYER vs
+   * REFUND_TO_SELLER blind. Access is gated at the route (RBAC.resolveDispute)
+   * and every view is audited, mirroring KycAdminService.documents.
+   */
+  async getDisputeForAdmin(disputeId: string, adminId: string, ip?: string): Promise<DisputeView> {
+    const dispute = await this.db.selectFrom("disputes").selectAll().where("id", "=", disputeId).executeTakeFirst();
+    if (!dispute) throw new DisputeNotFoundError();
+
+    await this.audit.log({
+      actorType: "admin",
+      actorId: adminId,
+      action: "dispute.evidence_viewed",
+      targetType: "dispute",
+      targetId: disputeId,
+      ip,
+      metadata: { tradeId: dispute.trade_id },
+    });
+
+    return this.toView(dispute);
+  }
+
+  /**
    * POST /disputes/:id/upload — same base64 + magic-byte pattern as KYC
    * (jpeg/png/webp/pdf, 5MB cap), private "disputes" bucket, key
    * `<disputeId>/<uuidv7><ext>` so submitEvidence can enforce scoping.

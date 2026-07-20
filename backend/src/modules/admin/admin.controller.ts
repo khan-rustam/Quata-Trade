@@ -73,6 +73,7 @@ import { AuditService } from "../../common/audit/audit.service";
 import { KycAdminService } from "../kyc/kyc-admin.service";
 import { ReviewNotAllowedError, SubmissionNotFoundError } from "../kyc/kyc.errors";
 import { DisputesAdminService, type DisputeQueuePage, type ResolveResult } from "../disputes/disputes-admin.service";
+import { DisputesService } from "../disputes/disputes.service";
 import { ConflictingResolutionError, DisputeNotFoundError } from "../disputes/disputes.errors";
 import { IllegalTransitionError, TradeNotFoundError } from "../escrow/escrow.errors";
 import { WithdrawalsService } from "../withdrawals/withdrawals.service";
@@ -184,6 +185,7 @@ export class AdminController {
     private readonly admin: AdminService,
     private readonly kycAdmin: KycAdminService,
     private readonly disputesAdmin: DisputesAdminService,
+    private readonly disputesSvc: DisputesService,
     private readonly withdrawals: WithdrawalsService,
     private readonly walletConfig: WalletConfigService,
     private readonly walletProvisioning: WalletProvisioningService,
@@ -513,6 +515,25 @@ export class AdminController {
   }
 
   // ── disputes (SUPER / COMPLIANCE / SUPPORT) ───────────────────────────────
+
+  /**
+   * Full dispute view INCLUDING the parties' uploaded evidence (short-TTL
+   * presigned URLs). Same role as resolving it: whoever may move the escrow must
+   * be able to see what the decision turns on.
+   */
+  @Roles(...RBAC.resolveDispute)
+  @Get("disputes/:id")
+  async disputeDetail(
+    @CurrentAdminId() adminId: string,
+    @Param("id", new ZodPipe(zUuid)) disputeId: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<unknown> {
+    try {
+      return await this.disputesSvc.getDisputeForAdmin(disputeId, adminId, this.ip(req));
+    } catch (err) {
+      throw mapAdminError(err);
+    }
+  }
 
   @Roles(...RBAC.resolveDispute)
   @Post("disputes/:id/resolve")
