@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { useEffect, useState, type ReactNode, type ComponentType } from "react";
+import { useModalPanel } from "@/hooks/use-modal-panel";
+import { useEffect, useState, type ReactNode, type ComponentType, useRef } from "react";
 import {
   Activity,
   ArrowUpFromLine,
@@ -86,10 +87,12 @@ export function AdminShell({
   children: ReactNode;
 }): React.JSX.Element {
   const tx = useTranslations("adminShell");
+  const drawerRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
   const qc = useQueryClient();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  useModalPanel(mobileNavOpen, drawerRef, () => setMobileNavOpen(false));
 
   const items = NAV.filter((n) => !n.gate || can(role, n.gate));
   const isActive = (href: string) => (href === "/admin" ? pathname === href : pathname.startsWith(href));
@@ -206,18 +209,25 @@ export function AdminShell({
             onClick={() => setMobileNavOpen(false)}
             aria-hidden
           />
-          {/* Modal semantics + Escape: this is a full-screen overlay that traps the
-              admin visually, but assistive tech was told nothing about it and there
-              was no keyboard way out. */}
+          {/*
+            Full-screen overlay that visually traps the admin, so it needs real
+            modal behaviour: focus moves in on open, Tab cycles inside, Escape
+            closes, focus returns to the trigger, background scroll is locked.
+            `aria-modal` WITHOUT those is worse than omitting it — it tells screen
+            readers to ignore everything outside the dialog while focus is still
+            on the hamburger, which is outside. The panel is also rendered after
+            <main>, so a keyboard user would otherwise have to traverse the whole
+            page to reach it. useModalPanel does what components/ui/dialog.tsx
+            already does; this drawer was the outlier.
+          */}
           <div
             id="admin-mobile-nav"
+            ref={drawerRef}
             role="dialog"
             aria-modal="true"
             aria-label={tx("menu")}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") setMobileNavOpen(false);
-            }}
-            className="absolute left-0 top-0 flex h-full w-64 max-w-[80%] flex-col border-r border-border bg-surface-1"
+            tabIndex={-1}
+            className="absolute left-0 top-0 flex h-full w-64 max-w-[80%] flex-col border-r border-border bg-surface-1 outline-none"
           >
             <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
               <span className="flex items-center gap-2">

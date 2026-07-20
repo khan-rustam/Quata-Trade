@@ -76,8 +76,8 @@ export default function AdminReleasesPage(): React.JSX.Element {
         updateType,
         releaseNotes: notes.trim(),
         minSupportedCode: minCode,
-        artifactUrl: artifactUrl.trim() || undefined,
-        checksumSha256: checksum.trim() || undefined,
+        artifactUrl: isBinary ? artifactUrl.trim() || undefined : undefined,
+        checksumSha256: isBinary ? checksum.trim() || undefined : undefined,
         totpCode,
       });
       toast.success(tx("publishedToastTitle"), tx("publishedToastBody"));
@@ -118,7 +118,15 @@ export default function AdminReleasesPage(): React.JSX.Element {
             {() => (
               <Segmented
                 value={platform}
-                onChange={(v) => setPlatform(v as AppPlatform)}
+                onChange={(v) => {
+                  setPlatform(v as AppPlatform);
+                  // The inputs unmount for web/pwa but the payload sent them
+                  // regardless: a leftover malformed URL 400s AFTER the TOTP
+                  // dialog with no visible field to correct, and a well-formed
+                  // one silently persists an APK url on a web release.
+                  setArtifactUrl("");
+                  setChecksum("");
+                }}
                 options={APP_PLATFORMS.map((p) => ({ value: p, label: p }))}
               />
             )}

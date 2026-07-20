@@ -1225,7 +1225,8 @@
     "evidenceFrom": "From the {who}",
     "opener": "party who opened the dispute",
     "counterparty": "counterparty",
-    "evidenceFile": "Attachment {n}"
+    "evidenceFile": "Attachment {n}",
+    "evidenceError": "Could not load the evidence for this dispute. Do not resolve it until you can see what was submitted — reload and try again."
   },
   "adminTreasury": {
     "title": "Treasury",

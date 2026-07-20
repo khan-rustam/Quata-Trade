@@ -107,7 +107,11 @@ function ResolveDialog({ dispute, requireTotp, onClose }: { dispute: Row; requir
   const [totp, setTotp] = useState("");
   // The evidence the decision actually turns on. Loaded here rather than in the
   // list so the presigned URLs are minted only when a resolver opens the case.
-  const { data: detail, isLoading: loadingEvidence } = useQuery({
+  const {
+    data: detail,
+    isLoading: loadingEvidence,
+    isError: evidenceError,
+  } = useQuery({
     queryKey: ["admin", "dispute", dispute.id],
     queryFn: () => adminApi.adminDisputeDetail(dispute.id),
   });
@@ -152,7 +156,12 @@ function ResolveDialog({ dispute, requireTotp, onClose }: { dispute: Row; requir
           <p className="mb-1.5 text-sm font-medium">{tx("evidenceTitle")}</p>
           {loadingEvidence ? (
             <Skeleton className="h-20 w-full rounded-lg" />
-          ) : !detail || detail.evidence.length === 0 ? (
+          ) : evidenceError || !detail ? (
+            // Never state "no evidence exists" when the request simply failed —
+            // that is a definitive claim, and the resolver can still move escrow
+            // on the strength of it. Say the truth: we could not load it.
+            <Alert tone="danger">{tx("evidenceError")}</Alert>
+          ) : detail.evidence.length === 0 ? (
             <Alert tone="warning">{tx("evidenceNone")}</Alert>
           ) : (
             <ul className="space-y-2">
@@ -211,7 +220,7 @@ function ResolveDialog({ dispute, requireTotp, onClose }: { dispute: Row; requir
           <Button variant="secondary" className="flex-1" onClick={onClose} disabled={busy}>
             {tx("cancel")}
           </Button>
-          <Button className="flex-1" disabled={busy || notes.trim().length < 10 || (requireTotp && totp.length < 6)} onClick={submit}>
+          <Button className="flex-1" disabled={busy || loadingEvidence || evidenceError || notes.trim().length < 10 || (requireTotp && totp.length < 6)} onClick={submit}>
             {busy ? <Spinner /> : tx("resolveDispute")}
           </Button>
         </div>

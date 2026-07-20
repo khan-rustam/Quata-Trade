@@ -29,7 +29,11 @@ export default function AppLayout({ children }: { children: ReactNode }): React.
     }
   }, [ready, isLoading, isError, me, router]);
 
-  if (!ready || isLoading || !me) {
+  // `me.status !== "active"` belongs in the guard, not only in the effect: without
+  // it the shell still mounts for a frozen user and every child page fires its
+  // queries for the whole client-side navigation to /suspended — so they watch
+  // their own dashboard and balances flash past.
+  if (!ready || isLoading || !me || me.status !== "active") {
     return (
       <div className="flex min-h-screen items-center justify-center text-text-2">
         <Spinner size={24} />

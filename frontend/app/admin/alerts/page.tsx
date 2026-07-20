@@ -121,7 +121,25 @@ export default function AlertsPage(): React.JSX.Element {
       ) : error || !data ? (
         <Alert tone="danger">{apiErrorMessage(error, tx("loadError"))}</Alert>
       ) : data.items.length === 0 ? (
-        <EmptyState icon={CheckCircle2} title={tx("emptyTitle")} description={tx("emptyBody")} />
+        <>
+          <EmptyState icon={CheckCircle2} title={tx("emptyTitle")} description={tx("emptyBody")} />
+          {/* Reachable here through the page's OWN action: acknowledging the last
+              alerts on page 2 shrinks total to one page, the refetch returns
+              nothing, and without this the admin sees "all clear" while the
+              unacknowledged banner still shows a count, with no way back. */}
+          {page > 1 && (
+            <Pagination
+              page={page}
+              pageSize={pageSize}
+              total={data.total}
+              onPage={setPage}
+              onPageSize={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+            />
+          )}
+        </>
       ) : (
         <div className="space-y-2">
           {data.items.map((a: AlertItem) => (

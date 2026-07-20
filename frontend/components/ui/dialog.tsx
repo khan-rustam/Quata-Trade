@@ -1,8 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useModalPanel } from "@/hooks/use-modal-panel";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,56 +29,8 @@ export function Dialog({
   const t = useTranslations("common");
   const panelRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const panel = panelRef.current;
-    // Remember what had focus so we can hand it back when the dialog closes.
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const focusableSelector =
-      'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-        return;
-      }
-      // Focus trap: keep Tab / Shift+Tab cycling inside the modal (WCAG 2.4.3 /
-      // 2.1.2) instead of leaking to the page behind the backdrop.
-      if (e.key !== "Tab" || !panel) return;
-      const focusables = Array.from(panel.querySelectorAll<HTMLElement>(focusableSelector)).filter(
-        (el) => el.offsetParent !== null,
-      );
-      if (focusables.length === 0) {
-        e.preventDefault();
-        panel.focus();
-        return;
-      }
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement;
-      if (e.shiftKey && (active === first || active === panel)) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && active === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    // Prefer an element that asked for focus (e.g. the first OTP box) — focusing the
-    // panel unconditionally stole it, forcing the user to click into the field.
-    const autoTarget = panel?.querySelector<HTMLElement>("[data-autofocus]");
-    (autoTarget ?? panel)?.focus();
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-      // Restore focus to the trigger so keyboard/SR context isn't lost on close.
-      previouslyFocused?.focus?.();
-    };
-  }, [open, onClose]);
+  // One implementation, shared with any other overlay that claims aria-modal.
+  useModalPanel(open, panelRef, onClose);
 
   if (!open) return null;
 

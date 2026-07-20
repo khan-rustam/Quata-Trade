@@ -1225,7 +1225,8 @@
     "evidenceFrom": "De la part {who}",
     "opener": "de la partie qui a ouvert le litige",
     "counterparty": "de la contrepartie",
-    "evidenceFile": "Pièce jointe {n}"
+    "evidenceFile": "Pièce jointe {n}",
+    "evidenceError": "Impossible de charger les preuves de ce litige. Ne le résolvez pas tant que vous ne pouvez pas voir ce qui a été soumis — rechargez et réessayez."
   },
   "adminTreasury": {
     "title": "Trésorerie",

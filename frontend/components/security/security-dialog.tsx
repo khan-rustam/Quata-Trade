@@ -41,6 +41,25 @@ export function SecurityDialog({
   const [pin, setPin] = useState("");
   const [totp, setTotp] = useState("");
 
+  // Every call site keeps this mounted and toggles `open`, so only the inner
+  // Dialog unmounts and the credentials survived between confirmations. On
+  // withdraw that means: enter PIN + 2FA for 500 USDT to address A, cancel, edit
+  // the amount or the address, press Review — and the dialog returns with both
+  // still filled and the button ALREADY enabled. One click moves real funds to
+  // terms the user never re-authorised. Same on internal transfer and on escrow
+  // release in the trade room.
+  //
+  // Reset during render (React's "adjusting state when a prop changes") so the
+  // stale credentials never reach the DOM.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setPin("");
+      setTotp("");
+    }
+  }
+
   const pinOk = !requirePin || pin.length === 6;
   const totpOk = !requireTotp || totp.length === 6;
 
