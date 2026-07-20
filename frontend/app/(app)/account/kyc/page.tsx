@@ -96,8 +96,11 @@ export default function KycPage(): React.JSX.Element {
         )}
       </Card>
 
-      {status?.reviewNotes && status.status === "REJECTED" && (
-        <Alert tone="danger" title={tx("reviewerNotes")}>
+      {/* RESUBMIT is precisely the state where the notes matter: the reviewer is
+          telling the user WHAT to fix. Showing them only on REJECTED meant a user
+          asked to resubmit got no instructions at all. */}
+      {status?.reviewNotes && (status.status === "REJECTED" || status.status === "RESUBMIT") && (
+        <Alert tone={status.status === "REJECTED" ? "danger" : "warning"} title={tx("reviewerNotes")}>
           {status.reviewNotes}
         </Alert>
       )}

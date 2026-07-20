@@ -814,7 +814,11 @@
     "cancelWarnBody": "Cancelling returns the crypto to the seller. If you have already sent the payment, you will not get it back through QuataTrade. Only cancel if you did NOT send the money. If you paid and the seller has not released the crypto, open a dispute instead.",
     "cancelDialogBack": "Keep trade open",
     "cancelDialogConfirm": "Cancel trade",
-    "cancelDialogDisputeInstead": "I already paid — open a dispute instead"
+    "cancelDialogDisputeInstead": "I already paid — open a dispute instead",
+    "disputeResolvedTitle": "Dispute resolved",
+    "disputeResolvedRelease": "The crypto in escrow was released to the buyer.",
+    "disputeResolvedRefund": "The crypto in escrow was returned to the seller.",
+    "disputeResolutionNotes": "Reviewer notes"
   },
   "account": {
     "title": "Account",

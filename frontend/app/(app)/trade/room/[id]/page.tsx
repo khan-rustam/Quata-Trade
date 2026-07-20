@@ -181,9 +181,11 @@ export default function TradeRoomPage(): React.JSX.Element {
           {tx("escrowReturned")}
         </Alert>
       )}
-      {trade.status === "DISPUTED" && (
-        <DisputePanel tradeId={id} disputeId={data.disputeId} meId={me?.id} />
-      )}
+      {/* Rendered whenever the trade HAS a dispute, not only while it is still
+          open: gating on status === "DISPUTED" meant the panel vanished the instant
+          an admin resolved it, so neither party ever saw the outcome or the
+          resolution notes — the trade just silently became COMPLETED or CANCELLED. */}
+      {data.disputeId !== null && <DisputePanel tradeId={id} disputeId={data.disputeId} meId={me?.id} />}
 
       {/* secondary actions */}
       {!terminal && trade.status !== "DISPUTED" && (
@@ -572,9 +574,27 @@ function DisputePanel({
 
   return (
     <div className="space-y-3">
-      <Alert tone="danger" title={tx("inDisputeTitle")}>
-        {tx("inDisputeBody")}
-      </Alert>
+      {resolved ? (
+        <Alert
+          tone={dispute?.resolution === "RELEASE_TO_BUYER" ? "success" : "info"}
+          title={tx("disputeResolvedTitle")}
+        >
+          <p>
+            {dispute?.resolution === "RELEASE_TO_BUYER"
+              ? tx("disputeResolvedRelease")
+              : tx("disputeResolvedRefund")}
+          </p>
+          {dispute?.resolutionNotes && (
+            <p className="mt-1.5 text-xs">
+              <span className="font-medium">{tx("disputeResolutionNotes")}:</span> {dispute.resolutionNotes}
+            </p>
+          )}
+        </Alert>
+      ) : (
+        <Alert tone="danger" title={tx("inDisputeTitle")}>
+          {tx("inDisputeBody")}
+        </Alert>
+      )}
 
       <Card className="space-y-4">
         {isLoading || !dispute ? (

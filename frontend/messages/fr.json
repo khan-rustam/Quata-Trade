@@ -814,7 +814,11 @@
     "cancelWarnBody": "L'annulation renvoie les cryptos au vendeur. Si vous avez déjà envoyé le paiement, QuataTrade ne pourra pas vous le restituer. N'annulez que si vous n'avez PAS envoyé l'argent. Si vous avez payé et que le vendeur n'a pas libéré les cryptos, ouvrez plutôt un litige.",
     "cancelDialogBack": "Garder la transaction",
     "cancelDialogConfirm": "Annuler la transaction",
-    "cancelDialogDisputeInstead": "J'ai déjà payé — ouvrir un litige"
+    "cancelDialogDisputeInstead": "J'ai déjà payé — ouvrir un litige",
+    "disputeResolvedTitle": "Litige résolu",
+    "disputeResolvedRelease": "Les cryptos en séquestre ont été libérées vers l'acheteur.",
+    "disputeResolvedRefund": "Les cryptos en séquestre ont été retournées au vendeur.",
+    "disputeResolutionNotes": "Notes de l'examinateur"
   },
   "account": {
     "title": "Compte",
