@@ -177,3 +177,21 @@ the latter is a self-contained admin feature scheduled as its own increment.
   **Interim operating rule: retain the retired key's spending seed indefinitely after any rotation.**
 - **F2 (admin 2FA enforced at login)** deferred at the client's explicit instruction (2026-07-20):
   "we will add this in complete end proper". `ADMIN_2FA_REQUIRED` still gates step-up.
+
+### 2026-07-20 UI completeness audit (48 findings) — remediation
+
+| ID | Doc says | We did | Why |
+|---|---|---|---|
+| D33-feeschedule | Doc 11 treats the /fees page as marketing copy | New PUBLIC `GET /fees/schedule` returns the live deposit fee, withdrawal fee, per-rail trading bps, seller bps and minimum deposit. The fee table, the calculator and the escrow simulator all render it, with the seeded values as an offline fallback. | The page kept its numbers in the translation catalogue and advertised a **0 USDT withdrawal fee while `withdrawal_fee` was configured at 1 USDT and every withdrawal was charged it** — a consumer-facing misstatement about money, with nothing keeping the two in step. Read-only and limited to what a prospective user is entitled to know; no limits, ceilings or internal thresholds. |
+| D33-quote | Not addressed | New `GET /withdrawals/quote` reusing the SAME settings lookup, promo waiver and `computeFee` call as `request()`. | The withdraw screen validated against `available` while the ledger debits `amount + fee`, so entering your full balance passed the client check and was rejected by the server — and the fee was never visible until the receipt, i.e. after the money moved. |
+| D33-holds | Migration 0032 deliberately added no `deposit_status` value | `zDeposit` carries `onHold` + `holdResolution`; the badge, the row note, the receipt and the CSV all distinguish "Under review" and "Not credited"; REJECTED deposits leave the `pending` balance sum. | Holds are flags, so a compliance-parked deposit was indistinguishable from one still confirming, and a permanently REJECTED one also read "Confirming" — a pending state for money that is never arriving. |
+| D33-stepup | Doc 06 requires step-up on "sensitive" admin actions | The four admin screens that gained server-side step-up now collect the code; `TotpActionDialog` emits `undefined` rather than `""`. | A server-side contract change had left freeze/suspend, KYC review and the hold decisions demanding a code with no field to enter it, and `""` fails zod's 6-digit rule — which broke the wallet key ceremony outright. |
+
+**Still open after this pass:**
+
+- **`pending` sums the GROSS deposit amount**, not `amount − fee`, so the figure a user sees
+  overstates what will actually be credited. Pre-existing; not changed here because it is a
+  money-display decision (show gross-in-flight or net-expected?) the client should make.
+- The public fee **prose** no longer asserts a value, but **which withdrawal fee the business
+  intends (0 or 1 USDT) is still unconfirmed** — the page now publishes whatever is configured.
+- `promo_campaigns` still has no admin editor (see the 2026-07-20 entry above).
