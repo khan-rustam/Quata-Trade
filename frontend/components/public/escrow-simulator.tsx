@@ -26,8 +26,11 @@ export function EscrowSimulator(): React.JSX.Element {
     queryFn: () => api.feeSchedule(),
     staleTime: 5 * 60_000,
   });
-  const feeRate =
-    (schedule?.tradingFeeBps[method] ?? (method === "QUATAPAY" ? 30 : 50)) / 10_000;
+  // One source for the rate, used by both the math and the per-rail badge — the
+  // badge used to hardcode "0.3% fee" / "0.5% fee" next to a live-computed figure.
+  const railPct = (m: string): number =>
+    (schedule?.tradingFeeBps[m] ?? (m === "QUATAPAY" ? 30 : 50)) / 100;
+  const feeRate = railPct(method) / 100;
   const feeAmount = amount * feeRate;
   const netAmount = amount - feeAmount;
   const cashAmount = amount * EXCHANGE_RATE;
@@ -109,21 +112,18 @@ export function EscrowSimulator(): React.JSX.Element {
                   const config = {
                     QUATAPAY: {
                       name: "QuataPay",
-                      fee: "0.3% fee",
                       activeClass: "border-accent-400 bg-accent-400/5 ring-1 ring-accent-400/20",
                       dotBg: "bg-accent-400",
                       badgeClass: "bg-accent-400/10 text-accent-400",
                     },
                     MTN_MOMO: {
                       name: "MTN MoMo",
-                      fee: "0.5% fee",
                       activeClass: "border-warning bg-warning/5 ring-1 ring-warning/20",
                       dotBg: "bg-warning",
                       badgeClass: "bg-warning/10 text-warning",
                     },
                     ORANGE_MONEY: {
                       name: "Orange Money",
-                      fee: "0.5% fee",
                       activeClass: "border-danger bg-danger/5 ring-1 ring-danger/20",
                       dotBg: "bg-danger",
                       badgeClass: "bg-danger/10 text-danger",
@@ -154,7 +154,7 @@ export function EscrowSimulator(): React.JSX.Element {
                       
                       {/* Bottom row: fee badge */}
                       <span className={cn("rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase", config.badgeClass)}>
-                        {config.fee}
+                        {t("feeBadge", { pct: railPct(m) })}
                       </span>
                     </button>
                   );

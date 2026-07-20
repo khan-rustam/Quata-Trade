@@ -107,7 +107,8 @@
       "step2Title": "2. Envoi du Cash",
       "step2Desc": "Vous envoyez le cash au vendeur via {method} hors plateforme.",
       "step3Title": "3. Libération de l'USDT",
-      "step3Desc": "Une fois le paiement confirmé, l'escrow libère l'USDT vers votre portefeuille."
+      "step3Desc": "Une fois le paiement confirmé, l'escrow libère l'USDT vers votre portefeuille.",
+      "feeBadge": "{pct} % de frais"
     }
   },
   "status": {

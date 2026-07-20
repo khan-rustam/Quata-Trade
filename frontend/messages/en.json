@@ -107,7 +107,8 @@
       "step2Title": "2. Send Cash",
       "step2Desc": "You send cash directly to the seller via {method} off-platform.",
       "step3Title": "3. Release USDT",
-      "step3Desc": "Once payment is verified, the escrow releases the USDT to your wallet."
+      "step3Desc": "Once payment is verified, the escrow releases the USDT to your wallet.",
+      "feeBadge": "{pct}% fee"
     }
   },
   "status": {
