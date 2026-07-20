@@ -284,7 +284,7 @@
     "eyebrow": "Pricing",
     "title": "Simple, transparent fees",
     "subtitle": "Any applicable platform fee is shown before you confirm — so you always know exactly what you'll pay or receive. No hidden fees.",
-    "promoNote": "Launch promotion: 0% trading fees for both buyers and sellers. QuataTrade may introduce trading fees in the future — any change is announced in advance and published on this page before it takes effect.",
+    "promoNote": "Launch promotion: trading fees may be waived in your market — the rates shown below are the standard schedule and the fee you will actually pay is always displayed before you confirm a trade. Any change is announced in advance and published on this page before it takes effect.",
     "buyerFeeLabel": "Buyer trading fee",
     "buyerFeeValue": "0%",
     "buyerFeeNote": "Buyers pay no QuataTrade trading fee during the launch promotion.",
@@ -293,7 +293,7 @@
     "sellerFeeNote": "Sellers pay no QuataTrade trading fee during the launch promotion.",
     "depositFeeLabel": "USDT deposit fee",
     "depositFeeValue": "1 USDT",
-    "depositFeeNote": "Flat fee per successful deposit, deducted after the deposit is confirmed. Minimum deposit 20 USDT (TRC20).",
+    "depositFeeNote": "Flat fee per successful deposit, deducted after the deposit is confirmed. Minimum deposit shown above.",
     "withdrawalFeeLabel": "USDT withdrawal fee",
     "withdrawalFeeValue": "See above",
     "withdrawalFeeNote": "Shown live above. You also pay the TRON network fee, which is displayed before you confirm.",
@@ -305,9 +305,9 @@
     "disputeFeeNote": "Opening a dispute on an eligible trade is free.",
     "examplesTitle": "Worked examples",
     "example1Title": "Buying 100 USDT",
-    "example1Body": "Trade amount 100 USDT · 0% buyer fee · 0% seller fee. You receive 100 USDT once the seller confirms payment and releases escrow.",
+    "example1Body": "Trade amount 100 USDT. The buyer and seller trading fees shown above apply; the exact figure for your trade is displayed before you confirm.",
     "example2Title": "Depositing 100 USDT",
-    "example2Body": "Deposit 100 USDT · 1 USDT platform deposit fee. 99 USDT is credited to your QuataTrade wallet.",
+    "example2Body": "Deposit 100 USDT · the platform deposit fee shown above is deducted. The remainder is credited to your QuataTrade wallet.",
     "example3Title": "Withdrawing 100 USDT",
     "example3Body": "Withdraw 100 USDT · the platform withdrawal fee shown above is deducted. The TRON network fee is shown before you confirm and deducted according to current blockchain conditions.",
     "note1": "Every applicable platform fee is shown before you confirm a transaction — there are no hidden fees.",
@@ -362,7 +362,7 @@
     "faq4Q": "The seller isn't releasing my crypto. What do I do?",
     "faq4A": "First, make sure you submitted your payment reference and details. If the seller still hasn't confirmed, open a dispute from the trade room — escrow freezes and a person reviews the evidence.",
     "faq5Q": "Are there any hidden fees?",
-    "faq5A": "No. Trading fees are published on the Fees page (0.3%–0.5% per method) and shown before you open a trade. Withdrawals pay only the blockchain network fee, shown before you confirm.",
+    "faq5A": "No. Every fee is published on the Fees page and shown before you confirm. Trading fees are charged per payment method; deposits and withdrawals each carry a platform fee in addition to the blockchain network fee, and the exact amounts are displayed before you commit.",
     "stuckPrefix": "Still stuck?",
     "stuckLink": "Contact support",
     "faqEmpty": "Answers are on the way — check back soon."
@@ -422,7 +422,13 @@
     "value3Body": "A clean, fast, modern experience made for how people actually pay here.",
     "legalPrefix": "Company details and legal identity are on our",
     "legalLink": "legal notice",
-    "ctaButton": "Join QuataTrade"
+    "ctaButton": "Join QuataTrade",
+    "mapTitle": "Regional P2P activity",
+    "mapCountry": "Cameroon",
+    "mapBlurb": "Connecting traders across Cameroon's cities. Orders are matched off-chain and secured instantly inside our escrow ledger.",
+    "mapActiveTraders": "Active traders",
+    "mapMonthlyVolume": "Monthly volume",
+    "mapHint": "Hover over city nodes to inspect regions"
   },
   "appHome": {
     "greeting": "Hi",
@@ -2070,7 +2076,9 @@
     "moderated": "User updated",
     "actionFailed": "Action failed",
     "authenticatorCodeLabel": "Your authenticator code",
-    "authenticatorCodeAria": "Authenticator code"
+    "authenticatorCodeAria": "Authenticator code",
+    "depositNotCredited": "Not credited",
+    "depositUnderReview": "Under review"
   },
   "adminReports": {
     "title": "Reports & analytics",

@@ -738,6 +738,14 @@ export const zAdminUserDepositRow = z.object({
   asset: z.string(),
   amount: zAmount,
   status: z.string(),
+  /**
+   * Holds are flags, not a status, so without these a support agent looking at
+   * this page — the page they open when a user calls asking where their money
+   * went — sees a compliance-REJECTED deposit as a neutral "CONFIRMING", while
+   * the user's own wallet correctly says "Not credited".
+   */
+  onHold: z.boolean(),
+  holdResolution: z.enum(["RELEASED", "REJECTED"]).nullable(),
   txHash: z.string(),
   createdAt: z.string(),
 });

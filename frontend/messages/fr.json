@@ -284,7 +284,7 @@
     "eyebrow": "Tarification",
     "title": "Des frais simples et transparents",
     "subtitle": "Tout frais de plateforme applicable est affiché avant votre confirmation — vous savez donc toujours exactement ce que vous paierez ou recevrez. Aucun frais caché.",
-    "promoNote": "Promotion de lancement : 0 % de frais de transaction pour les acheteurs et les vendeurs. QuataTrade pourra introduire des frais de transaction à l'avenir — tout changement sera annoncé à l'avance et publié sur cette page avant son entrée en vigueur.",
+    "promoNote": "Promotion de lancement : les frais de transaction peuvent être offerts sur votre marché — les taux ci-dessous constituent la grille standard, et les frais réellement appliqués sont toujours affichés avant la confirmation. Tout changement est annoncé à l'avance et publié sur cette page avant son entrée en vigueur.",
     "buyerFeeLabel": "Frais de transaction acheteur",
     "buyerFeeValue": "0 %",
     "buyerFeeNote": "Les acheteurs ne paient aucun frais de transaction QuataTrade pendant la promotion de lancement.",
@@ -293,7 +293,7 @@
     "sellerFeeNote": "Les vendeurs ne paient aucun frais de transaction QuataTrade pendant la promotion de lancement.",
     "depositFeeLabel": "Frais de dépôt USDT",
     "depositFeeValue": "1 USDT",
-    "depositFeeNote": "Frais fixe par dépôt réussi, prélevé après confirmation du dépôt. Dépôt minimum de 20 USDT (TRC20).",
+    "depositFeeNote": "Frais forfaitaires par dépôt réussi, déduits après confirmation du dépôt. Dépôt minimum indiqué ci-dessus.",
     "withdrawalFeeLabel": "Frais de retrait USDT",
     "withdrawalFeeValue": "Voir ci-dessus",
     "withdrawalFeeNote": "Affichés en direct ci-dessus. Vous payez également les frais du réseau TRON, indiqués avant confirmation.",
@@ -305,9 +305,9 @@
     "disputeFeeNote": "Ouvrir un litige sur une transaction éligible est gratuit.",
     "examplesTitle": "Exemples concrets",
     "example1Title": "Acheter 100 USDT",
-    "example1Body": "Montant de la transaction : 100 USDT · 0 % de frais acheteur · 0 % de frais vendeur. Vous recevez 100 USDT une fois que le vendeur confirme le paiement et libère le séquestre.",
+    "example1Body": "Transaction de 100 USDT. Les frais acheteur et vendeur indiqués ci-dessus s'appliquent ; le montant exact de votre transaction est affiché avant confirmation.",
     "example2Title": "Déposer 100 USDT",
-    "example2Body": "Dépôt de 100 USDT · 1 USDT de frais de dépôt de plateforme. 99 USDT sont crédités sur votre portefeuille QuataTrade.",
+    "example2Body": "Déposez 100 USDT · les frais de dépôt indiqués ci-dessus sont déduits. Le reste est crédité sur votre portefeuille QuataTrade.",
     "example3Title": "Retirer 100 USDT",
     "example3Body": "Retirez 100 USDT · les frais de retrait de la plateforme indiqués ci-dessus sont déduits. Les frais du réseau TRON sont affichés avant confirmation et déduits selon les conditions du réseau.",
     "note1": "Tout frais de plateforme applicable est affiché avant que vous confirmiez une transaction — il n'y a aucun frais caché.",
@@ -362,7 +362,7 @@
     "faq4Q": "Le vendeur ne libère pas mes cryptos. Que dois-je faire ?",
     "faq4A": "Vérifiez d'abord que vous avez bien soumis votre référence et vos détails de paiement. Si le vendeur n'a toujours pas confirmé, ouvrez un litige depuis la salle de transaction — le séquestre se fige et une personne examine les preuves.",
     "faq5Q": "Y a-t-il des frais cachés ?",
-    "faq5A": "Non. Les frais de transaction sont publiés sur la page Frais (0,3 % à 0,5 % par méthode) et affichés avant l'ouverture d'une transaction. Les retraits ne paient que les frais de réseau de la blockchain, indiqués avant votre confirmation.",
+    "faq5A": "Non. Tous les frais sont publiés sur la page Tarifs et affichés avant confirmation. Les frais de transaction dépendent du moyen de paiement ; les dépôts et les retraits comportent chacun des frais de plateforme en plus des frais du réseau blockchain, et les montants exacts sont affichés avant validation.",
     "stuckPrefix": "Toujours bloqué ?",
     "stuckLink": "Contacter le support",
     "faqEmpty": "Les réponses arrivent bientôt — revenez plus tard."
@@ -422,7 +422,13 @@
     "value3Body": "Une expérience claire, rapide et moderne, pensée pour la façon dont on paie réellement ici.",
     "legalPrefix": "Les informations sur l'entreprise et son identité légale figurent dans notre",
     "legalLink": "mention légale",
-    "ctaButton": "Rejoindre QuataTrade"
+    "ctaButton": "Rejoindre QuataTrade",
+    "mapTitle": "Activité P2P régionale",
+    "mapCountry": "Cameroun",
+    "mapBlurb": "Douala et Yaoundé connectent les traders de tout le pays via MTN MoMo et Orange Money, facilitant un accès sécurisé à l'USDT.",
+    "mapActiveTraders": "Traders actifs",
+    "mapMonthlyVolume": "Volume mensuel",
+    "mapHint": "Survolez les points pour changer de région"
   },
   "appHome": {
     "greeting": "Salut",
@@ -2070,7 +2076,9 @@
     "moderated": "Utilisateur mis à jour",
     "actionFailed": "Échec de l'action",
     "authenticatorCodeLabel": "Votre code d'authentification",
-    "authenticatorCodeAria": "Code d'authentification"
+    "authenticatorCodeAria": "Code d'authentification",
+    "depositNotCredited": "Non crédité",
+    "depositUnderReview": "En cours de vérification"
   },
   "adminReports": {
     "title": "Rapports et analyses",

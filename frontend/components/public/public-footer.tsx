@@ -68,7 +68,6 @@ export function PublicFooter(): React.JSX.Element {
 
   // Static company data representation
   const company = {
-    tagline: "Crypto to cash. Protected.",
     email: "support@quatade.com",
     phone: "",
     social: {
@@ -107,7 +106,7 @@ export function PublicFooter(): React.JSX.Element {
 
             {/* Glassmorphic tagline badge */}
             <div className="inline-block rounded-xl border border-accent-400/20 bg-accent-400/5 px-3 py-1.5 text-xs font-semibold text-accent-400 shadow-sm shadow-accent-400/5">
-              {company.tagline}
+              {t("tagline")}
             </div>
 
             <p className="text-xs leading-relaxed text-text-2">
@@ -189,7 +188,7 @@ export function PublicFooter(): React.JSX.Element {
         {/* Footer Bottom copyright */}
         <div className="mt-20 flex flex-col items-center justify-between gap-6 border-t border-border/40 pt-8 text-[11px] text-text-3 sm:flex-row">
           <p className="font-semibold order-2 sm:order-1">
-            © {year} Quata Digital Enterprise. All rights reserved.
+            {t("rights", { year })}
           </p>
           <div className="flex items-center gap-2 order-1 sm:order-2">
             <span className="h-1.5 w-1.5 rounded-full bg-accent-400 animate-pulse" />

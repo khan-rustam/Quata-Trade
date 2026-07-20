@@ -376,7 +376,7 @@ export class AdminService {
         .execute(),
       this.db
         .selectFrom("deposits")
-        .select(["id", "asset", "amount", "status", "tx_hash", "created_at"])
+        .select(["id", "asset", "amount", "status", "aml_hold", "policy_hold", "hold_resolution", "tx_hash", "created_at"])
         .where("user_id", "=", userId)
         .orderBy("created_at", "desc")
         .limit(10)
@@ -463,6 +463,8 @@ export class AdminService {
         asset: d.asset,
         amount: d.amount.toString(),
         status: d.status,
+        onHold: d.aml_hold || d.policy_hold,
+        holdResolution: d.hold_resolution,
         txHash: d.tx_hash,
         createdAt: d.created_at.toISOString(),
       })),

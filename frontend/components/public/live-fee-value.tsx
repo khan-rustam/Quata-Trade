@@ -34,9 +34,12 @@ export function LiveFeeValue({
 
 function format(row: string, s: FeeSchedule, fallback: string): string {
   switch (row) {
-    // Buyer pays no trading fee by design; the seller side is the configurable one.
+    // NOT 0 by design: computeTradeFees charges the buyer the per-rail trading
+    // bps (deducted from what they receive) and the seller sellerFeeBps. Publishing
+    // a flat "0%" understated a fee the engine actually takes. Rails can differ, so
+    // show the configured range rather than pick one.
     case "buyerFee":
-      return "0%";
+      return bpsRange(s.tradingFeeBps);
     case "sellerFee":
       return pct(s.sellerFeeBps);
     case "depositFee":
@@ -47,6 +50,20 @@ function format(row: string, s: FeeSchedule, fallback: string): string {
     default:
       return fallback;
   }
+}
+
+/**
+ * The configured per-rail range. A promotion can waive this for a market, but
+ * promo overrides are per-country and this page has no country context — so it
+ * publishes the base schedule and the promo note beside it does the rest.
+ * Overstating a fee is the safe direction; understating it is not.
+ */
+function bpsRange(byRail: Record<string, number>): string {
+  const values = Object.values(byRail);
+  if (values.length === 0) return "0%";
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  return lo === hi ? pct(lo) : `${pct(lo)}–${pct(hi)}`;
 }
 
 /** bps → percent, trimming a trailing ".0" so 0 renders as "0%" not "0.0%". */

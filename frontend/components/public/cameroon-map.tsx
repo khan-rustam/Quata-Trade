@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { motion, useReducedMotion } from "motion/react";
 import { MapPin, Sparkles, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,7 +9,6 @@ import { cn } from "@/lib/utils";
 interface CityNode {
   id: string;
   name: string;
-  nameFr: string;
   x: number;
   y: number;
   traders: number;
@@ -16,14 +16,14 @@ interface CityNode {
 }
 
 const CITIES: CityNode[] = [
-  { id: "maroua", name: "Maroua", nameFr: "Maroua", x: 210, y: 40, traders: 142, volume: "12.5K" },
-  { id: "garoua", name: "Garoua", nameFr: "Garoua", x: 170, y: 110, traders: 289, volume: "24.1K" },
-  { id: "ngaoundere", name: "Ngaoundéré", nameFr: "Ngaoundéré", x: 160, y: 190, traders: 312, volume: "31.8K" },
-  { id: "bamenda", name: "Bamenda", nameFr: "Bamenda", x: 60, y: 240, traders: 410, volume: "45.0K" },
-  { id: "bafoussam", name: "Bafoussam", nameFr: "Bafoussam", x: 80, y: 260, traders: 520, volume: "58.2K" },
-  { id: "buea", name: "Buea", nameFr: "Buea", x: 50, y: 320, traders: 380, volume: "39.5K" },
-  { id: "douala", name: "Douala", nameFr: "Douala", x: 70, y: 310, traders: 2450, volume: "342.0K" },
-  { id: "yaounde", name: "Yaoundé", nameFr: "Yaoundé", x: 120, y: 300, traders: 1890, volume: "265.4K" },
+  { id: "maroua", name: "Maroua", x: 210, y: 40, traders: 142, volume: "12.5K" },
+  { id: "garoua", name: "Garoua", x: 170, y: 110, traders: 289, volume: "24.1K" },
+  { id: "ngaoundere", name: "Ngaoundéré", x: 160, y: 190, traders: 312, volume: "31.8K" },
+  { id: "bamenda", name: "Bamenda", x: 60, y: 240, traders: 410, volume: "45.0K" },
+  { id: "bafoussam", name: "Bafoussam", x: 80, y: 260, traders: 520, volume: "58.2K" },
+  { id: "buea", name: "Buea", x: 50, y: 320, traders: 380, volume: "39.5K" },
+  { id: "douala", name: "Douala", x: 70, y: 310, traders: 2450, volume: "342.0K" },
+  { id: "yaounde", name: "Yaoundé", x: 120, y: 300, traders: 1890, volume: "265.4K" },
 ];
 
 const CONNECTIONS = [
@@ -36,7 +36,13 @@ const CONNECTIONS = [
   { from: "bafoussam", to: "bamenda" },
 ];
 
-export function CameroonMap({ locale = "en" }: { locale?: string }): React.JSX.Element {
+/**
+ * The `locale` prop was never passed by the only caller (/about), so every
+ * `locale === "fr"` arm was dead code and the page was English for everyone.
+ * Uses the real i18n mechanism now; city names are proper nouns and stay as data.
+ */
+export function CameroonMap(): React.JSX.Element {
+  const t = useTranslations("about");
   const reduce = useReducedMotion();
   const [hoveredCity, setHoveredCity] = useState<CityNode | null>(null);
 
@@ -159,24 +165,22 @@ export function CameroonMap({ locale = "en" }: { locale?: string }): React.JSX.E
                 <TrendingUp size={12} />
               </span>
               <span className="text-xs font-semibold uppercase tracking-wider text-text-3">
-                {locale === "fr" ? "Activité P2P Régionale" : "Regional P2P Activity"}
+                {t("mapTitle")}
               </span>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-baseline gap-2.5">
                 <h3 className="font-display text-2xl font-bold text-text-1">
-                  {locale === "fr" ? activeCity.nameFr : cityDisplayName(activeCity)}
+                  {activeCity.name}
                 </h3>
                 <span className="inline-flex items-center gap-1 text-xs text-accent-400 font-semibold">
-                  <MapPin size={12} /> Cameroon
+                  <MapPin size={12} /> {t("mapCountry")}
                 </span>
               </div>
 
               <p className="text-xs text-text-2 leading-relaxed">
-                {locale === "fr" 
-                  ? `Douala et Yaoundé connectent les traders de tout le pays via MTN MoMo et Orange Money, facilitant l'accès sécurisé à l'USDT.`
-                  : `Connecting decentralized traders across Cameroon cities. Orders are matched off-chain and secured instantly inside our escrow ledger.`}
+                {t("mapBlurb")}
               </p>
 
               {/* Data metrics */}
@@ -186,7 +190,7 @@ export function CameroonMap({ locale = "en" }: { locale?: string }): React.JSX.E
                     {activeCity.traders.toLocaleString()}
                   </div>
                   <div className="mt-1 text-[10px] text-text-3 uppercase tracking-wider">
-                    {locale === "fr" ? "Traders Actifs" : "Active Traders"}
+                    {t("mapActiveTraders")}
                   </div>
                 </div>
                 <div className="rounded-lg border border-border bg-surface-1/60 p-3.5 text-center">
@@ -194,7 +198,7 @@ export function CameroonMap({ locale = "en" }: { locale?: string }): React.JSX.E
                     {activeCity.volume} USDT
                   </div>
                   <div className="mt-1 text-[10px] text-text-3 uppercase tracking-wider">
-                    {locale === "fr" ? "Volume Mensuel" : "Monthly Volume"}
+                    {t("mapMonthlyVolume")}
                   </div>
                 </div>
               </div>
@@ -204,7 +208,7 @@ export function CameroonMap({ locale = "en" }: { locale?: string }): React.JSX.E
           <div className="mt-6 text-[11px] text-text-3 flex items-center gap-1.5 border-t border-border/40 pt-4">
             <Sparkles size={12} className="text-accent-400" />
             <span>
-              {locale === "fr" ? "Survolez les points pour changer de région" : "Hover over city nodes to inspect regions"}
+              {t("mapHint")}
             </span>
           </div>
         </div>
@@ -213,7 +217,3 @@ export function CameroonMap({ locale = "en" }: { locale?: string }): React.JSX.E
   );
 }
 
-function cityDisplayName(city: CityNode): string {
-  // strip diacritics for basic display if needed, but rendering unicode is perfect in react
-  return city.name;
-}

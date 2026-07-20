@@ -107,7 +107,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     {
       category: "fees",
       q: "Are there any hidden fees?",
-      a: "No. Trading fees are published on the Fees page (0.3%–0.5% per method) and shown before you open a trade. Withdrawals pay only the blockchain network fee, shown before you confirm.",
+      a: "No. Every fee is published on the Fees page and shown before you confirm. Trading fees are charged per payment method; deposits and withdrawals each carry a platform fee in addition to the blockchain network fee, and the exact amounts are displayed before you commit.",
     },
     {
       category: "security",

@@ -265,7 +265,18 @@ export default function AdminUserDetailPage(): React.JSX.Element {
                   {data.recentDeposits.map((d) => (
                     <tr key={d.id}>
                       <td className="px-4 py-2.5 text-right font-money tabular-nums">{formatUsdt(d.amount, "USDT_TRC20", 2)}</td>
-                      <td className="px-4 py-2.5"><Badge tone="neutral">{d.status}</Badge></td>
+                      {/* Hold state must win over the raw status here too: this is
+                          the page support opens when a user asks where their money
+                          went, and a REJECTED deposit read as a neutral "CONFIRMING". */}
+                      <td className="px-4 py-2.5">
+                        {d.holdResolution === "REJECTED" ? (
+                          <Badge tone="danger">{tx("depositNotCredited")}</Badge>
+                        ) : d.onHold ? (
+                          <Badge tone="warning">{tx("depositUnderReview")}</Badge>
+                        ) : (
+                          <Badge tone="neutral">{d.status}</Badge>
+                        )}
+                      </td>
                       <td className="px-4 py-2.5 text-xs text-text-3">{formatDateTime(d.createdAt)}</td>
                     </tr>
                   ))}
