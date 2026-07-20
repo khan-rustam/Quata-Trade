@@ -61,7 +61,7 @@ export function TimelinePhone(): React.JSX.Element {
                 </div>
                 <div className="font-money text-base font-semibold text-text-1">100.00 USDT</div>
                 <div className="mt-1 text-[10px] text-text-3 px-3 uppercase tracking-wider">
-                  Held Safely in Escrow
+                  {t("phHeldSafely")}
                 </div>
               </div>
               <p className="text-[10px] text-text-3">{t("phLockedLedger")}</p>
@@ -77,13 +77,13 @@ export function TimelinePhone(): React.JSX.Element {
                 </div>
                 <div className="rounded-lg border border-border bg-surface-1 p-2.5 space-y-2">
                   <div className="text-[10px] text-text-3 uppercase">{t("phMtnMomo")}</div>
-                  <div className="text-xs font-semibold text-text-1">Name: Jean Marc</div>
-                  <div className="text-xs font-semibold text-text-1 font-money">Number: 677 88 99 00</div>
-                  <div className="text-xs font-bold text-accent-400 font-money">Amount: 65,000 XAF</div>
+                  <div className="text-xs font-semibold text-text-1">{t("phFieldName", { name: "Jean Marc" })}</div>
+                  <div className="text-xs font-semibold text-text-1 font-money">{t("phFieldNumber", { number: "677 88 99 00" })}</div>
+                  <div className="text-xs font-bold text-accent-400 font-money">{t("phFieldAmount", { amount: "65,000" })}</div>
                 </div>
               </div>
               <div className="rounded-md border border-dashed border-border bg-surface-1/50 p-2 text-center text-[10px] text-text-2">
-                [ Upload MoMo Receipt ]
+                {t("phUploadReceipt")}
               </div>
             </div>
           );
@@ -98,9 +98,9 @@ export function TimelinePhone(): React.JSX.Element {
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/15 border border-success/30 text-success mb-3">
                   <Check size={26} />
                 </div>
-                <div className="text-sm font-bold text-text-1">Trade Completed!</div>
+                <div className="text-sm font-bold text-text-1">{t("phTradeCompleted")}</div>
                 <div className="mt-1 text-[10px] text-text-2">
-                  100.00 USDT added to your wallet
+                  {t("phAddedToWallet")}
                 </div>
               </div>
               <p className="text-[10px] text-text-3">{t("phZeroRisk")}</p>
@@ -149,7 +149,7 @@ export function TimelinePhone(): React.JSX.Element {
                 </div>
                 <div className="font-money text-base font-semibold text-text-1">100.00 USDT</div>
                 <div className="mt-1 text-[10px] text-text-3 px-3 uppercase tracking-wider">
-                  Reserved in Escrow
+                  {t("phReservedEscrow")}
                 </div>
               </div>
               <p className="text-[10px] text-text-3">{t("phFundsLocked")}</p>
@@ -166,10 +166,10 @@ export function TimelinePhone(): React.JSX.Element {
                 <div className="rounded-lg border border-border bg-surface-1 p-2.5 text-center my-4 space-y-1">
                   <div className="text-[10px] text-text-3 uppercase">{t("phCheckMomo")}</div>
                   <div className="text-xs font-bold text-text-1">+65,000 XAF received</div>
-                  <div className="text-[9px] text-success">Reference: CM188299X</div>
+                  <div className="text-[9px] text-success">{t("phReference", { ref: "CM188299X" })}</div>
                 </div>
               </div>
-              <p className="text-[10px] text-center text-text-3">Check your bank or MoMo app first!</p>
+              <p className="text-[10px] text-center text-text-3">{t("phCheckFirst")}</p>
             </div>
           );
         case 4:
@@ -185,7 +185,7 @@ export function TimelinePhone(): React.JSX.Element {
                 </div>
                 <div className="text-sm font-bold text-text-1">{t("phUsdtReleased")}</div>
                 <div className="mt-1 text-[10px] text-text-2">
-                  Buyer credited successfully
+                  {t("phBuyerCredited")}
                 </div>
               </div>
               <p className="text-[10px] text-text-3">{t("phSettled")}</p>

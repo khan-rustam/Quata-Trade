@@ -41,7 +41,11 @@ export function Pagination({
 }): React.JSX.Element | null {
   const tx = useTranslations("adminUi");
   const pages = Math.max(1, Math.ceil(total / pageSize));
-  if (pages <= 1 && !onPageSize) return null;
+  // Hiding a single-page control is fine — UNLESS the caller is stranded beyond
+  // the last page (acknowledge the last alerts on page 2, approve the last
+  // withdrawals, filter down to nothing) — which is exactly when they need the
+  // way back and the old guard took it away.
+  if (pages <= 1 && !onPageSize && page <= pages) return null;
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-sm text-text-2">
       <span>{tx("pageStatus", { page, pages, total })}</span>
