@@ -311,6 +311,8 @@ export class AdminController {
     @Req() req: AuthenticatedRequest,
   ): Promise<AdminHeldDepositRow> {
     try {
+      // Step-up: a release credits real money that screening flagged.
+      await this.adminAuth.verifyTotp(adminId, dto.totpCode, "deposit.hold_release", this.ip(req));
       return await this.heldDeposits.release(depositId, adminId, dto.reason, this.ip(req));
     } catch (err) {
       throw mapAdminError(err);
@@ -327,6 +329,8 @@ export class AdminController {
     @Req() req: AuthenticatedRequest,
   ): Promise<AdminHeldDepositRow> {
     try {
+      // Step-up: a rejection permanently refuses to credit a user's funds.
+      await this.adminAuth.verifyTotp(adminId, dto.totpCode, "deposit.hold_reject", this.ip(req));
       return await this.heldDeposits.reject(depositId, adminId, dto.reason, this.ip(req));
     } catch (err) {
       throw mapAdminError(err);
@@ -344,7 +348,7 @@ export class AdminController {
     @Body(new ZodPipe(zFreezeUserRequest)) dto: FreezeUserRequest,
     @Req() req: AuthenticatedRequest,
   ): Promise<{ ok: true; status: string }> {
-    return this.moderate(adminId, userId, "freeze", dto.reason, req);
+    return this.moderate(adminId, userId, "freeze", dto.reason, dto.totpCode, req);
   }
 
   @Roles(...RBAC.freezeUser)
@@ -356,7 +360,7 @@ export class AdminController {
     @Body(new ZodPipe(zFreezeUserRequest)) dto: FreezeUserRequest,
     @Req() req: AuthenticatedRequest,
   ): Promise<{ ok: true; status: string }> {
-    return this.moderate(adminId, userId, "suspend", dto.reason, req);
+    return this.moderate(adminId, userId, "suspend", dto.reason, dto.totpCode, req);
   }
 
   @Roles(...RBAC.freezeUser)
@@ -368,7 +372,7 @@ export class AdminController {
     @Body(new ZodPipe(zFreezeUserRequest)) dto: FreezeUserRequest,
     @Req() req: AuthenticatedRequest,
   ): Promise<{ ok: true; status: string }> {
-    return this.moderate(adminId, userId, "restore", dto.reason, req);
+    return this.moderate(adminId, userId, "restore", dto.reason, dto.totpCode, req);
   }
 
   private async moderate(
@@ -376,9 +380,14 @@ export class AdminController {
     userId: string,
     action: UserModerationAction,
     reason: string,
+    totpCode: string | undefined,
     req: AuthenticatedRequest,
   ): Promise<{ ok: true; status: string }> {
     try {
+      // Step-up (audit F3): freezing or restoring an account cuts off or restores
+      // a user's access to their own funds. A stolen admin session must not be
+      // enough — re-authenticate the human, exactly like a withdrawal approval.
+      await this.adminAuth.verifyTotp(adminId, totpCode, `user.${action}`, this.ip(req));
       const result = await this.admin.setUserStatus(adminId, userId, action, reason, this.ip(req));
       return { ok: true, status: result.status };
     } catch (err) {
@@ -411,7 +420,7 @@ export class AdminController {
     @Body(new ZodPipe(zKycReviewRequest)) dto: KycReviewRequest,
     @Req() req: AuthenticatedRequest,
   ): Promise<unknown> {
-    return this.reviewKyc(submissionId, adminId, "APPROVED", dto.notes, req);
+    return this.reviewKyc(submissionId, adminId, "APPROVED", dto.notes, dto.totpCode, req);
   }
 
   @Roles(...RBAC.kycReview)
@@ -423,7 +432,7 @@ export class AdminController {
     @Body(new ZodPipe(zKycReviewRequest)) dto: KycReviewRequest,
     @Req() req: AuthenticatedRequest,
   ): Promise<unknown> {
-    return this.reviewKyc(submissionId, adminId, "REJECTED", dto.notes, req);
+    return this.reviewKyc(submissionId, adminId, "REJECTED", dto.notes, dto.totpCode, req);
   }
 
   @Roles(...RBAC.kycReview)
@@ -435,7 +444,7 @@ export class AdminController {
     @Body(new ZodPipe(zKycReviewRequest)) dto: KycReviewRequest,
     @Req() req: AuthenticatedRequest,
   ): Promise<unknown> {
-    return this.reviewKyc(submissionId, adminId, "RESUBMIT", dto.notes, req);
+    return this.reviewKyc(submissionId, adminId, "RESUBMIT", dto.notes, dto.totpCode, req);
   }
 
   private async reviewKyc(
@@ -443,9 +452,13 @@ export class AdminController {
     adminId: string,
     decision: "APPROVED" | "REJECTED" | "RESUBMIT",
     notes: string | undefined,
+    totpCode: string | undefined,
     req: AuthenticatedRequest,
   ): Promise<unknown> {
     try {
+      // Step-up (audit F3): approving KYC raises the user's tier and with it their
+      // withdrawal limits, so it is a limit-raising money action, not a review note.
+      await this.adminAuth.verifyTotp(adminId, totpCode, `kyc.${decision.toLowerCase()}`, this.ip(req));
       const result = await this.kycAdmin.review(submissionId, adminId, decision, notes, this.ip(req));
       // Auto-provision the deposit wallet the moment onboarding completes
       // (Documents/10 D30-provision). Best-effort: never blocks the approval;

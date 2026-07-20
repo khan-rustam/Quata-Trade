@@ -6,6 +6,9 @@ import { startTestDb, type TestDb } from "../../../test/helpers/pg";
 import { createUser, createAdmin } from "../../../test/helpers/fixtures";
 import { LedgerService } from "../ledger/ledger.service";
 import { AuditService } from "../../common/audit/audit.service";
+import { AlertsService } from "../../common/alerts/alerts.service";
+import { ConfigService } from "@nestjs/config";
+import type { Env } from "../../config/env";
 import { TRON_ACCOUNT_PATH } from "./derivation";
 import { WalletConfigService } from "./wallet-config.service";
 import { WalletService } from "./wallet.service";
@@ -44,7 +47,17 @@ describe("WalletConfigService (Documents/10 D29 — admin wallet config / key ce
   beforeAll(async () => {
     t = await startTestDb();
     audit = new AuditService(t.db);
-    svc = new WalletConfigService(t.db, ENV_XPUB, audit);
+    // No webhook/email/telegram configured: alerts are inert here, so the
+    // rotation alert cannot make these DB assertions depend on the network.
+    const alerts = new AlertsService(
+      new ConfigService<Env, true>({
+        ALERT_WEBHOOK_URL: "",
+        ALERT_EMAIL_TO: "",
+        TELEGRAM_BOT_TOKEN: "",
+        TELEGRAM_CHAT_ID: "",
+      }),
+    );
+    svc = new WalletConfigService(t.db, ENV_XPUB, audit, alerts);
     adminId = await createAdmin(t.db, "SUPER_ADMIN");
   });
 

@@ -152,3 +152,28 @@ the latter is a self-contained admin feature scheduled as its own increment.
 - The 30% revenue-share can reclassify the developer as an operator/partner (higher liability). Prefer paid milestones or a clear contract that isolates liability + indemnifies the developer.
 - Written record that the developer advised the client of the CEMAC/COBAC crypto restrictions and data-protection obligations.
 - Walk-away triggers: client refuses written contract / refuses to hold keys & licenses / pressures for auto-KYC or removing caps / wants developer to custody funds personally.
+
+### 2026-07-20 deposit-audit remediation (MEDIUM batch)
+
+| ID | Doc says | We did | Why |
+|---|---|---|---|
+| D32-hold | Migration 0018 promised "so the admin queue can surface both"; docs describe holds but name no release path | Added migration 0032 (`hold_resolution` RELEASED/REJECTED + reason/by/at), `HeldDepositsService`, `GET /admin/deposits/held`, `POST .../release`, `POST .../reject`, RBAC `reviewHeldDeposit` (SUPER + COMPLIANCE). RELEASE stamps the row so the credit path skips re-screening and the amount policy; REJECT keeps the flags set and moves no funds. | An `aml_hold` / `policy_hold` deposit was skipped by the confirmation job on every tick and **nothing anywhere could clear either flag** — held funds were on-chain, visible to the user, and permanently uncreditable with no operator path out. |
+| D32-conf | Docs treat `DEPOSIT_CONFIRMATIONS` (env) and the admin `deposit_policy.confirmations` as one number | `SettingsService.depositConfirmations(envFloor)` = `max(admin value, env floor)`; both the credit gate and the deposit-address response use it. | They were two independent numbers: the gate enforced env while the UI advertised the admin setting, so raising it in the console changed nothing and users were told a threshold that was not enforced. Env is now a floor an admin cannot lower. |
+| D32-stepup | Doc 06 requires TOTP step-up on "sensitive" admin actions without enumerating them | Extended step-up to freeze/suspend/restore, KYC approve/reject/resubmit, and both held-deposit decisions. | Each either cuts off a user's access to their own funds or raises their limits. A stolen admin session was previously sufficient for all of them. |
+| D32-xpubfp | Not addressed in the docs | Audit metadata stores a SHA-256 fingerprint of the retired xpub instead of the key itself. | Audit rows are readable by SUPER/COMPLIANCE/AUDITOR — wider than `manageWalletConfig` (SUPER only). The xpub cannot spend but derives every user's deposit address. |
+
+**OPEN — needs a client/architecture decision before launch (not silently assumed):**
+
+- **xpub rotation leaves legacy addresses unspendable.** `deposit_addresses` carries
+  `UNIQUE(user_id, asset)`, so an existing user keeps their address forever. After a rotation
+  every already-issued address still derives from the **retired** key: deposits to it are
+  credited by the platform but cannot be signed by the new seed. Rotation now raises a CRITICAL
+  alert naming both fingerprints, and remains blocked unless an admin sets `acknowledgeReset` —
+  but acknowledging does not make the funds spendable.
+  Resolving it properly means dropping `UNIQUE(user_id, asset)`, stamping each address with its
+  `wallet_config_id`, issuing fresh addresses from the active key, and keeping the retired
+  addresses **watched** (never deactivated — deactivating would silently lose funds sent to them).
+  That is a money-path schema redesign, so it is logged here rather than built unattended.
+  **Interim operating rule: retain the retired key's spending seed indefinitely after any rotation.**
+- **F2 (admin 2FA enforced at login)** deferred at the client's explicit instruction (2026-07-20):
+  "we will add this in complete end proper". `ADMIN_2FA_REQUIRED` still gates step-up.

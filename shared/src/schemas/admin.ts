@@ -76,7 +76,7 @@ export const zAdminUserRow = z.object({
 export const zAdminUsersResponse = zPaginated(zAdminUserRow);
 
 export const zFreezeUserRequest = z
-  .object({ reason: z.string().trim().min(5).max(1000) })
+  .object({ reason: z.string().trim().min(5).max(1000), totpCode: zTotpCode.optional() })
   .strict();
 
 export const zAdminWithdrawalRow = z.object({
@@ -614,6 +614,7 @@ export type AdminHeldDepositQuery = z.infer<typeof zAdminHeldDepositQuery>;
 export const zAdminHeldDepositDecision = z
   .object({
     reason: z.string().trim().min(10).max(4000),
+    totpCode: zTotpCode.optional(),
   })
   .strict();
 export type AdminHeldDepositDecision = z.infer<typeof zAdminHeldDepositDecision>;

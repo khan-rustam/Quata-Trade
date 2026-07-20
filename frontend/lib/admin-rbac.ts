@@ -10,6 +10,7 @@ export const RBAC = {
   approveWithdrawal: ["SUPER_ADMIN", "FINANCE_ADMIN"],
   resolveDispute: ["SUPER_ADMIN", "COMPLIANCE_ADMIN", "SUPPORT_ADMIN"],
   kycReview: ["SUPER_ADMIN", "COMPLIANCE_ADMIN"],
+  reviewHeldDeposit: ["SUPER_ADMIN", "COMPLIANCE_ADMIN"], // release/reject an AML or policy hold
   freezeUser: ["SUPER_ADMIN", "COMPLIANCE_ADMIN", "SUPPORT_ADMIN", "MODERATOR"],
   killSwitch: ["SUPER_ADMIN", "FINANCE_ADMIN"],
   manageCountries: ["SUPER_ADMIN", "FINANCE_ADMIN"],

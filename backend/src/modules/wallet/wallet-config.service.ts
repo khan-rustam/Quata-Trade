@@ -9,6 +9,7 @@ import { DB } from "../../db/database.module";
 import type { Database, WalletConfigsTable } from "../../db/types";
 import { newId } from "../../common/ids";
 import { AuditService } from "../../common/audit/audit.service";
+import { AlertsService } from "../../common/alerts/alerts.service";
 import { deriveTronAddress, xpubFingerprint, TRON_ACCOUNT_PATH } from "./derivation";
 import { WALLET_XPUB } from "./wallet.tokens";
 import { WalletConfigInvalidXpubError, WalletConfigRotationBlockedError } from "./wallet.errors";
@@ -32,6 +33,7 @@ export class WalletConfigService {
     @Inject(DB) private readonly db: Kysely<Database>,
     @Inject(WALLET_XPUB) private readonly envXpub: string,
     private readonly audit: AuditService,
+    private readonly alerts: AlertsService,
   ) {}
 
   /**
@@ -140,6 +142,21 @@ export class WalletConfigService {
         trx,
       );
     });
+    // Rotation is a CUSTODY EVENT, not a config edit, and until now it was silent.
+    // deposit_addresses carries UNIQUE(user_id, asset), so every already-issued
+    // address stays derived from the RETIRED key: those addresses keep receiving
+    // deposits that the new signer seed cannot spend. Acknowledging the reset does
+    // not make that untrue — it only records that an admin was asked. Page someone.
+    if (current) {
+      await this.alerts.send("critical", "Custodial xpub ROTATED — existing deposit addresses still derive from the retired key", {
+        network,
+        adminId,
+        derivedAddressCount: derivedCount,
+        previousXpubFingerprint: xpubFingerprint(current.xpub),
+        newXpubFingerprint: xpubFingerprint(dto.xpub),
+        action: "retain the retired key's spending seed until every legacy address is swept",
+      });
+    }
     return this.view(network);
   }
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { KYC_STATUSES } from "../constants.js";
-import { zUuid } from "./common.js";
+import { zTotpCode, zUuid } from "./common.js";
 
 export const KYC_DOC_TYPES = ["national_id", "passport", "drivers_license"] as const;
 
@@ -32,6 +32,9 @@ export type KycStatusResponse = z.infer<typeof zKycStatusResponse>;
 export const zKycReviewRequest = z
   .object({
     notes: z.string().trim().max(4000).optional(),
+    // Step-up: an approval grants a KYC tier (and with it higher limits), so it
+    // is re-authenticated like a withdrawal approval, not treated as a read.
+    totpCode: zTotpCode.optional(),
   })
   .strict();
 export type KycReviewRequest = z.infer<typeof zKycReviewRequest>;
