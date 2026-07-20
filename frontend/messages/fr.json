@@ -2039,5 +2039,11 @@
     "iosSteps2": "Tap the Share button, scroll down, and choose “Add to Home Screen”.",
     "desktopTitle": "Desktop (Chrome / Edge)",
     "desktopSteps": "Click “Install app” above, or use the install icon in the address bar."
+  },
+  "pwaUpdate": {
+    "title": "A new version of QuataTrade is available",
+    "body": "Update now to get the latest improvements and security fixes. Your session stays signed in.",
+    "updateNow": "Update now",
+    "later": "Later"
   }
 }

@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { inter, plexMono, spaceGrotesk } from "@/lib/fonts";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { PwaUpdatePrompt } from "@/components/pwa/pwa-update-prompt";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -83,6 +84,9 @@ export default async function RootLayout({
             {t("skipToContent")}
           </a>
           <Providers>{children}</Providers>
+          {/* Non-blocking "new version available" prompt; suppressed during
+              trading/escrow/wallet/KYC flows (see PwaUpdatePrompt). */}
+          <PwaUpdatePrompt />
         </NextIntlClientProvider>
       </body>
     </html>
