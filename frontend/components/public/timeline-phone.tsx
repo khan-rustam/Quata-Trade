@@ -25,34 +25,34 @@ export function TimelinePhone(): React.JSX.Element {
             <div className="flex flex-col h-full bg-bg p-4 justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4 border-b border-border pb-2">
-                  <span className="text-[11px] font-semibold text-text-3">BUY USDT</span>
+                  <span className="text-[11px] font-semibold text-text-3">{t("phBuyUsdt")}</span>
                   <span className="h-2 w-2 rounded-full bg-accent-400" />
                 </div>
                 <div className="space-y-2.5">
                   <div className="rounded-lg border border-border bg-surface-1 p-2.5 flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-semibold text-text-1">Jean M. (99% success)</div>
-                      <div className="text-[10px] text-text-3">Rate: 651 XAF · Limits: 20-500 USDT</div>
+                      <div className="text-xs font-semibold text-text-1">{t("phTrader", { name: "Jean M.", rate: 99 })}</div>
+                      <div className="text-[10px] text-text-3">{t("phTraderMeta", { rate: 651, limits: "20-500" })}</div>
                     </div>
-                    <span className="rounded-md bg-accent-400/10 px-2 py-1 text-[10px] font-bold text-accent-400">Buy</span>
+                    <span className="rounded-md bg-accent-400/10 px-2 py-1 text-[10px] font-bold text-accent-400">{t("phBuy")}</span>
                   </div>
                   <div className="rounded-lg border border-border bg-surface-1 p-2.5 flex items-center justify-between opacity-60">
                     <div>
-                      <div className="text-xs font-semibold text-text-1">Amina T. (96% success)</div>
-                      <div className="text-[10px] text-text-3">Rate: 652 XAF · Limits: 50-1000 USDT</div>
+                      <div className="text-xs font-semibold text-text-1">{t("phTrader", { name: "Amina T.", rate: 96 })}</div>
+                      <div className="text-[10px] text-text-3">{t("phTraderMeta", { rate: 652, limits: "50-1000" })}</div>
                     </div>
-                    <span className="rounded-md bg-accent-400/10 px-2 py-1 text-[10px] font-bold text-accent-400">Buy</span>
+                    <span className="rounded-md bg-accent-400/10 px-2 py-1 text-[10px] font-bold text-accent-400">{t("phBuy")}</span>
                   </div>
                 </div>
               </div>
-              <p className="text-[10px] text-center text-text-3">Find and pick verified rates instantly.</p>
+              <p className="text-[10px] text-center text-text-3">{t("phFindRates")}</p>
             </div>
           );
         case 2:
           return (
             <div className="flex flex-col h-full bg-bg p-4 justify-between items-center text-center">
               <div className="w-full flex items-center justify-between mb-4 border-b border-border pb-2 text-left">
-                <span className="text-[11px] font-semibold text-text-3">ESCROW LOCKED</span>
+                <span className="text-[11px] font-semibold text-text-3">{t("phEscrowLocked")}</span>
                 <Shield size={12} className="text-accent-400" />
               </div>
               <div className="my-auto flex flex-col items-center">
@@ -64,7 +64,7 @@ export function TimelinePhone(): React.JSX.Element {
                   Held Safely in Escrow
                 </div>
               </div>
-              <p className="text-[10px] text-text-3">Locked in ledger. Seller cannot run.</p>
+              <p className="text-[10px] text-text-3">{t("phLockedLedger")}</p>
             </div>
           );
         case 3:
@@ -72,11 +72,11 @@ export function TimelinePhone(): React.JSX.Element {
             <div className="flex flex-col h-full bg-bg p-4 justify-between">
               <div>
                 <div className="flex items-center justify-between mb-3 border-b border-border pb-2">
-                  <span className="text-[11px] font-semibold text-text-3">PAY SELLER</span>
+                  <span className="text-[11px] font-semibold text-text-3">{t("phPaySeller")}</span>
                   <span className="text-[10px] font-money text-warning">29:55</span>
                 </div>
                 <div className="rounded-lg border border-border bg-surface-1 p-2.5 space-y-2">
-                  <div className="text-[10px] text-text-3 uppercase">MTN Mobile Money</div>
+                  <div className="text-[10px] text-text-3 uppercase">{t("phMtnMomo")}</div>
                   <div className="text-xs font-semibold text-text-1">Name: Jean Marc</div>
                   <div className="text-xs font-semibold text-text-1 font-money">Number: 677 88 99 00</div>
                   <div className="text-xs font-bold text-accent-400 font-money">Amount: 65,000 XAF</div>
@@ -91,7 +91,7 @@ export function TimelinePhone(): React.JSX.Element {
           return (
             <div className="flex flex-col h-full bg-bg p-4 justify-between items-center text-center">
               <div className="w-full flex items-center justify-between mb-4 border-b border-border pb-2 text-left">
-                <span className="text-[11px] font-semibold text-text-3">SUCCESS</span>
+                <span className="text-[11px] font-semibold text-text-3">{t("phSuccess")}</span>
                 <CheckCircle2 size={12} className="text-success" />
               </div>
               <div className="my-auto flex flex-col items-center">
@@ -103,7 +103,7 @@ export function TimelinePhone(): React.JSX.Element {
                   100.00 USDT added to your wallet
                 </div>
               </div>
-              <p className="text-[10px] text-text-3">Zero risk. Safe cryptocurrency exchange.</p>
+              <p className="text-[10px] text-text-3">{t("phZeroRisk")}</p>
             </div>
           );
       }
@@ -115,32 +115,32 @@ export function TimelinePhone(): React.JSX.Element {
             <div className="flex flex-col h-full bg-bg p-4 justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4 border-b border-border pb-2">
-                  <span className="text-[11px] font-semibold text-text-3">POST OFFER</span>
+                  <span className="text-[11px] font-semibold text-text-3">{t("phPostOffer")}</span>
                   <span className="h-2 w-2 rounded-full bg-danger" />
                 </div>
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <label className="text-[9px] text-text-3 uppercase">I want to sell</label>
+                    <label className="text-[9px] text-text-3 uppercase">{t("phIWantToSell")}</label>
                     <div className="rounded-md border border-border bg-surface-1 px-2.5 py-1.5 font-money text-xs font-semibold">
                       100.00 USDT
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[9px] text-text-3 uppercase">My XAF Rate</label>
+                    <label className="text-[9px] text-text-3 uppercase">{t("phMyRate")}</label>
                     <div className="rounded-md border border-border bg-surface-1 px-2.5 py-1.5 font-money text-xs font-semibold">
                       650 XAF / USDT
                     </div>
                   </div>
                 </div>
               </div>
-              <p className="text-[10px] text-center text-text-3">Set your own rate and limits easily.</p>
+              <p className="text-[10px] text-center text-text-3">{t("phSetRate")}</p>
             </div>
           );
         case 2:
           return (
             <div className="flex flex-col h-full bg-bg p-4 justify-between items-center text-center">
               <div className="w-full flex items-center justify-between mb-4 border-b border-border pb-2 text-left">
-                <span className="text-[11px] font-semibold text-text-3">ESCROW RESERVE</span>
+                <span className="text-[11px] font-semibold text-text-3">{t("phEscrowReserve")}</span>
                 <Shield size={12} className="text-accent-400" />
               </div>
               <div className="my-auto flex flex-col items-center">
@@ -152,7 +152,7 @@ export function TimelinePhone(): React.JSX.Element {
                   Reserved in Escrow
                 </div>
               </div>
-              <p className="text-[10px] text-text-3">Funds safely locked for the trade.</p>
+              <p className="text-[10px] text-text-3">{t("phFundsLocked")}</p>
             </div>
           );
         case 3:
@@ -160,11 +160,11 @@ export function TimelinePhone(): React.JSX.Element {
             <div className="flex flex-col h-full bg-bg p-4 justify-between">
               <div>
                 <div className="flex items-center justify-between mb-3 border-b border-border pb-2">
-                  <span className="text-[11px] font-semibold text-text-3">RECEIVE CASH</span>
-                  <span className="text-[10px] font-money text-warning">Waiting...</span>
+                  <span className="text-[11px] font-semibold text-text-3">{t("phReceiveCash")}</span>
+                  <span className="text-[10px] font-money text-warning">{t("phWaiting")}</span>
                 </div>
                 <div className="rounded-lg border border-border bg-surface-1 p-2.5 text-center my-4 space-y-1">
-                  <div className="text-[10px] text-text-3 uppercase">Check MTN MoMo App</div>
+                  <div className="text-[10px] text-text-3 uppercase">{t("phCheckMomo")}</div>
                   <div className="text-xs font-bold text-text-1">+65,000 XAF received</div>
                   <div className="text-[9px] text-success">Reference: CM188299X</div>
                 </div>
@@ -176,19 +176,19 @@ export function TimelinePhone(): React.JSX.Element {
           return (
             <div className="flex flex-col h-full bg-bg p-4 justify-between items-center text-center">
               <div className="w-full flex items-center justify-between mb-4 border-b border-border pb-2 text-left">
-                <span className="text-[11px] font-semibold text-text-3">RELEASED</span>
+                <span className="text-[11px] font-semibold text-text-3">{t("phReleased")}</span>
                 <CheckCircle2 size={12} className="text-success" />
               </div>
               <div className="my-auto flex flex-col items-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/15 border border-success/30 text-success mb-3">
                   <Check size={26} />
                 </div>
-                <div className="text-sm font-bold text-text-1">USDT Released</div>
+                <div className="text-sm font-bold text-text-1">{t("phUsdtReleased")}</div>
                 <div className="mt-1 text-[10px] text-text-2">
                   Buyer credited successfully
                 </div>
               </div>
-              <p className="text-[10px] text-text-3">Transaction settled instantly.</p>
+              <p className="text-[10px] text-text-3">{t("phSettled")}</p>
             </div>
           );
       }

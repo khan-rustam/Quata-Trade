@@ -213,7 +213,30 @@
     "escrowTitle": "Pourquoi le séquestre est important",
     "escrowBody": "Le séquestre signifie que la crypto du vendeur est conservée en sécurité jusqu'à ce qu'il confirme la réception de votre paiement. En cas de problème, chaque partie peut ouvrir un litige — le séquestre se fige et une personne réelle examine les preuves. Une capture d'écran n'est pas de l'argent ; c'est la confirmation du vendeur qui libère les fonds.",
     "escrowLink": "Lire l'intégralité des règles de transaction et de séquestre →",
-    "ctaButton": "Créez votre compte"
+    "ctaButton": "Créez votre compte",
+    "phBuyUsdt": "ACHETER DES USDT",
+    "phEscrowLocked": "SÉQUESTRE BLOQUÉ",
+    "phEscrowReserve": "RÉSERVE DE SÉQUESTRE",
+    "phPaySeller": "PAYER LE VENDEUR",
+    "phPostOffer": "PUBLIER UNE OFFRE",
+    "phReceiveCash": "RECEVOIR LES ESPÈCES",
+    "phReleased": "LIBÉRÉ",
+    "phSuccess": "SUCCÈS",
+    "phBuy": "Acheter",
+    "phFindRates": "Trouvez et choisissez des taux vérifiés instantanément.",
+    "phFundsLocked": "Fonds bloqués en toute sécurité pour la transaction.",
+    "phLockedLedger": "Bloqué dans le registre. Le vendeur ne peut pas s'enfuir.",
+    "phSetRate": "Définissez facilement votre taux et vos limites.",
+    "phSettled": "Transaction réglée instantanément.",
+    "phZeroRisk": "Zéro risque. Échange de cryptomonnaie sécurisé.",
+    "phCheckMomo": "Vérifiez l'appli MTN MoMo",
+    "phMtnMomo": "MTN Mobile Money",
+    "phMyRate": "Mon taux XAF",
+    "phIWantToSell": "Je veux vendre",
+    "phUsdtReleased": "USDT libérés",
+    "phWaiting": "En attente…",
+    "phTrader": "{name} ({rate} % de réussite)",
+    "phTraderMeta": "Taux : {rate} XAF · Limites : {limits} USDT"
   },
   "security": {
     "heroEyebrow": "Sécurité et confiance",
@@ -2223,5 +2246,13 @@
     "contactSupport": "Contacter le support",
     "maintenanceTitle": "Nous revenons très vite",
     "maintenanceBody": "QuataTrade est en maintenance planifiée afin de protéger vos transactions. Vos fonds sont en sécurité. Merci de revenir dans quelques instants."
+  },
+  "legal": {
+    "effective": "En vigueur",
+    "lastUpdated": "Dernière mise à jour",
+    "version": "Version {version}",
+    "draftSuffix": "(brouillon)",
+    "draftBannerTitle": "Brouillon — en attente de revue juridique.",
+    "draftBannerBody": "Cette page décrit le fonctionnement de QuataTrade et signale chaque point que l'exploitant et un avocat qualifié au Cameroun doivent confirmer. Elle n'a pas encore de valeur juridique."
   }
 }

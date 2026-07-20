@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { useTranslations } from "next-intl";
 import { AlertTriangle } from "lucide-react";
 import type { LegalDoc } from "@/lib/legal-content";
 
@@ -9,6 +10,7 @@ import type { LegalDoc } from "@/lib/legal-content";
  * Cameroon-qualified lawyer reviews it (Documents/14 §13.B).
  */
 export function LegalPage({ doc }: { doc: LegalDoc }): React.JSX.Element {
+  const t = useTranslations("legal");
   const isFinal = doc.status === "final";
   return (
     <article className="mx-auto max-w-3xl px-4 py-10 md:px-6">
@@ -16,18 +18,16 @@ export function LegalPage({ doc }: { doc: LegalDoc }): React.JSX.Element {
         <div className="mb-5 flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning">
           <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden />
           <p>
-            <strong>Draft — pending legal review.</strong> This page describes how QuataTrade works and
-            marks (in mint) every detail the operator and a Cameroon-qualified lawyer must confirm. It is
-            not yet legally binding and must not ship to production until reviewed and localized (EN + FR).
+            <strong>{t("draftBannerTitle")}</strong> {t("draftBannerBody")}
           </p>
         </div>
       )}
 
       <h1 className="font-display text-3xl font-bold tracking-tight">{doc.title}</h1>
       <p className="mt-1 text-sm text-text-3">
-        {isFinal ? "Effective" : "Last updated"}:{" "}
-        <span className="font-medium">{doc.lastUpdated}</span> · Version {doc.version}
-        {isFinal ? "" : " (draft)"}
+        {isFinal ? t("effective") : t("lastUpdated")}:{" "}
+        <span className="font-medium">{doc.lastUpdated}</span> · {t("version", { version: doc.version })}
+        {isFinal ? "" : ` ${t("draftSuffix")}`}
       </p>
       {doc.summary && <p className="mt-4 text-text-2">{doc.summary}</p>}
 

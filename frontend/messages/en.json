@@ -213,7 +213,30 @@
     "escrowTitle": "Why escrow matters",
     "escrowBody": "Escrow means the seller's crypto is held safely until they confirm your payment landed. If there's a problem, either side can open a dispute — escrow freezes and a real person reviews the evidence. A screenshot is not money; the seller's confirmation is what releases funds.",
     "escrowLink": "Read the full trade & escrow rules →",
-    "ctaButton": "Create your account"
+    "ctaButton": "Create your account",
+    "phBuyUsdt": "BUY USDT",
+    "phEscrowLocked": "ESCROW LOCKED",
+    "phEscrowReserve": "ESCROW RESERVE",
+    "phPaySeller": "PAY SELLER",
+    "phPostOffer": "POST OFFER",
+    "phReceiveCash": "RECEIVE CASH",
+    "phReleased": "RELEASED",
+    "phSuccess": "SUCCESS",
+    "phBuy": "Buy",
+    "phFindRates": "Find and pick verified rates instantly.",
+    "phFundsLocked": "Funds safely locked for the trade.",
+    "phLockedLedger": "Locked in ledger. Seller cannot run.",
+    "phSetRate": "Set your own rate and limits easily.",
+    "phSettled": "Transaction settled instantly.",
+    "phZeroRisk": "Zero risk. Safe cryptocurrency exchange.",
+    "phCheckMomo": "Check MTN MoMo App",
+    "phMtnMomo": "MTN Mobile Money",
+    "phMyRate": "My XAF Rate",
+    "phIWantToSell": "I want to sell",
+    "phUsdtReleased": "USDT Released",
+    "phWaiting": "Waiting…",
+    "phTrader": "{name} ({rate}% success)",
+    "phTraderMeta": "Rate: {rate} XAF · Limits: {limits} USDT"
   },
   "security": {
     "heroEyebrow": "Security & trust",
@@ -2223,5 +2246,13 @@
     "contactSupport": "Contact support",
     "maintenanceTitle": "We'll be right back",
     "maintenanceBody": "QuataTrade is undergoing scheduled maintenance to keep your trades safe. Your funds are secure. Please check back shortly."
+  },
+  "legal": {
+    "effective": "Effective",
+    "lastUpdated": "Last updated",
+    "version": "Version {version}",
+    "draftSuffix": "(draft)",
+    "draftBannerTitle": "Draft — pending legal review.",
+    "draftBannerBody": "This page describes how QuataTrade works and marks every detail the operator and a Cameroon-qualified lawyer must confirm. It is not yet legally binding."
   }
 }
