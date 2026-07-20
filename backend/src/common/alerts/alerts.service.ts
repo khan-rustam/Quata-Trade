@@ -20,6 +20,12 @@ const SECURITY_EVENTS: Record<string, { severity: Severity; title: string }> = {
   "withdrawal.broadcast_stale": { severity: "critical", title: "Withdrawal stuck in BROADCAST" },
   "reconciliation.reserve_shortfall": { severity: "critical", title: "On-chain reserve shortfall" },
   "reconciliation.job_error": { severity: "critical", title: "Reconciliation job failed to run" },
+  // A user's deposit is frozen pending a human decision — it must never sit silently.
+  "deposit.policy_hold": { severity: "warning", title: "Deposit held for review (policy/limit)" },
+  // Two DB rows for one on-chain transfer; the second was blocked before crediting.
+  "deposit.duplicate_blocked": { severity: "critical", title: "Duplicate deposit blocked (same tx credited twice?)" },
+  // A credited deposit vanished from the chain — phantom balance, funds at risk.
+  "deposit.orphaned": { severity: "critical", title: "Credited deposit ORPHANED by chain reorg" },
 };
 
 const ICON: Record<Severity, string> = { info: "info", warning: "warn", critical: "CRITICAL" };

@@ -118,9 +118,14 @@ export class HttpTronGridClient implements TronGridClient {
   }
 
   async getTrc20TransfersTo(address: string): Promise<Trc20Transfer[]> {
+    // `order_by` is pinned EXPLICITLY: without it the provider's default sort is
+    // undocumented, and an ascending default would mean a busy address stops
+    // surfacing new deposits once it passes `limit` lifetime transfers — silently,
+    // with no error. Newest-first guarantees recent deposits are always in the window.
     const path =
       `/v1/accounts/${address}/transactions/trc20` +
-      `?contract_address=${this.cfg.usdtContract}&only_to=true&limit=100`;
+      `?contract_address=${this.cfg.usdtContract}&only_to=true&limit=100` +
+      `&order_by=block_timestamp,desc`;
     const parsed = zTrc20Response.parse(await this.getJson(path));
 
     const transfers: Trc20Transfer[] = [];
@@ -138,7 +143,14 @@ export class HttpTronGridClient implements TronGridClient {
       // log indexes, else the second collides on UNIQUE(tx_hash,log_index) and
       // the deposit is silently dropped. Consume the matching logs in order.
       const seen = seenPerTx.get(item.transaction_id) ?? 0;
-      const logIndex = meta.logIndexes[seen] ?? 1_000_000 + seen; // distinct fallback
+      const logIndex = meta.logIndexes[seen];
+      // No provable log for this occurrence → skip rather than synthesize an identity
+      // (see resolveTxMeta). The scanner re-reads the full transfer list every pass,
+      // so it is picked up as soon as the node returns resolvable logs.
+      if (logIndex === undefined) {
+        this.logger.warn(`unresolved log index for ${item.transaction_id} — deferring to a later scan`);
+        continue;
+      }
       seenPerTx.set(item.transaction_id, seen + 1);
       transfers.push({
         txHash: item.transaction_id,
@@ -223,10 +235,16 @@ export class HttpTronGridClient implements TronGridClient {
           }
         }
       }
-      return { blockNumber, logIndexes: logIndexes.length > 0 ? logIndexes : [0] };
+      // NEVER fabricate a log index. The deposit's ledger idempotency key is
+      // `deposit:<txHash>:<logIndex>`, so a synthesized value can differ between the
+      // primary and fallback RPC nodes and mint a SECOND deposit row for the SAME
+      // on-chain transfer — both passing UNIQUE(tx_hash, log_index) — and credit twice.
+      // Unresolvable ⇒ report "cannot prove depth yet"; a later scan retries.
+      if (logIndexes.length === 0) return { blockNumber: null, logIndexes: [] };
+      return { blockNumber, logIndexes };
     } catch (err) {
       this.logger.warn(`tx meta resolution failed for ${txHash}: ${err instanceof Error ? err.message : "unknown"}`);
-      return { blockNumber: null, logIndexes: [0] };
+      return { blockNumber: null, logIndexes: [] };
     }
   }
 

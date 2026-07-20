@@ -139,21 +139,45 @@ export function validateEnv(config: Record<string, unknown>): Env {
       .join("\n");
     throw new Error(`Environment validation failed:\n${issues}`);
   }
-  if (parsed.data.NODE_ENV === "production") {
-    // Production hard-stops: dev defaults, mock signer, and testnet are forbidden.
-    if (parsed.data.SIGNER_MODE === "mock") {
-      throw new Error("SIGNER_MODE=mock is forbidden in production");
-    }
+  // ── Tier A: SECURITY hard-stops — every environment except local development ──
+  // These caught nothing on a staging box before, because the whole block used to be
+  // gated on NODE_ENV === "production". A staging/pre-prod host handling real user
+  // data must never run with published dev secrets, Swagger open, or admin 2FA off.
+  // Deliberately EXCLUDES production-only facts (mainnet, real signer, alert webhook)
+  // so a testnet staging box still boots.
+  if (parsed.data.NODE_ENV !== "development") {
+    const env = parsed.data.NODE_ENV;
     if (parsed.data.JWT_ACCESS_SECRET.startsWith("dev_only")) {
-      throw new Error("Dev JWT secret detected in production");
+      throw new Error(`Dev JWT secret detected in ${env}`);
     }
     // The dev MASTER_ENCRYPTION_KEY (.env.example) base64-decodes to "dev_only_…";
     // a real random 32-byte key never does. Prevents shipping the published key.
     if (Buffer.from(parsed.data.MASTER_ENCRYPTION_KEY, "base64").toString("utf8").startsWith("dev_only")) {
-      throw new Error("Dev MASTER_ENCRYPTION_KEY detected in production");
+      throw new Error(`Dev MASTER_ENCRYPTION_KEY detected in ${env}`);
     }
     if (parsed.data.SWAGGER_ENABLED) {
-      throw new Error("Swagger must be disabled in production");
+      throw new Error(`Swagger must be disabled in ${env}`);
+    }
+    // Reject the published dev credentials from .env.example so a mis-copied deploy
+    // cannot boot with attacker-known secrets to the funds ledger / KYC store.
+    if (/dev_only/i.test(parsed.data.DATABASE_URL) || (parsed.data.DATABASE_APP_PASSWORD ?? "").includes("dev_only")) {
+      throw new Error(`Dev database password detected in ${env} (DATABASE_URL / DATABASE_APP_PASSWORD)`);
+    }
+    if (parsed.data.MINIO_SECRET_KEY.trim() === "" || /dev_only/i.test(parsed.data.MINIO_SECRET_KEY)) {
+      throw new Error(`MINIO_SECRET_KEY must be a real (non-dev) secret in ${env} (object store holds KYC/PII)`);
+    }
+    if (!parsed.data.ADMIN_2FA_REQUIRED) {
+      throw new Error(`ADMIN_2FA_REQUIRED must be true in ${env} (admin step-up 2FA on money actions)`);
+    }
+    if (!parsed.data.STORAGE_SSE_ENABLED) {
+      throw new Error(`STORAGE_SSE_ENABLED must be true in ${env} (at-rest encryption of KYC/PII objects)`);
+    }
+  }
+
+  // ── Tier B: PRODUCTION-ONLY facts (mainnet, real custody, paging) ──
+  if (parsed.data.NODE_ENV === "production") {
+    if (parsed.data.SIGNER_MODE === "mock") {
+      throw new Error("SIGNER_MODE=mock is forbidden in production");
     }
     if (parsed.data.WALLET_XPUB.trim() === "") {
       throw new Error("WALLET_XPUB is required in production (watch-only deposit derivation)");
@@ -192,24 +216,10 @@ export function validateEnv(config: Record<string, unknown>): Env {
         throw new Error(`SIGNER_MODE=remote requires mTLS config in production — missing: ${missing.join(", ")}`);
       }
     }
-    if (!parsed.data.STORAGE_SSE_ENABLED) {
-      throw new Error("STORAGE_SSE_ENABLED must be true in production (at-rest encryption of KYC/PII objects)");
-    }
-    if (!parsed.data.ADMIN_2FA_REQUIRED) {
-      throw new Error("ADMIN_2FA_REQUIRED must be true in production (admin step-up 2FA on escrow-release/withdrawal actions)");
-    }
     // Critical ops/security alerts (reconciliation mismatch, reserve shortfall, AML
     // hit, kill-switch) are log-only when this is empty — nobody gets paged.
     if (parsed.data.ALERT_WEBHOOK_URL.trim() === "") {
       throw new Error("ALERT_WEBHOOK_URL is required in production (critical ops/security alerts must page on-call, not just log)");
-    }
-    // Reject the published dev credentials from .env.example so a mis-copied prod
-    // deploy cannot boot with attacker-known secrets to the funds ledger / KYC store.
-    if (/dev_only/i.test(parsed.data.DATABASE_URL) || (parsed.data.DATABASE_APP_PASSWORD ?? "").includes("dev_only")) {
-      throw new Error("Dev database password detected in production (DATABASE_URL / DATABASE_APP_PASSWORD)");
-    }
-    if (parsed.data.MINIO_SECRET_KEY.trim() === "" || /dev_only/i.test(parsed.data.MINIO_SECRET_KEY)) {
-      throw new Error("MINIO_SECRET_KEY must be a real (non-dev) secret in production (object store holds KYC/PII)");
     }
   }
   return parsed.data;

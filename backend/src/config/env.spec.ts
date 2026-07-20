@@ -125,6 +125,48 @@ describe("validateEnv", () => {
     expect(() => validateEnv(base({ LOG_LEVEL: "verbose" }))).toThrow(/LOG_LEVEL/);
   });
 
+  /** A staging box: real secrets + 2FA + SSE, but still on testnet with a mock signer. */
+  const staging = (overrides: Record<string, unknown> = {}): Record<string, unknown> =>
+    base({
+      NODE_ENV: "staging",
+      JWT_ACCESS_SECRET: "staging-jwt-secret-that-is-at-least-32-chars",
+      MASTER_ENCRYPTION_KEY: PROD_KEY,
+      MINIO_SECRET_KEY: "staging-minio-secret",
+      ADMIN_2FA_REQUIRED: "true",
+      STORAGE_SSE_ENABLED: "true",
+      ...overrides,
+    });
+
+  describe("tier A — security hard-stops apply outside development", () => {
+    it("accepts a properly-secured staging config (testnet + mock signer still allowed)", () => {
+      expect(() => validateEnv(staging())).not.toThrow();
+      expect(() => validateEnv(staging({ TRON_NETWORK: "shasta", SIGNER_MODE: "mock" }))).not.toThrow();
+    });
+
+    it("rejects dev secrets on staging (this is what the prod-only gate used to miss)", () => {
+      expect(() => validateEnv(staging({ JWT_ACCESS_SECRET: base().JWT_ACCESS_SECRET }))).toThrow(/JWT/);
+      expect(() => validateEnv(staging({ MASTER_ENCRYPTION_KEY: base().MASTER_ENCRYPTION_KEY }))).toThrow(
+        /MASTER_ENCRYPTION_KEY/,
+      );
+      expect(() => validateEnv(staging({ MINIO_SECRET_KEY: "quatatrade_dev_only" }))).toThrow(/MINIO_SECRET_KEY/);
+      expect(() =>
+        validateEnv(staging({ DATABASE_URL: "postgres://quatatrade_app:app_dev_only@host:5432/db" })),
+      ).toThrow(/database password/);
+    });
+
+    it("requires admin 2FA, SSE and no Swagger on staging", () => {
+      expect(() => validateEnv(staging({ ADMIN_2FA_REQUIRED: "false" }))).toThrow(/ADMIN_2FA_REQUIRED/);
+      expect(() => validateEnv(staging({ STORAGE_SSE_ENABLED: "false" }))).toThrow(/STORAGE_SSE_ENABLED/);
+      expect(() => validateEnv(staging({ SWAGGER_ENABLED: "true" }))).toThrow(/Swagger/);
+    });
+
+    it("does NOT force production-only facts on staging", () => {
+      // mainnet / real signer / alert webhook / hot address are production-only —
+      // forcing them would make a testnet staging box unbootable.
+      expect(() => validateEnv(staging({ TRON_NETWORK: "nile", WALLET_XPUB: "", ALERT_WEBHOOK_URL: "" }))).not.toThrow();
+    });
+  });
+
   it("does not apply production hard-stops in development", () => {
     // dev key, empty xpub, shasta, mock signer — all fine outside production
     expect(() => validateEnv(base({ SIGNER_MODE: "mock", TRON_NETWORK: "shasta", WALLET_XPUB: "" }))).not.toThrow();
