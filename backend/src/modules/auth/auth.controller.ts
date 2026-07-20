@@ -24,6 +24,8 @@ import {
   zTotpSetupResponse,
   zTotpVerifyRequest,
   zVerifyEmailRequest,
+  zResendEmailVerificationRequest,
+  type ResendEmailVerificationRequest,
   type AuthTokensResponse,
   type LoginRequest,
   type Ok,
@@ -161,6 +163,23 @@ export class AuthController {
     } catch (err) {
       rethrowAuth(err);
     }
+  }
+
+  /**
+   * Re-issue the verification code. Rate limited harder than login: this mails a
+   * live credential, and the response is intentionally uninformative so it cannot
+   * be used to discover which addresses are registered or already verified.
+   */
+  @Public()
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @Post("verify-email/resend")
+  @HttpCode(HttpStatus.OK)
+  async resendVerifyEmail(
+    @Body(new ZodPipe(zResendEmailVerificationRequest)) dto: ResendEmailVerificationRequest,
+    @Req() req: AuthHttpRequest,
+  ): Promise<Ok> {
+    await this.auth.resendEmailVerification(dto.email, this.meta(req));
+    return { ok: true }; // ALWAYS ok — no enumeration
   }
 
   @Public()

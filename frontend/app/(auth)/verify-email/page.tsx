@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -23,6 +23,36 @@ function VerifyForm(): React.JSX.Element {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [resending, setResending] = useState(false);
+  // Cooldown, not a disable-forever: the code expires in 15 minutes and nothing
+  // else in the system ever issues another one, so this button is the only way
+  // back for anyone who opened the email late or burned their 5 attempts —
+  // without it, withdrawals stay blocked on an unverifiable address.
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  const resend = async () => {
+    if (!email || cooldown > 0) return;
+    setResending(true);
+    setError(null);
+    try {
+      await api.resendEmailVerification({ email });
+      // The response is deliberately opaque (it never reveals whether the address
+      // is registered), so the confirmation has to be non-committal too.
+      toast.success(tx("resentTitle"), tx("resentBody"));
+      setCode("");
+      setCooldown(60);
+    } catch (err) {
+      setError(apiErrorMessage(err, tx("resendFailed")));
+    } finally {
+      setResending(false);
+    }
+  };
 
   const verify = async () => {
     setBusy(true);
@@ -64,7 +94,19 @@ function VerifyForm(): React.JSX.Element {
         </Button>
       </div>
 
-      <p className="mt-4 text-center text-sm text-text-2">
+      <div className="mt-4 text-center text-sm text-text-2">
+        {tx("noCode")}{" "}
+        <button
+          type="button"
+          onClick={resend}
+          disabled={!email || resending || cooldown > 0}
+          className="font-medium text-accent-400 hover:underline disabled:cursor-not-allowed disabled:text-text-3 disabled:no-underline"
+        >
+          {resending ? tx("resending") : cooldown > 0 ? tx("resendIn", { seconds: cooldown }) : tx("resend")}
+        </button>
+      </div>
+
+      <p className="mt-2 text-center text-sm text-text-2">
         {tx("wrongAddress")}{" "}
         <Link href="/register" className="font-medium text-accent-400 hover:underline">
           {tx("startOver")}

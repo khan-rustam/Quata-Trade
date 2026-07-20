@@ -504,6 +504,74 @@ export class AuthService {
   // ── password reset ──────────────────────────────────────────────────────
 
   /** Always resolves — response never reveals whether the email exists. */
+  /**
+   * Re-issue the email verification OTP.
+   *
+   * The registration OTP lives 15 minutes and allows 5 attempts, and nothing
+   * else in the system ever issues another one: re-registering with an existing
+   * email hits the anti-enumeration branch, which deliberately persists nothing.
+   * So a user who opened the email late, or burned their attempts, was verified
+   * never — and withdrawals refuse to run without a verified email, which made
+   * their deposited funds permanently unwithdrawable.
+   *
+   * Opaque like forgotPassword: an unknown email, an already-verified one and a
+   * successful re-issue are indistinguishable to the caller. Prior unconsumed
+   * OTPs are invalidated so only the newest code works.
+   */
+  async resendEmailVerification(email: string, meta: RequestMeta): Promise<void> {
+    const user = await this.db
+      .selectFrom("users")
+      .select(["id", "email_verified_at"])
+      .where("email", "=", email)
+      .executeTakeFirst();
+    if (!user || user.email_verified_at !== null) return;
+
+    const otp = String(randomInt(0, 1_000_000)).padStart(6, "0");
+    await this.db.transaction().execute(async (trx) => {
+      // Retire outstanding codes: leaving them live would widen the guessing
+      // surface every time the user pressed resend.
+      await trx
+        .updateTable("auth_tokens")
+        .set({ consumed_at: new Date() })
+        .where("user_id", "=", user.id)
+        .where("kind", "=", "email_otp")
+        .where("consumed_at", "is", null)
+        .execute();
+      await trx
+        .insertInto("auth_tokens")
+        .values({
+          id: newId(),
+          user_id: user.id,
+          kind: "email_otp",
+          token_hash: sha256Hex(otp),
+          expires_at: new Date(Date.now() + EMAIL_OTP_TTL_MS),
+        })
+        .execute();
+      // the OTP travels to the user ONLY via the notify pipeline
+      await trx
+        .insertInto("notifications")
+        .values({
+          id: newId(),
+          user_id: user.id,
+          channel: "email",
+          template: "email_verify",
+          payload: JSON.stringify({ code: otp }),
+        })
+        .execute();
+      await this.audit.log(
+        {
+          actorType: "user",
+          actorId: user.id,
+          action: "auth.email_verification_resent",
+          targetType: "user",
+          targetId: user.id,
+          ip: meta.ip ?? undefined,
+        },
+        trx,
+      );
+    });
+  }
+
   async forgotPassword(email: string, meta: RequestMeta): Promise<void> {
     const user = await this.db.selectFrom("users").select(["id"]).where("email", "=", email).executeTakeFirst();
     if (!user) return;

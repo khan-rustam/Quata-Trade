@@ -44,6 +44,13 @@ export const zAuthTokensResponse = z.object({
 });
 export type AuthTokensResponse = z.infer<typeof zAuthTokensResponse>;
 
+/**
+ * Re-issue the email verification code. Response is always ok — an unknown or
+ * already-verified email must be indistinguishable from a successful re-issue.
+ */
+export const zResendEmailVerificationRequest = z.object({ email: zEmail }).strict();
+export type ResendEmailVerificationRequest = z.infer<typeof zResendEmailVerificationRequest>;
+
 export const zForgotPasswordRequest = z.object({ email: zEmail }).strict();
 export const zResetPasswordRequest = z
   .object({ token: z.string().min(32).max(256), password: zPassword })

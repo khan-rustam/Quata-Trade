@@ -1430,7 +1430,14 @@
     "startOver": "Recommencer",
     "verifiedTitle": "E-mail vérifié",
     "verifiedBody": "Tout est prêt — connectez-vous pour continuer.",
-    "invalidCode": "Code invalide ou expiré"
+    "invalidCode": "Code invalide ou expiré",
+    "noCode": "Vous n'avez pas reçu le code ?",
+    "resend": "Envoyer un nouveau code",
+    "resending": "Envoi…",
+    "resendIn": "Nouveau code dans {seconds} s",
+    "resentTitle": "Code envoyé",
+    "resentBody": "Si cette adresse doit être vérifiée, un nouveau code est en route. Il expire dans 15 minutes.",
+    "resendFailed": "Impossible d'envoyer un nouveau code. Réessayez dans un instant."
   },
   "emailChange": {
     "emailLabel": "E-mail",

@@ -5,6 +5,7 @@ import {
   zTotpSetupResponse,
   type LoginRequest,
   type RegisterRequest,
+  type ResendEmailVerificationRequest,
 } from "../schemas/auth.js";
 import { zAnyRecord, zOk, type Ok } from "../schemas/common.js";
 import {
@@ -240,6 +241,8 @@ export class QuataApiClient {
   login = (body: LoginRequest) => this.request("POST", "/api/v1/auth/login", zAuthTokensResponse, body);
   refresh = () => this.request("POST", "/api/v1/auth/refresh", zAuthTokensResponse);
   logout = (): Promise<Ok> => this.request("POST", "/api/v1/auth/logout", zOk);
+  resendEmailVerification = (body: ResendEmailVerificationRequest) =>
+    this.request("POST", "/api/v1/auth/verify-email/resend", zOk, body);
   forgotPassword = (body: { email: string }): Promise<Ok> =>
     this.request("POST", "/api/v1/auth/forgot", zOk, body);
   resetPassword = (body: { token: string; password: string }): Promise<Ok> =>
