@@ -30,6 +30,7 @@ import {
   UsersRound,
   Wallet,
   X,
+  Rocket,
 } from "lucide-react";
 import type { LucideProps } from "lucide-react";
 import type { AdminRole } from "@quatatrade/shared";
@@ -64,6 +65,7 @@ const NAV: NavItem[] = [
   { href: "/admin/ledger-adjustment", labelKey: "navLedgerAdjustment", icon: Scale, gate: "ledgerAdjustment" },
   { href: "/admin/wallet-config", labelKey: "navWalletConfig", icon: KeyRound, gate: "manageWalletConfig" },
   { href: "/admin/team", labelKey: "navTeam", icon: UsersRound, gate: "manageAdmins" },
+  { href: "/admin/releases", labelKey: "navReleases", icon: Rocket, gate: "manageReleases" },
   { href: "/admin/settings", labelKey: "navSettings", icon: Sliders, gate: "editSettings" },
   { href: "/admin/countries", labelKey: "navCountries", icon: Globe, gate: "manageCountries" },
   { href: "/admin/content", labelKey: "navContent", icon: FileText, gate: "editSettings" },

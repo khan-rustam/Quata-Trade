@@ -17,6 +17,7 @@ import { PromoModule } from "./modules/promo/promo.module";
 import { CountriesModule } from "./modules/countries/countries.module";
 import { HealthModule } from "./modules/health/health.module";
 import { MetricsModule } from "./modules/metrics/metrics.module";
+import { UpdatesModule } from "./modules/updates/updates.module";
 import { FeesModule } from "./modules/fees/fees.module";
 import { LedgerModule } from "./modules/ledger/ledger.module";
 import { EscrowModule } from "./modules/escrow/escrow.module";
@@ -90,6 +91,7 @@ import { MarketsModule } from "./modules/markets/markets.module";
     StorageModule,
     HealthModule,
     MetricsModule,
+    UpdatesModule,
     FeesModule,
     LedgerModule,
     EscrowModule,

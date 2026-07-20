@@ -20,5 +20,6 @@ export * from "./schemas/screening.js";
 export * from "./schemas/system.js";
 export * from "./schemas/alerts.js";
 export * from "./schemas/markets.js";
+export * from "./schemas/updates.js";
 
 export * from "./client/index.js";

@@ -114,6 +114,16 @@ import {
   type RejectWithdrawalRequest,
   type UpdateSettingRequest,
 } from "../schemas/admin.js";
+import {
+  zAppRelease,
+  zCheckUpdateResponse,
+  zMinSupportedResponse,
+  zReleasesResponse,
+  zVersionResponse,
+  type AppRelease,
+  type PublishReleaseRequest,
+  type ReleaseStatusRequest,
+} from "../schemas/updates.js";
 import { zSystemHealthResponse } from "../schemas/system.js";
 import { zAlertItem, zAlertsResponse } from "../schemas/alerts.js";
 import {
@@ -376,6 +386,22 @@ export class QuataApiClient {
   adminMe = () => this.request("GET", "/api/v1/admin/me", zAdminProfile);
   adminUpdateProfile = (body: AdminUpdateProfileRequest): Promise<AdminProfile> =>
     this.request("PATCH", "/api/v1/admin/profile", zAdminProfile, body);
+
+  // ---- update management (public reads; admin publish/rollback) ----
+  /** Current production release for a platform. */
+  appVersion = (query?: Query) => this.request("GET", "/api/v1/updates/version", zVersionResponse, undefined, query);
+  /** "I'm on versionCode N" → optional/mandatory/security + hard-gate flag. */
+  checkUpdate = (query?: Query) => this.request("GET", "/api/v1/updates/check", zCheckUpdateResponse, undefined, query);
+  /** Published release history (release notes). */
+  appReleases = (query?: Query) => this.request("GET", "/api/v1/updates/releases", zReleasesResponse, undefined, query);
+  minimumSupportedVersion = (query?: Query) =>
+    this.request("GET", "/api/v1/updates/minimum-supported-version", zMinSupportedResponse, undefined, query);
+
+  adminReleases = (query?: Query) => this.request("GET", "/api/v1/admin/releases", zReleasesResponse, undefined, query);
+  adminPublishRelease = (body: PublishReleaseRequest): Promise<AppRelease> =>
+    this.request("POST", "/api/v1/admin/releases", zAppRelease, body);
+  adminSetReleaseStatus = (id: string, body: ReleaseStatusRequest): Promise<AppRelease> =>
+    this.request("PATCH", `/api/v1/admin/releases/${id}`, zAppRelease, body);
   adminTotpSetup = () => this.request("POST", "/api/v1/admin/2fa/setup", zTotpSetupResponse);
   adminTotpEnable = (body: { code: string }): Promise<Ok> =>
     this.request("POST", "/api/v1/admin/2fa/enable", zOk, body);

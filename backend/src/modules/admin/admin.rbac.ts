@@ -40,5 +40,9 @@ export const RBAC = {
   manageAdmins: ["SUPER_ADMIN"] as const,
   viewDashboards: ADMIN_ROLES,
   editSettings: ["SUPER_ADMIN", "FINANCE_ADMIN"] as const,
+  /** Publish/roll back application releases (update management) — SUPER only: a
+   *  bad or forced release reaches every client, so it is a release-engineering
+   *  action, not a business-config one. */
+  manageReleases: ["SUPER_ADMIN"] as const,
   viewAuditLogs: ["SUPER_ADMIN", "COMPLIANCE_ADMIN", "AUDITOR"] as const,
 } satisfies Record<string, readonly AdminRole[]>;

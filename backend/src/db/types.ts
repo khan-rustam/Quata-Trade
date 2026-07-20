@@ -90,6 +90,23 @@ export interface AuthTokensTable {
   created_at: Timestamp;
 }
 
+export interface AppReleasesTable {
+  id: string;
+  platform: string;
+  version: string;
+  version_code: number;
+  update_type: string;
+  status: Generated<string>;
+  release_notes: Generated<string>;
+  min_supported_code: Generated<number>;
+  artifact_url: string | null;
+  checksum_sha256: string | null;
+  signature: string | null;
+  released_at: Timestamp;
+  published_by: string | null;
+  created_at: Timestamp;
+}
+
 export interface AdminsTable {
   id: string;
   email: string;
@@ -501,6 +518,7 @@ export interface Database {
   sessions: SessionsTable;
   auth_tokens: AuthTokensTable;
   admins: AdminsTable;
+  app_releases: AppReleasesTable;
   accounts: AccountsTable;
   journal_entries: JournalEntriesTable;
   ledger_entries: LedgerEntriesTable;

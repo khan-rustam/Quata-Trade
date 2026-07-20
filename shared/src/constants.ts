@@ -179,3 +179,20 @@ export const KYC_TIER_LIMITS = {
 
 /** Withdrawals at or above this amount require a second admin approver (500 USDT). */
 export const DUAL_APPROVAL_THRESHOLD = 500_000_000n;
+
+/** Application platforms the update system serves (mirrors the app_releases CHECK). */
+export const APP_PLATFORMS = ["web", "pwa", "android", "ios"] as const;
+export type AppPlatform = (typeof APP_PLATFORMS)[number];
+
+/**
+ * How urgently a release must be adopted:
+ *  - optional  → prompt, user may postpone
+ *  - mandatory → must update before continuing (once below min supported)
+ *  - security  → mandatory + flagged as a security fix
+ */
+export const UPDATE_TYPES = ["optional", "mandatory", "security"] as const;
+export type UpdateType = (typeof UPDATE_TYPES)[number];
+
+/** Lifecycle of a release row (mirrors the app_releases CHECK). */
+export const RELEASE_STATUSES = ["published", "rolled_back", "archived"] as const;
+export type ReleaseStatus = (typeof RELEASE_STATUSES)[number];
