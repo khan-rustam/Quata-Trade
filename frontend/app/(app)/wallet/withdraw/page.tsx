@@ -19,6 +19,7 @@ import { Usdt } from "@/components/ui/amount";
 import { WithdrawalStatusBadge } from "@/components/ui/status-badge";
 import { SecurityDialog } from "@/components/security/security-dialog";
 import { useToast } from "@/components/ui/toast";
+import { useMe } from "@/hooks/use-auth";
 import { useBalances, useWithdrawalAddresses, withdrawalAddressesKey } from "@/hooks/use-wallet";
 import { api } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
@@ -43,10 +44,24 @@ export default function WithdrawPage(): React.JSX.Element {
   const toast = useToast();
   const qc = useQueryClient();
   const { data: balances } = useBalances();
+  const { data: me } = useMe();
   const { data: addrData, isLoading: addrLoading } = useWithdrawalAddresses();
   const available = balances?.balances.find((b) => b.asset === ASSET)?.available ?? "0";
 
   const addresses = (addrData?.addresses ?? []).filter((a) => a.asset === ASSET);
+
+  // The server refuses a withdrawal unless the email is verified, KYC is at least
+  // tier 1 and 2FA is on (withdrawals.service). None of that was said anywhere on
+  // this screen, so the user picked an address, typed an amount, passed the
+  // confirm dialog and only then hit a rejection — with no link to whatever they
+  // were missing. Same three checks, stated up front.
+  const blockers = me
+    ? [
+        !me.emailVerified && { key: "blockerEmail", href: "/account" },
+        me.kycTier < 1 && { key: "blockerKyc", href: "/account/kyc" },
+        !me.totpEnabled && { key: "blockerTotp", href: "/account/security" },
+      ].filter((b): b is { key: string; href: string } => Boolean(b))
+    : [];
 
   const now = useSyncExternalStore(subscribeClock, getNow, getServerNow);
   const isUsable = (a: WithdrawalAddress): boolean => a.active && new Date(a.usableAt).getTime() <= now;
@@ -202,6 +217,20 @@ export default function WithdrawPage(): React.JSX.Element {
     <div className="mx-auto max-w-md space-y-5">
       <PageHeader title={tx("title")} subtitle={tx("subtitle")} backHref="/wallet" />
 
+      {blockers.length > 0 && (
+        <Alert tone="warning" title={tx("blockersTitle")}>
+          <ul className="mt-1 space-y-1">
+            {blockers.map((b) => (
+              <li key={b.key}>
+                <Link href={b.href} className="text-accent-400 underline underline-offset-2">
+                  {tx(b.key)}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Alert>
+      )}
+
       <Card className="space-y-4">
         <div className="flex items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm">
           <span className="text-text-2">{tx("available")}</span>
@@ -281,8 +310,22 @@ export default function WithdrawPage(): React.JSX.Element {
           {showAddForm ? (
             <div className="space-y-2 rounded-lg border border-border p-3">
               <p className="text-sm font-medium">{tx("addNewAddress")}</p>
-              <Input placeholder={tx("newAddressPlaceholder")} value={newAddr} onChange={(e) => setNewAddr(e.target.value.trim())} />
-              <Input placeholder={tx("labelPlaceholder")} value={newLabel} onChange={(e) => setNewLabel(e.target.value)} maxLength={60} />
+              {/* A placeholder is not a label: it disappears on focus and screen
+                  readers announce the field as unnamed. These two take a TRON
+                  address that funds are sent to — worth naming properly. */}
+              <Input
+                aria-label={tx("newAddressAria")}
+                placeholder={tx("newAddressPlaceholder")}
+                value={newAddr}
+                onChange={(e) => setNewAddr(e.target.value.trim())}
+              />
+              <Input
+                aria-label={tx("labelAria")}
+                placeholder={tx("labelPlaceholder")}
+                value={newLabel}
+                onChange={(e) => setNewLabel(e.target.value)}
+                maxLength={60}
+              />
               {addError && (
                 <p role="alert" className="text-sm text-danger">
                   {addError}
@@ -350,7 +393,11 @@ export default function WithdrawPage(): React.JSX.Element {
 
         <Alert tone="info">{tx("feeNotice")}</Alert>
 
-        <Button className="w-full" onClick={openConfirm} disabled={!selected || !isUsable(selected) || !amount}>
+        <Button
+          className="w-full"
+          onClick={openConfirm}
+          disabled={!selected || !isUsable(selected) || !amount || blockers.length > 0}
+        >
           {tx("reviewWithdrawal")}
         </Button>
       </Card>

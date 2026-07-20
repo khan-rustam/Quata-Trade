@@ -631,7 +631,13 @@
     "addressRemoveFailed": "Could not remove the address",
     "cancel": "Cancel",
     "amountExceedsWithFee": "Not enough balance once the withdrawal fee is included.",
-    "rowTotalDebit": "Total deducted from your balance"
+    "rowTotalDebit": "Total deducted from your balance",
+    "blockersTitle": "Finish these before you can withdraw",
+    "blockerEmail": "Verify your email address",
+    "blockerKyc": "Complete identity verification (tier 1)",
+    "blockerTotp": "Turn on two-factor authentication",
+    "newAddressAria": "TRON (TRC20) withdrawal address",
+    "labelAria": "Label for this address"
   },
   "walletTransfer": {
     "emailInvalid": "Enter a valid email",
@@ -966,7 +972,15 @@
     "templateTradeCancelled": "Trade cancelled",
     "templateTradeDisputed": "Trade disputed",
     "templateDisputeResolved": "Dispute resolved",
-    "templateKycReviewed": "KYC reviewed"
+    "templateKycReviewed": "KYC reviewed",
+    "templateKycSubmitted": "Identity documents received",
+    "templateWalletCreated": "Your deposit wallet is ready",
+    "templateWithdrawalApproved": "Withdrawal approved and sending",
+    "templateWithdrawalRejected": "Withdrawal not approved — amount returned",
+    "templateWithdrawalFailed": "Withdrawal could not be completed — amount returned",
+    "templateInternalTransferReceived": "You received USDT",
+    "templatePriceAlertTriggered": "Price alert triggered",
+    "templatePasswordReset": "Password reset requested"
   },
   "adminDash": {
     "title": "Dashboard",

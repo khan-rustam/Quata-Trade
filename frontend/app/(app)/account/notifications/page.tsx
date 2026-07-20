@@ -28,6 +28,17 @@ const TEMPLATE_KEYS: Record<string, string> = {
   trade_disputed: "templateTradeDisputed",
   dispute_resolved: "templateDisputeResolved",
   kyc_reviewed: "templateKycReviewed",
+  // These 8 existed in notify.templates.ts but not here, so the feed rendered the
+  // raw id — a user whose withdrawal was rejected saw the literal text
+  // "withdrawal_rejected".
+  kyc_submitted: "templateKycSubmitted",
+  wallet_created: "templateWalletCreated",
+  withdrawal_approved: "templateWithdrawalApproved",
+  withdrawal_rejected: "templateWithdrawalRejected",
+  withdrawal_failed: "templateWithdrawalFailed",
+  internal_transfer_received: "templateInternalTransferReceived",
+  price_alert_triggered: "templatePriceAlertTriggered",
+  password_reset: "templatePasswordReset",
 };
 
 export default function NotificationsPage(): React.JSX.Element {

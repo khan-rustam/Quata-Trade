@@ -631,7 +631,13 @@
     "addressRemoveFailed": "Impossible de retirer l'adresse",
     "cancel": "Annuler",
     "amountExceedsWithFee": "Solde insuffisant une fois les frais de retrait inclus.",
-    "rowTotalDebit": "Total débité de votre solde"
+    "rowTotalDebit": "Total débité de votre solde",
+    "blockersTitle": "À compléter avant de pouvoir retirer",
+    "blockerEmail": "Vérifiez votre adresse e-mail",
+    "blockerKyc": "Terminez la vérification d'identité (palier 1)",
+    "blockerTotp": "Activez l'authentification à deux facteurs",
+    "newAddressAria": "Adresse de retrait TRON (TRC20)",
+    "labelAria": "Libellé de cette adresse"
   },
   "walletTransfer": {
     "emailInvalid": "Saisissez une adresse e-mail valide",
@@ -966,7 +972,15 @@
     "templateTradeCancelled": "Échange annulé",
     "templateTradeDisputed": "Échange en litige",
     "templateDisputeResolved": "Litige résolu",
-    "templateKycReviewed": "KYC examiné"
+    "templateKycReviewed": "KYC examiné",
+    "templateKycSubmitted": "Documents d'identité reçus",
+    "templateWalletCreated": "Votre portefeuille de dépôt est prêt",
+    "templateWithdrawalApproved": "Retrait approuvé et en cours d'envoi",
+    "templateWithdrawalRejected": "Retrait refusé — montant restitué",
+    "templateWithdrawalFailed": "Le retrait n'a pas pu aboutir — montant restitué",
+    "templateInternalTransferReceived": "Vous avez reçu des USDT",
+    "templatePriceAlertTriggered": "Alerte de prix déclenchée",
+    "templatePasswordReset": "Réinitialisation du mot de passe demandée"
   },
   "adminDash": {
     "title": "Tableau de bord",
