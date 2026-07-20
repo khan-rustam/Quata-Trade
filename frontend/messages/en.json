@@ -985,7 +985,9 @@
     "cancel": "Cancel",
     "confirmAction": "{action, select, freeze {Confirm freeze} suspend {Confirm suspend} restore {Confirm restore} other {Confirm}}",
     "toastTitle": "{action, select, freeze {User frozen} suspend {User suspended} restore {User restored} other {User updated}}",
-    "actionFailed": "Action failed"
+    "actionFailed": "Action failed",
+    "authenticatorCodeLabel": "Your authenticator code",
+    "authenticatorCodeAria": "Authenticator code"
   },
   "adminTrades": {
     "title": "Trades",
@@ -1063,7 +1065,9 @@
     "notesHint": "Shown to the user on reject/resubmit.",
     "notesPlaceholder": "Optional reviewer notes…",
     "cancel": "Cancel",
-    "confirm": "Confirm {decision}"
+    "confirm": "Confirm {decision}",
+    "authenticatorCodeLabel": "Your authenticator code",
+    "authenticatorCodeAria": "Authenticator code"
   },
   "adminHeldDeposits": {
     "title": "Held deposits",
@@ -1100,7 +1104,9 @@
     "cancel": "Cancel",
     "releasedToastTitle": "Deposit released",
     "rejectedToastTitle": "Deposit rejected",
-    "actionFailed": "The decision could not be recorded"
+    "actionFailed": "The decision could not be recorded",
+    "authenticatorCodeLabel": "Your authenticator code",
+    "authenticatorCodeAria": "Authenticator code"
   },
   "adminDisputes": {
     "title": "Disputes",
@@ -1923,7 +1929,9 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "moderated": "User updated",
-    "actionFailed": "Action failed"
+    "actionFailed": "Action failed",
+    "authenticatorCodeLabel": "Your authenticator code",
+    "authenticatorCodeAria": "Authenticator code"
   },
   "adminReports": {
     "title": "Reports & analytics",

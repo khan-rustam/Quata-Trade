@@ -8,6 +8,7 @@ import type { z } from "zod";
 import { zAdminKycQueueRow } from "@quatatrade/shared";
 import { AdminTitle, ExportCsvButton, Pagination, RefreshButton, TableFrame } from "@/components/admin/admin-ui";
 import { Dialog } from "@/components/ui/dialog";
+import { OtpInput } from "@/components/ui/otp-input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
-import { useAdminKycQueue } from "@/hooks/use-admin";
+import { useAdminKycQueue, useAdminMe } from "@/hooks/use-admin";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime } from "@/lib/format";
 
@@ -31,6 +32,7 @@ export default function AdminKycPage(): React.JSX.Element {
   const [page, setPage] = useState(1);
   const { data, isLoading, refetch, isFetching } = useAdminKycQueue(page);
   const [active, setActive] = useState<Row | null>(null);
+  const { data: me } = useAdminMe();
 
   return (
     <div className="space-y-5">
@@ -96,19 +98,31 @@ export default function AdminKycPage(): React.JSX.Element {
         </>
       )}
 
-      {active && <ReviewDialog row={active} onClose={() => setActive(null)} />}
+      {active && <ReviewDialog row={active} requireTotp={Boolean(me?.totpEnabled)} onClose={() => setActive(null)} />}
     </div>
   );
 }
 
-function ReviewDialog({ row, onClose }: { row: Row; onClose: () => void }): React.JSX.Element {
+function ReviewDialog({
+  row,
+  requireTotp,
+  onClose,
+}: {
+  row: Row;
+  requireTotp: boolean;
+  onClose: () => void;
+}): React.JSX.Element {
   const tx = useTranslations("adminKyc");
   const qc = useQueryClient();
   const toast = useToast();
   const [decision, setDecision] = useState<Decision>("approve");
   const [notes, setNotes] = useState("");
+  const [totp, setTotp] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Step-up: an approval raises the user's KYC tier and with it their withdrawal
+  // limits, so the server re-verifies the reviewer's own TOTP.
+  const totpOk = !requireTotp || totp.length >= 6;
 
   const labels: Record<Decision, string> = {
     approve: tx("decisionApprove"),
@@ -131,7 +145,7 @@ function ReviewDialog({ row, onClose }: { row: Row; onClose: () => void }): Reac
     setBusy(true);
     setError(null);
     try {
-      await adminApi.adminReviewKyc(row.id, decision, { notes: notes.trim() || undefined });
+      await adminApi.adminReviewKyc(row.id, decision, { notes: notes.trim() || undefined, totpCode: totp || undefined });
       toast.success(toastTitles[decision], tx("toastDetail", { email: row.userEmail, tier: row.tier }));
       onClose();
       void qc.invalidateQueries({ queryKey: ["admin"] });
@@ -201,11 +215,17 @@ function ReviewDialog({ row, onClose }: { row: Row; onClose: () => void }): Reac
         <Field label={tx("notesLabel")} hint={tx("notesHint")}>
           {(p) => <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={tx("notesPlaceholder")} {...p} />}
         </Field>
+        {requireTotp && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{tx("authenticatorCodeLabel")}</label>
+            <OtpInput value={totp} onChange={setTotp} aria-label={tx("authenticatorCodeAria")} invalid={Boolean(error)} />
+          </div>
+        )}
         <div className="flex gap-2">
           <Button variant="secondary" className="flex-1" onClick={onClose} disabled={busy}>
             {tx("cancel")}
           </Button>
-          <Button className="flex-1" onClick={submit} disabled={busy}>
+          <Button className="flex-1" onClick={submit} disabled={busy || !totpOk}>
             {busy ? <Spinner /> : tx("confirm", { decision: labels[decision] })}
           </Button>
         </div>

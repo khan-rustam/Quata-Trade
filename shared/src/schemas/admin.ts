@@ -78,6 +78,7 @@ export const zAdminUsersResponse = zPaginated(zAdminUserRow);
 export const zFreezeUserRequest = z
   .object({ reason: z.string().trim().min(5).max(1000), totpCode: zTotpCode.optional() })
   .strict();
+export type FreezeUserRequest = z.infer<typeof zFreezeUserRequest>;
 
 export const zAdminWithdrawalRow = z.object({
   id: zUuid,

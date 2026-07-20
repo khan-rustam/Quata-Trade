@@ -985,7 +985,9 @@
     "cancel": "Annuler",
     "confirmAction": "{action, select, freeze {Confirmer le gel} suspend {Confirmer la suspension} restore {Confirmer la restauration} other {Confirmer}}",
     "toastTitle": "{action, select, freeze {Utilisateur gelé} suspend {Utilisateur suspendu} restore {Utilisateur restauré} other {Utilisateur mis à jour}}",
-    "actionFailed": "Échec de l'action"
+    "actionFailed": "Échec de l'action",
+    "authenticatorCodeLabel": "Votre code d'authentification",
+    "authenticatorCodeAria": "Code d'authentification"
   },
   "adminTrades": {
     "title": "Échanges",
@@ -1063,7 +1065,48 @@
     "notesHint": "Affiché à l'utilisateur en cas de rejet ou de nouvelle soumission.",
     "notesPlaceholder": "Notes du relecteur (facultatif)…",
     "cancel": "Annuler",
-    "confirm": "Confirmer {decision}"
+    "confirm": "Confirmer {decision}",
+    "authenticatorCodeLabel": "Votre code d'authentification",
+    "authenticatorCodeAria": "Code d'authentification"
+  },
+  "adminHeldDeposits": {
+    "title": "Dépôts bloqués",
+    "subtitle": "Dépôts retenus par le filtrage AML ou par la politique de montants. Rien n'est crédité sans décision d'un administrateur.",
+    "readOnlyNotice": "Lecture seule : la libération ou le refus d'un dépôt bloqué est réservé aux super administrateurs et aux administrateurs conformité.",
+    "filterHold": "Type de blocage",
+    "hold_all": "Tous les blocages",
+    "hold_aml": "AML uniquement",
+    "hold_policy": "Politique uniquement",
+    "emptyTitle": "Aucun dépôt bloqué",
+    "emptyDescription": "Aucune décision de conformité en attente.",
+    "colUser": "Utilisateur",
+    "colAmount": "Montant",
+    "colHold": "Motif du blocage",
+    "colSource": "Adresse d'origine",
+    "colTx": "Transaction",
+    "colAge": "Ancienneté",
+    "colAction": "Action",
+    "badgeAml": "Blocage AML",
+    "badgePolicy": "Blocage politique",
+    "noReason": "Aucun motif enregistré",
+    "confirmations": "{n, plural, one {# confirmation} other {# confirmations}}",
+    "release": "Libérer",
+    "reject": "Refuser",
+    "releaseTitle": "Libérer ce dépôt ?",
+    "rejectTitle": "Refuser ce dépôt ?",
+    "dialogSubject": "{email}",
+    "consequenceTitle": "Conséquence",
+    "releaseConsequence": "La libération crédite l'intégralité du montant sur le solde de l'utilisateur malgré le blocage. Les fonds deviennent utilisables et retirables.",
+    "rejectConsequence": "Le refus empêche définitivement le crédit de ce dépôt. Les fonds ne sont PAS renvoyés à l'expéditeur : ils restent en conservation et seul un ajustement manuel du grand livre peut les déplacer.",
+    "reasonLabel": "Motif",
+    "reasonHint": "Au moins 10 caractères. C'est la trace d'audit de la décision.",
+    "reasonPlaceholder": "Pourquoi libérez-vous ou refusez-vous ce dépôt ?",
+    "cancel": "Annuler",
+    "releasedToastTitle": "Dépôt libéré",
+    "rejectedToastTitle": "Dépôt refusé",
+    "actionFailed": "La décision n'a pas pu être enregistrée",
+    "authenticatorCodeLabel": "Votre code d'authentification",
+    "authenticatorCodeAria": "Code d'authentification"
   },
   "adminDisputes": {
     "title": "Litiges",
@@ -1886,7 +1929,9 @@
     "cancel": "Annuler",
     "confirm": "Confirmer",
     "moderated": "Utilisateur mis à jour",
-    "actionFailed": "Échec de l'action"
+    "actionFailed": "Échec de l'action",
+    "authenticatorCodeLabel": "Votre code d'authentification",
+    "authenticatorCodeAria": "Code d'authentification"
   },
   "adminReports": {
     "title": "Rapports et analyses",

@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
+import { OtpInput } from "@/components/ui/otp-input";
 import { Segmented } from "@/components/ui/segmented";
 import { Field } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/input";
@@ -36,7 +37,7 @@ import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api/admin-client";
-import { useAdminUserDetail } from "@/hooks/use-admin";
+import { useAdminUserDetail, useAdminMe } from "@/hooks/use-admin";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime, formatUsdt, formatXaf } from "@/lib/format";
 
@@ -49,6 +50,7 @@ export default function AdminUserDetailPage(): React.JSX.Element {
   const id = String(params.id ?? "");
   const { data, isLoading, refetch, isFetching } = useAdminUserDetail(id);
   const [moderating, setModerating] = useState(false);
+  const { data: me } = useAdminMe();
 
   return (
     <div className="space-y-5">
@@ -353,7 +355,13 @@ export default function AdminUserDetailPage(): React.JSX.Element {
             )}
           </Section>
 
-          {moderating && <ModerateDialog user={data.user} onClose={() => setModerating(false)} />}
+          {moderating && (
+            <ModerateDialog
+              user={data.user}
+              requireTotp={Boolean(me?.totpEnabled)}
+              onClose={() => setModerating(false)}
+            />
+          )}
         </>
       )}
     </div>
@@ -394,9 +402,11 @@ function Empty({ text }: { text: string }): React.JSX.Element {
 
 function ModerateDialog({
   user,
+  requireTotp,
   onClose,
 }: {
   user: AdminUserDetail["user"];
+  requireTotp: boolean;
   onClose: () => void;
 }): React.JSX.Element {
   const tx = useTranslations("adminUserDetail");
@@ -404,14 +414,18 @@ function ModerateDialog({
   const toast = useToast();
   const [action, setAction] = useState<Action>(user.status === "active" ? "freeze" : "restore");
   const [reason, setReason] = useState("");
+  const [totp, setTotp] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Step-up: freezing or restoring an account cuts off or restores a user's
+  // access to their own funds, so the server re-verifies the admin's own TOTP.
+  const totpOk = !requireTotp || totp.length >= 6;
 
   const submit = async () => {
     setBusy(true);
     setError(null);
     try {
-      await adminApi.adminModerateUser(user.id, action, { reason });
+      await adminApi.adminModerateUser(user.id, action, { reason, totpCode: totp || undefined });
       toast.success(tx("moderated"), user.email);
       onClose();
       void qc.invalidateQueries({ queryKey: ["admin"] });
@@ -443,6 +457,12 @@ function ModerateDialog({
         <Field label={tx("reasonLabel")} required>
           {(p) => <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder={tx("reasonPlaceholder")} {...p} />}
         </Field>
+        {requireTotp && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{tx("authenticatorCodeLabel")}</label>
+            <OtpInput value={totp} onChange={setTotp} aria-label={tx("authenticatorCodeAria")} invalid={Boolean(error)} />
+          </div>
+        )}
         <div className="flex gap-2">
           <Button variant="secondary" className="flex-1" onClick={onClose} disabled={busy}>
             {tx("cancel")}
@@ -451,7 +471,7 @@ function ModerateDialog({
             variant={action === "restore" ? "primary" : "danger"}
             className="flex-1"
             onClick={submit}
-            disabled={busy || reason.trim().length < 5}
+            disabled={busy || reason.trim().length < 5 || !totpOk}
           >
             {busy ? <Spinner /> : tx("confirm")}
           </Button>

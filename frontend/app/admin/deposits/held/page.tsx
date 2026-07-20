@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Field } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/input";
+import { OtpInput } from "@/components/ui/otp-input";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
@@ -179,26 +180,48 @@ export default function AdminHeldDepositsPage(): React.JSX.Element {
         </>
       )}
 
-      {action && <DecisionDialog row={action.row} kind={action.kind} onClose={() => setAction(null)} />}
+      {action && (
+        <DecisionDialog
+          row={action.row}
+          kind={action.kind}
+          requireTotp={Boolean(me?.totpEnabled)}
+          onClose={() => setAction(null)}
+        />
+      )}
     </div>
   );
 }
 
-function DecisionDialog({ row, kind, onClose }: { row: Row; kind: Decision; onClose: () => void }): React.JSX.Element {
+function DecisionDialog({
+  row,
+  kind,
+  requireTotp,
+  onClose,
+}: {
+  row: Row;
+  kind: Decision;
+  requireTotp: boolean;
+  onClose: () => void;
+}): React.JSX.Element {
   const tx = useTranslations("adminHeldDeposits");
   const toast = useToast();
   const review = useReviewHeldDeposit();
   const [reason, setReason] = useState("");
+  const [totp, setTotp] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   // Mirror the wire contract exactly rather than re-stating "min 10 chars" here.
   const parsed = zAdminHeldDepositDecision.safeParse({ reason });
+  // Both decisions are step-up actions server-side: a release credits flagged
+  // money, a rejection permanently refuses it. Without this the request is
+  // rejected with "verification failed" and the admin has no way to comply.
+  const totpOk = !requireTotp || totp.length >= 6;
 
   const submit = async () => {
-    if (!parsed.success) return;
+    if (!parsed.success || !totpOk) return;
     setError(null);
     try {
-      await review.mutateAsync({ id: row.id, decision: kind, body: parsed.data });
+      await review.mutateAsync({ id: row.id, decision: kind, body: { ...parsed.data, totpCode: totp || undefined } });
       toast.success(kind === "release" ? tx("releasedToastTitle") : tx("rejectedToastTitle"), row.userEmail);
       onClose();
     } catch (err) {
@@ -252,6 +275,13 @@ function DecisionDialog({ row, kind, onClose }: { row: Row; kind: Decision; onCl
           )}
         </Field>
 
+        {requireTotp && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{tx("authenticatorCodeLabel")}</label>
+            <OtpInput value={totp} onChange={setTotp} aria-label={tx("authenticatorCodeAria")} invalid={Boolean(error)} />
+          </div>
+        )}
+
         <div className="flex gap-2">
           <Button variant="secondary" className="flex-1" onClick={onClose} disabled={review.isPending}>
             {tx("cancel")}
@@ -259,7 +289,7 @@ function DecisionDialog({ row, kind, onClose }: { row: Row; kind: Decision; onCl
           <Button
             variant={kind === "reject" ? "danger" : "primary"}
             className="flex-1"
-            disabled={!parsed.success || review.isPending}
+            disabled={!parsed.success || !totpOk || review.isPending}
             onClick={submit}
           >
             {review.isPending ? <Spinner /> : kind === "release" ? tx("release") : tx("reject")}

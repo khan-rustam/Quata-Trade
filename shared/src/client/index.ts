@@ -113,6 +113,7 @@ import {
   type LedgerAdjustmentRequest,
   type RejectWithdrawalRequest,
   type UpdateSettingRequest,
+  type FreezeUserRequest,
 } from "../schemas/admin.js";
 import {
   zAppRelease,
@@ -414,7 +415,7 @@ export class QuataApiClient {
   /** Full user profile + balances + trades/withdrawals/deposits/kyc/sessions/risk for the detail page. */
   adminUserDetail = (id: string) =>
     this.request("GET", `/api/v1/admin/users/${id}`, zAdminUserDetail);
-  adminModerateUser = (id: string, action: "freeze" | "suspend" | "restore", body: { reason: string }) =>
+  adminModerateUser = (id: string, action: "freeze" | "suspend" | "restore", body: FreezeUserRequest) =>
     this.request("POST", `/api/v1/admin/users/${id}/${action}`, zModerationResult, body);
   // ---- AML / sanctions blocklist (compliance) ----
   adminBlockedAddresses = () =>
