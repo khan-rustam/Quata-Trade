@@ -119,6 +119,17 @@ describe("validateEnv", () => {
     expect(() => validateEnv(prod({ SWAGGER_ENABLED: "true" }))).toThrow(/Swagger/);
   });
 
+  it("rejects a foreign/SQLAlchemy DATABASE_URL leaked from another app on the box", () => {
+    // The exact value that silently pointed the API at a sibling project's database.
+    expect(() =>
+      validateEnv(base({ DATABASE_URL: "postgresql+psycopg://quatapay:pw@127.0.0.1:5432/quatapay" })),
+    ).toThrow(/DATABASE_URL/);
+    expect(() => validateEnv(base({ DATABASE_URL: "mysql://u:p@localhost:3306/db" }))).toThrow(/DATABASE_URL/);
+    // Both accepted node-postgres spellings still pass.
+    expect(() => validateEnv(base({ DATABASE_URL: "postgres://u:p@localhost:5432/db" }))).not.toThrow();
+    expect(() => validateEnv(base({ DATABASE_URL: "postgresql://u:p@localhost:5432/db" }))).not.toThrow();
+  });
+
   it("accepts LOG_LEVEL case-insensitively (INFO -> info)", () => {
     expect(validateEnv(base({ LOG_LEVEL: "INFO" })).LOG_LEVEL).toBe("info");
     expect(validateEnv(base({ LOG_LEVEL: "Debug" })).LOG_LEVEL).toBe("debug");

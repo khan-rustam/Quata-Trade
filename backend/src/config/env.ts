@@ -15,7 +15,21 @@ export const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   WEB_ORIGIN: z.string().url().default("http://localhost:3000"),
 
-  DATABASE_URL: z.string().min(1),
+  /**
+   * node-postgres DSN. Validated because this box is shared with other projects and
+   * an exported DATABASE_URL from a sibling app leaks into PM2's captured env —
+   * dotenv will NOT override it, so the API silently connects to the WRONG database
+   * and every query fails with a confusing "relation does not exist". A Python
+   * SQLAlchemy DSN (`postgresql+psycopg://`) is the tell-tale; reject it at boot.
+   */
+  DATABASE_URL: z
+    .string()
+    .min(1)
+    .refine(
+      (v) => /^postgres(ql)?:\/\//.test(v),
+      "DATABASE_URL must be a node-postgres DSN starting with postgres:// or postgresql:// " +
+        "(a '+driver' dialect DSN such as postgresql+psycopg:// belongs to another app — check for a leaked env var)",
+    ),
   DATABASE_MIGRATION_URL: z.string().min(1).optional(),
   DATABASE_APP_PASSWORD: z.string().min(1).optional(),
 
