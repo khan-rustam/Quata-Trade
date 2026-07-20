@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { Smartphone, Sparkles, Shield, Send, CheckCircle2, User, Coins, Check } from "lucide-react";
+import { Shield, CheckCircle2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const STEPS = [1, 2, 3, 4] as const;

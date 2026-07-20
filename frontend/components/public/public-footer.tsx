@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowUpRight, Facebook, Instagram, Linkedin, Mail, Phone, Send, Twitter } from "lucide-react";
+import { Facebook, Instagram, Linkedin, Mail, Send, Twitter } from "lucide-react";
 import type { ComponentType } from "react";
 import type { LucideProps } from "lucide-react";
 import { Logo } from "@/components/brand/logo";

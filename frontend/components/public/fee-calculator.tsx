@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toDisplay } from "@quatatrade/shared";
 import { api } from "@/lib/api/client";
 import { motion, useReducedMotion } from "motion/react";
-import { Percent, Sparkles, Coins, Zap } from "lucide-react";
+import { Percent, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function FeeCalculator(): React.JSX.Element {

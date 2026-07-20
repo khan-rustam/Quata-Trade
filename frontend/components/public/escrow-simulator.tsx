@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { Lock, Send, ShieldCheck, Sparkles } from "lucide-react";
-import { PaymentMethodChip, paymentMethodLabel } from "@/components/trade/payment-method-chip";
+import { paymentMethodLabel } from "@/components/trade/payment-method-chip";
 import { cn } from "@/lib/utils";
 
 const EXCHANGE_RATE = 650; // 1 USDT = 650 XAF constant for demo
@@ -32,7 +32,6 @@ export function EscrowSimulator(): React.JSX.Element {
     (schedule?.tradingFeeBps[m] ?? (m === "QUATAPAY" ? 30 : 50)) / 100;
   const feeRate = railPct(method) / 100;
   const feeAmount = amount * feeRate;
-  const netAmount = amount - feeAmount;
   const cashAmount = amount * EXCHANGE_RATE;
 
   const methodName = paymentMethodLabel(method);
