@@ -18,6 +18,9 @@ import {
   serializeAmount,
   zAddWithdrawalAddressRequest,
   zPagination,
+  zAssetCode,
+  zAmount,
+  type WithdrawalQuote,
   zUuid,
   zWithdrawalRequest,
   type AddWithdrawalAddressRequest,
@@ -27,6 +30,7 @@ import {
   type WithdrawalAddress,
   type WithdrawalRequest,
 } from "@quatatrade/shared";
+import { z } from "zod";
 import { ZodPipe } from "../../common/zod.pipe";
 import { CurrentUserId } from "../../common/auth/decorators";
 import { RiskService } from "../risk/risk.service";
@@ -71,6 +75,9 @@ function toWire(row: WithdrawalRow, networkFeeEstimate: string): Withdrawal {
  * User-facing withdrawal endpoints only. Admin approve/reject have NO routes
  * here — the admin module calls WithdrawalsService methods behind RolesGuard.
  */
+const zWithdrawalQuoteQuery = z.object({ asset: zAssetCode, amount: zAmount }).strict();
+type WithdrawalQuoteQuery = z.infer<typeof zWithdrawalQuoteQuery>;
+
 @Controller("withdrawals")
 export class WithdrawalsController {
   constructor(
@@ -96,6 +103,24 @@ export class WithdrawalsController {
     try {
       const wd = await this.withdrawals.request(userId, dto);
       return toWire(wd, await this.netEstimate(wd.asset));
+    } catch (err) {
+      throw this.mapError(err);
+    }
+  }
+
+  /**
+   * Fee + total for a prospective withdrawal, so the user sees what it costs
+   * BEFORE committing and the client can validate against the real debit
+   * (amount + fee) rather than the amount alone. Declared before :id so "quote"
+   * is not captured as an id.
+   */
+  @Get("quote")
+  async quote(
+    @CurrentUserId() userId: string,
+    @Query(new ZodPipe(zWithdrawalQuoteQuery)) query: WithdrawalQuoteQuery,
+  ): Promise<WithdrawalQuote> {
+    try {
+      return await this.withdrawals.quote(userId, query.asset, BigInt(query.amount));
     } catch (err) {
       throw this.mapError(err);
     }

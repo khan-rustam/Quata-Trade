@@ -618,7 +618,9 @@
     "addressAddedBody": "Elle devient utilisable après le délai de sécurité.",
     "addressAddFailed": "Impossible d'ajouter l'adresse",
     "addressRemoveFailed": "Impossible de retirer l'adresse",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "amountExceedsWithFee": "Solde insuffisant une fois les frais de retrait inclus.",
+    "rowTotalDebit": "Total débité de votre solde"
   },
   "walletTransfer": {
     "emailInvalid": "Saisissez une adresse e-mail valide",

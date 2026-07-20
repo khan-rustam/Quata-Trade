@@ -618,7 +618,9 @@
     "addressAddedBody": "It becomes usable after the security cooldown.",
     "addressAddFailed": "Could not add the address",
     "addressRemoveFailed": "Could not remove the address",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "amountExceedsWithFee": "Not enough balance once the withdrawal fee is included.",
+    "rowTotalDebit": "Total deducted from your balance"
   },
   "walletTransfer": {
     "emailInvalid": "Enter a valid email",

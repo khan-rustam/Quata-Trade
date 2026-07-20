@@ -225,7 +225,10 @@ function EditOfferDialog({ offer, onClose }: { offer: Offer; onClose: () => void
     try {
       if (methods.length === 0) throw new Error(tx("selectPaymentMethod"));
       const body: UpdateOfferRequest = {
-        priceXafPerUnit: BigInt(Math.round(Number(price || "0"))).toString(),
+        // The input is already digit-only, so this is a plain integer string.
+        // Routing it through Number()/Math.round() was the float hop that was
+        // removed from the create path — money never touches a JS number.
+        priceXafPerUnit: BigInt(price || "0").toString(),
         minTrade: fromDisplay(minTrade || "0").toString(),
         maxTrade: fromDisplay(maxTrade || "0").toString(),
         paymentMethods: methods,

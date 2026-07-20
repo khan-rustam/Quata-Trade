@@ -86,6 +86,20 @@ export type Deposit = z.infer<typeof zDeposit>;
 
 export const zDepositsResponse = zPaginated(zDeposit);
 
+/**
+ * What a withdrawal will actually cost, before committing. The ledger debits
+ * amount + fee, so a client that validates only against `available` lets the
+ * user submit their whole balance and then get an insufficient-funds error.
+ */
+export const zWithdrawalQuote = z.object({
+  amount: zAmount,
+  fee: zAmount,
+  networkFeeEstimate: zAmount,
+  /** amount + fee — the figure that must fit inside the available balance. */
+  total: zAmount,
+});
+export type WithdrawalQuote = z.infer<typeof zWithdrawalQuote>;
+
 export const zWithdrawalRequest = z
   .object({
     asset: zAssetCode,

@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Clock, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { fromDisplay, zTronAddress, type Withdrawal, type WithdrawalAddress } from "@quatatrade/shared";
 import { PageHeader } from "@/components/layout/page-header";
@@ -54,6 +54,20 @@ export default function WithdrawPage(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
   const [amountError, setAmountError] = useState<string>();
+  // Quote the real cost as the user types, so the fee is disclosed before they
+  // commit and the amount check can use the actual debit (amount + fee).
+  const amountUnits = (() => {
+    try {
+      return fromDisplay(amount || "0");
+    } catch {
+      return 0n;
+    }
+  })();
+  const { data: quote } = useQuery({
+    queryKey: ["withdrawal-quote", amountUnits.toString()],
+    queryFn: () => api.withdrawalQuote("USDT_TRC20", amountUnits.toString()),
+    enabled: amountUnits > 0n,
+  });
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dialogError, setDialogError] = useState<string | null>(null);
@@ -104,8 +118,12 @@ export default function WithdrawPage(): React.JSX.Element {
     try {
       const units = fromDisplay(amount || "0");
       if (units <= 0n) throw new Error();
-      if (units > BigInt(available)) {
-        setAmountError(tx("amountExceeds"));
+      // The ledger debits amount + fee. Checking the amount alone let someone
+      // enter their whole balance, pass this check, and be told "insufficient
+      // balance" by the server after confirming.
+      const debit = quote ? BigInt(quote.total) : units;
+      if (debit > BigInt(available)) {
+        setAmountError(quote ? tx("amountExceedsWithFee") : tx("amountExceeds"));
         return false;
       }
       setAmountError(undefined);
@@ -302,6 +320,33 @@ export default function WithdrawPage(): React.JSX.Element {
             />
           )}
         </Field>
+
+        {/* The fee used to appear only in the receipt, i.e. after the money had
+            already moved. It has to be visible before the user commits. */}
+        {quote && (
+          <dl className="rounded-lg border border-border bg-surface-2 p-3 text-sm">
+            <div className="flex justify-between gap-3">
+              <dt className="text-text-3">{tx("rowPlatformFee")}</dt>
+              <dd>
+                <Usdt value={quote.fee} size="sm" />
+              </dd>
+            </div>
+            {quote.networkFeeEstimate !== "0" && (
+              <div className="mt-1.5 flex justify-between gap-3">
+                <dt className="text-text-3">{tx("rowNetworkFeeEstimate")}</dt>
+                <dd>
+                  <Usdt value={quote.networkFeeEstimate} size="sm" />
+                </dd>
+              </div>
+            )}
+            <div className="mt-1.5 flex justify-between gap-3 border-t border-border pt-1.5 font-medium">
+              <dt>{tx("rowTotalDebit")}</dt>
+              <dd>
+                <Usdt value={quote.total} size="sm" />
+              </dd>
+            </div>
+          </dl>
+        )}
 
         <Alert tone="info">{tx("feeNotice")}</Alert>
 

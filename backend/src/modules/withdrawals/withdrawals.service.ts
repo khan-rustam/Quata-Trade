@@ -8,6 +8,7 @@ import { TronWeb } from "tronweb";
 import type {
   AddWithdrawalAddressRequest,
   AdminRole,
+  AssetCode,
   WithdrawalAddress,
   WithdrawalRequest,
   WithdrawalStatus,
@@ -381,6 +382,39 @@ export class WithdrawalsService {
   }
 
   // ----------------------------------------------------------- admin decisions
+
+
+  /**
+   * What a withdrawal of `amount` will actually cost, BEFORE the user commits.
+   *
+   * The withdraw screen validated the amount against `available` while the ledger
+   * debits `amount + fee`, so anyone entering their full balance passed the client
+   * check and was then told "insufficient balance" by the server — and the fee was
+   * never disclosed until after submission. This reuses the same settings, promo
+   * waiver and computeFee call as request(), so the quote cannot drift from the
+   * charge. Read-only: no ledger, no state.
+   */
+  async quote(
+    userId: string,
+    asset: AssetCode,
+    amount: bigint,
+  ): Promise<{ amount: string; fee: string; networkFeeEstimate: string; total: string }> {
+    const user = await this.db
+      .selectFrom("users")
+      .select(["country"])
+      .where("id", "=", userId)
+      .executeTakeFirstOrThrow();
+    const feeCfg = await this.settings.withdrawalFee(asset);
+    const feeWaived = await this.promo.withdrawalWaived(user.country);
+    const fee = feeWaived ? 0n : feeCfg.fixed + computeFee(amount, feeCfg.bps);
+    const networkFeeEstimate = await this.settings.withdrawalNetworkFee(asset);
+    return {
+      amount: amount.toString(),
+      fee: fee.toString(),
+      networkFeeEstimate: networkFeeEstimate.toString(),
+      total: (amount + fee).toString(),
+    };
+  }
 
   /**
    * Approve. Dual approval when amount >= dual_approval_threshold: the first
