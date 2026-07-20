@@ -187,7 +187,8 @@
     "close": "Close",
     "copied": "Copied",
     "addToWatchlist": "Add to watchlist",
-    "removeFromWatchlist": "Remove from watchlist"
+    "removeFromWatchlist": "Remove from watchlist",
+    "copy": "Copy"
   },
   "howItWorks": {
     "heroEyebrow": "How it works",
@@ -303,13 +304,19 @@
     "note4": "You are solely responsible for any taxes arising from your use of QuataTrade. We do not provide tax advice.",
     "ctaStart": "Create your account",
     "ctaTerms": "Read the terms",
-    "calcVolumeAria": "Monthly trading volume in USDT",
     "calcRailQuatapay": "QuataPay ({pct}%)",
     "calcRailMomo": "MoMo / Orange Money ({pct}%)",
     "calcDepositFee": "Deposit fee (flat)",
     "calcTradingFee": "Trading fee ({pct}%)",
     "calcTotalNet": "Total net received",
-    "calcSavings": "Save ≈ {amount} USDT"
+    "calcSavings": "Save ≈ {amount} USDT",
+    "calcHeading": "Interactive cost estimator",
+    "calcStandardRates": "Standard rates",
+    "calcVolumeLabel": "Volume to trade",
+    "calcPaymentMethod": "Payment method",
+    "calcBreakdown": "Estimated cost breakdown",
+    "calcWithdrawalFee": "Withdrawal platform fee",
+    "calcSavingsNote": "Compared to traditional high-fee P2P exchangers."
   },
   "help": {
     "heroEyebrow": "Help center",
@@ -670,7 +677,9 @@
     "blockerKyc": "Complete identity verification (tier 1)",
     "blockerTotp": "Turn on two-factor authentication",
     "newAddressAria": "TRON (TRC20) withdrawal address",
-    "labelAria": "Label for this address"
+    "labelAria": "Label for this address",
+    "quoteLoading": "Calculating the fee…",
+    "quoteUnavailable": "Could not calculate the fee right now. Check your connection and try again."
   },
   "walletTransfer": {
     "emailInvalid": "Enter a valid email",

@@ -35,7 +35,8 @@ export function FeeCalculator(): React.JSX.Element {
   const tradeFeeAmount = volume * tradeFeeRate;
 
   // Total fees (Trade + flat Deposit)
-  const totalFees = tradeFeeAmount + depositFee;
+  const withdrawalFee = schedule ? Number(toDisplay(schedule.withdrawalFee.fixed, "USDT_TRC20", 2)) : 0;
+  const totalFees = tradeFeeAmount + depositFee + withdrawalFee;
   const netUSDT = Math.max(0, volume - totalFees);
 
   // Competitor standard fees (usually around 1% to 2% flat P2P fees)
@@ -55,7 +56,7 @@ export function FeeCalculator(): React.JSX.Element {
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent-400/10 text-accent-400">
               <Percent size={12} />
             </span>
-            <h3 className="font-display text-xl font-bold text-text-1">Interactive Cost Estimator</h3>
+            <h3 className="font-display text-xl font-bold text-text-1">{t("calcHeading")}</h3>
           </div>
 
           {/* Pricing Tier Selector */}
@@ -84,23 +85,24 @@ export function FeeCalculator(): React.JSX.Element {
                   : "text-text-2 hover:text-text-1"
               )}
             >
-              Standard Rates
+              {t("calcStandardRates")}
             </button>
           </div>
 
           {/* Slider input */}
           <div className="space-y-2">
             <div className="flex justify-between items-baseline">
-              <label className="text-xs font-semibold uppercase tracking-wider text-text-3">
-                Volume to Trade
+              <label htmlFor="fee-calc-volume" className="text-xs font-semibold uppercase tracking-wider text-text-3">
+                {t("calcVolumeLabel")}
               </label>
               <span className="font-money text-lg font-bold text-accent-400 tabular-nums">
                 {volume} <span className="text-xs font-normal text-text-3">USDT</span>
               </span>
             </div>
             <input
+              id="fee-calc-volume"
               type="range"
-              aria-label={t("calcVolumeAria")}
+              aria-label={t("calcVolumeLabel")}
               aria-valuetext={`${volume} USDT`}
               min="10"
               max="2000"
@@ -116,7 +118,7 @@ export function FeeCalculator(): React.JSX.Element {
             </div>
           </div>
 
-          {/* Payment Method Option Selector (Only visible for Standard Rates) */}
+          {/* {t("calcPaymentMethod")} Option Selector (Only visible for Standard Rates) */}
           <div className={cn("transition-all duration-300", promoMode ? "opacity-40 pointer-events-none" : "opacity-100")}>
             <label className="text-xs font-semibold uppercase tracking-wider text-text-3">
               Payment Method
@@ -155,7 +157,7 @@ export function FeeCalculator(): React.JSX.Element {
         {/* Right Side: Cost Breakdown Cards */}
         <div className="rounded-xl border border-border bg-surface-2/30 p-5 md:p-6 space-y-5">
           <span className="text-xs font-semibold uppercase tracking-wider text-text-3">
-            Estimated Cost Breakdown
+            {t("calcBreakdown")}
           </span>
 
           <div className="space-y-3 font-money text-sm">
@@ -170,8 +172,11 @@ export function FeeCalculator(): React.JSX.Element {
             </div>
 
             <div className="flex justify-between items-center py-1.5 border-b border-border/40">
-              <span className="text-text-2 font-sans text-xs">Withdrawal Platform Fee</span>
-              <span className="text-accent-400 font-semibold tabular-nums">0 USDT</span>
+              {/* Was hardcoded "0 USDT" — sitting 40px below a fee table that
+                  renders the live 1 USDT. Same live source now, and it counts
+                  toward the total so the net stops overstating. */}
+              <span className="text-text-2 font-sans text-xs">{t("calcWithdrawalFee")}</span>
+              <span className="text-accent-400 font-semibold tabular-nums">{withdrawalFee.toFixed(2)} USDT</span>
             </div>
 
             <div className="flex justify-between items-center py-2.5">
@@ -192,7 +197,7 @@ export function FeeCalculator(): React.JSX.Element {
               <div>
                 <div className="text-xs font-bold text-accent-400">{t("calcSavings", { amount: savings.toFixed(1) })}</div>
                 <div className="text-[10px] text-text-2 font-sans leading-relaxed mt-0.5">
-                  Compared to traditional high-fee P2P exchangers.
+                  {t("calcSavingsNote")}
                 </div>
               </div>
             </motion.div>

@@ -187,7 +187,8 @@
     "close": "Fermer",
     "copied": "Copié",
     "addToWatchlist": "Ajouter à la liste de suivi",
-    "removeFromWatchlist": "Retirer de la liste de suivi"
+    "removeFromWatchlist": "Retirer de la liste de suivi",
+    "copy": "Copier"
   },
   "howItWorks": {
     "heroEyebrow": "Comment ça marche",
@@ -303,13 +304,19 @@
     "note4": "Vous êtes seul responsable de toute obligation fiscale découlant de votre utilisation de QuataTrade. Nous ne fournissons pas de conseils fiscaux.",
     "ctaStart": "Créez votre compte",
     "ctaTerms": "Lire les conditions",
-    "calcVolumeAria": "Volume d'échange mensuel en USDT",
     "calcRailQuatapay": "QuataPay ({pct} %)",
     "calcRailMomo": "MoMo / Orange Money ({pct} %)",
     "calcDepositFee": "Frais de dépôt (forfait)",
     "calcTradingFee": "Frais de transaction ({pct} %)",
     "calcTotalNet": "Total net reçu",
-    "calcSavings": "Économisez ≈ {amount} USDT"
+    "calcSavings": "Économisez ≈ {amount} USDT",
+    "calcHeading": "Estimateur de coûts interactif",
+    "calcStandardRates": "Tarifs standard",
+    "calcVolumeLabel": "Volume à échanger",
+    "calcPaymentMethod": "Moyen de paiement",
+    "calcBreakdown": "Estimation détaillée des coûts",
+    "calcWithdrawalFee": "Frais de retrait de la plateforme",
+    "calcSavingsNote": "Par rapport aux plateformes P2P traditionnelles à frais élevés."
   },
   "help": {
     "heroEyebrow": "Centre d'aide",
@@ -670,7 +677,9 @@
     "blockerKyc": "Terminez la vérification d'identité (palier 1)",
     "blockerTotp": "Activez l'authentification à deux facteurs",
     "newAddressAria": "Adresse de retrait TRON (TRC20)",
-    "labelAria": "Libellé de cette adresse"
+    "labelAria": "Libellé de cette adresse",
+    "quoteLoading": "Calcul des frais…",
+    "quoteUnavailable": "Impossible de calculer les frais pour le moment. Vérifiez votre connexion et réessayez."
   },
   "walletTransfer": {
     "emailInvalid": "Saisissez une adresse e-mail valide",

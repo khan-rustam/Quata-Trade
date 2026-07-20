@@ -20,6 +20,7 @@ import { WithdrawalStatusBadge } from "@/components/ui/status-badge";
 import { SecurityDialog } from "@/components/security/security-dialog";
 import { useToast } from "@/components/ui/toast";
 import { useMe } from "@/hooks/use-auth";
+import { useDebounced } from "@/hooks/use-debounced";
 import { useBalances, useWithdrawalAddresses, withdrawalAddressesKey } from "@/hooks/use-wallet";
 import { api } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
@@ -78,11 +79,26 @@ export default function WithdrawPage(): React.JSX.Element {
       return 0n;
     }
   })();
-  const { data: quote } = useQuery({
-    queryKey: ["withdrawal-quote", amountUnits.toString()],
-    queryFn: () => api.withdrawalQuote("USDT_TRC20", amountUnits.toString()),
-    enabled: amountUnits > 0n,
+  // Debounced so typing "1000.50" fires one request, not one per keystroke.
+  const debouncedUnits = useDebounced(amountUnits.toString(), 300);
+  const {
+    data: quote,
+    isFetching: quoting,
+    isError: quoteFailed,
+  } = useQuery({
+    queryKey: ["withdrawal-quote", debouncedUnits],
+    queryFn: () => api.withdrawalQuote("USDT_TRC20", debouncedUnits),
+    enabled: BigInt(debouncedUnits) > 0n,
+    // Keep the last quote on screen while the next loads, so the fee panel does
+    // not flicker away mid-typing and leave the user with no figure.
+    placeholderData: (prev) => prev,
   });
+  // The quote is what makes the amount check correct (the ledger debits
+  // amount + fee). Falling back to comparing the amount alone reinstates the
+  // exact bug this fixes, so an unsettled or failed quote must BLOCK, not
+  // silently pass: without this you can paste your full balance, click Review
+  // inside the request RTT, pass PIN + TOTP and still get 422 from the server.
+  const quoteReady = quote !== undefined && quote.amount === amountUnits.toString();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dialogError, setDialogError] = useState<string | null>(null);
@@ -136,9 +152,16 @@ export default function WithdrawPage(): React.JSX.Element {
       // The ledger debits amount + fee. Checking the amount alone let someone
       // enter their whole balance, pass this check, and be told "insufficient
       // balance" by the server after confirming.
-      const debit = quote ? BigInt(quote.total) : units;
-      if (debit > BigInt(available)) {
-        setAmountError(quote ? tx("amountExceedsWithFee") : tx("amountExceeds"));
+      if (quoteFailed) {
+        setAmountError(tx("quoteUnavailable"));
+        return false;
+      }
+      if (!quoteReady) {
+        setAmountError(tx("quoteLoading"));
+        return false;
+      }
+      if (BigInt(quote.total) > BigInt(available)) {
+        setAmountError(tx("amountExceedsWithFee"));
         return false;
       }
       setAmountError(undefined);
@@ -396,7 +419,9 @@ export default function WithdrawPage(): React.JSX.Element {
         <Button
           className="w-full"
           onClick={openConfirm}
-          disabled={!selected || !isUsable(selected) || !amount || blockers.length > 0}
+          disabled={
+            !selected || !isUsable(selected) || !amount || blockers.length > 0 || !quoteReady || quoting
+          }
         >
           {tx("reviewWithdrawal")}
         </Button>
