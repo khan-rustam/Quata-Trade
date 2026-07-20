@@ -153,7 +153,9 @@ export function PublicFooter(): React.JSX.Element {
             <div key={col.titleKey} className={cn("relative space-y-5", idx >= 0 && "lg:pl-8 lg:border-l lg:border-border/30")}>
               <div className="flex items-center justify-between border-b border-border/40 pb-2">
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-text-3">
-                  {col.titleKey}
+                  {/* titleKey is a key, not a label — rendering it raw printed
+                      "product" / "support" / "legal" / "company" to every visitor. */}
+                  {t(col.titleKey)}
                 </h3>
                 <span className="h-1 w-1 rounded-full bg-accent-400/30" />
               </div>

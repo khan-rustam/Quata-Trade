@@ -100,6 +100,24 @@ export const zWithdrawalQuote = z.object({
 });
 export type WithdrawalQuote = z.infer<typeof zWithdrawalQuote>;
 
+/**
+ * The LIVE fee schedule, for the public /fees page.
+ *
+ * That page used to hardcode its numbers in the translation catalogue, so it
+ * advertised a 0 USDT withdrawal fee while the configured value was 1 USDT and
+ * the withdrawal path charged it. Publishing the configured values means the
+ * page cannot contradict what is actually taken.
+ */
+export const zFeeSchedule = z.object({
+  depositFee: z.object({ fixed: zAmount, bps: z.number().int() }),
+  withdrawalFee: z.object({ fixed: zAmount, bps: z.number().int() }),
+  /** Trading fee in basis points per payment rail (100 bps = 1%). */
+  tradingFeeBps: z.record(z.string(), z.number().int()),
+  sellerFeeBps: z.number().int(),
+  minDeposit: zAmount,
+});
+export type FeeSchedule = z.infer<typeof zFeeSchedule>;
+
 export const zWithdrawalRequest = z
   .object({
     asset: zAssetCode,

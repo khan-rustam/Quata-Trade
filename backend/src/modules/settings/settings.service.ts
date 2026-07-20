@@ -63,6 +63,11 @@ export class SettingsService {
     this.cache.clear();
   }
 
+  /** The full rail -> bps map (public fee schedule). Per-rail lookup is feeBps(). */
+  async allFeeBps(): Promise<Record<string, number>> {
+    return zFeeBps.parse(await this.raw("fee_bps"));
+  }
+
   async feeBps(method: PaymentMethod): Promise<number> {
     // Fall back to the compiled default if a rail somehow isn't in the settings row.
     return zFeeBps.parse(await this.raw("fee_bps"))[method] ?? FEE_BPS[method];

@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api/client";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { Lock, Send, ShieldCheck, Sparkles } from "lucide-react";
-import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
+import { PaymentMethodChip, paymentMethodLabel } from "@/components/trade/payment-method-chip";
 import { cn } from "@/lib/utils";
 
 const EXCHANGE_RATE = 650; // 1 USDT = 650 XAF constant for demo
@@ -17,17 +19,20 @@ export function EscrowSimulator(): React.JSX.Element {
   const [method, setMethod] = useState<"QUATAPAY" | "MTN_MOMO" | "ORANGE_MONEY">("QUATAPAY");
   const [step, setStep] = useState<number>(0);
 
-  // Fee computation
-  const feeRate = method === "QUATAPAY" ? 0.003 : 0.005;
+  // Fee rates come from the configured schedule so this illustration cannot show
+  // a rate the platform does not charge; seeded defaults are the offline fallback.
+  const { data: schedule } = useQuery({
+    queryKey: ["fee-schedule"],
+    queryFn: () => api.feeSchedule(),
+    staleTime: 5 * 60_000,
+  });
+  const feeRate =
+    (schedule?.tradingFeeBps[method] ?? (method === "QUATAPAY" ? 30 : 50)) / 10_000;
   const feeAmount = amount * feeRate;
   const netAmount = amount - feeAmount;
   const cashAmount = amount * EXCHANGE_RATE;
 
-  const methodName = method === "QUATAPAY" 
-    ? "QuataPay" 
-    : method === "MTN_MOMO" 
-    ? "MTN MoMo" 
-    : "Orange Money";
+  const methodName = paymentMethodLabel(method);
 
   const steps = [
     {
@@ -69,11 +74,15 @@ export function EscrowSimulator(): React.JSX.Element {
           <div className="mt-6 space-y-4">
             {/* Input field */}
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wider text-text-3">
+              <label
+                htmlFor="escrow-sim-amount"
+                className="text-xs font-semibold uppercase tracking-wider text-text-3"
+              >
                 {t("labelAmount")} (USDT)
               </label>
               <div className="relative mt-2 rounded-xl border border-border bg-surface-2 focus-within:border-accent-400 focus-within:ring-2 focus-within:ring-accent-400/20 transition-all">
                 <input
+                  id="escrow-sim-amount"
                   type="number"
                   min="5"
                   max="10000"

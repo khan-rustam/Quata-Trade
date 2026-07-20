@@ -58,10 +58,18 @@ export function Hero(): React.JSX.Element {
             className="text-balance font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-text-1 md:text-6xl"
             {...rise(0.06)}
           >
-            Crypto to cash. <br />
-            <span className="bg-gradient-to-r from-accent-400 via-accent-200 to-accent-400 bg-clip-text text-transparent">
-              Protected.
-            </span>
+            {/* The translated headline already existed in both catalogues; this was
+                hardcoded English, so French visitors got an English H1 — the single
+                most prominent string on the site. Rich text keeps the gradient on the
+                accented phrase while letting each locale choose where it falls. */}
+            {t.rich("heroTitle", {
+              br: () => <br />,
+              accent: (chunks) => (
+                <span className="bg-gradient-to-r from-accent-400 via-accent-200 to-accent-400 bg-clip-text text-transparent">
+                  {chunks}
+                </span>
+              ),
+            })}
           </motion.h1>
 
           <motion.p 

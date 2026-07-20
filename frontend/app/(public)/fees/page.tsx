@@ -6,13 +6,14 @@ import { Section, SectionHeading } from "@/components/public/marketing";
 import { buttonClassName } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
 import { FeeCalculator } from "@/components/public/fee-calculator";
+import { LiveFeeValue } from "@/components/public/live-fee-value";
 import { buildMetadata } from "@/lib/seo-engine";
 
 export function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/fees", {
     title: "Fees — QuataTrade",
     description:
-      "QuataTrade's launch fee structure: 0% trading for buyers and sellers, a low flat deposit fee, and no platform withdrawal fee. No hidden fees.",
+      "QuataTrade's launch fee structure: 0% trading for buyers and sellers, and a low flat deposit fee. Current rates are published live on this page. No hidden fees.",
   });
 }
 
@@ -44,7 +45,8 @@ export default function FeesPage(): React.JSX.Element {
                     <p className="mt-0.5 text-xs text-text-3">{t(`${k}Note`)}</p>
                   </td>
                   <td className="whitespace-nowrap px-4 py-4 text-right font-money text-base font-semibold text-accent-400">
-                    {t(`${k}Value`)}
+                    {/* Live configured value, not catalogue copy — see LiveFeeValue. */}
+                    <LiveFeeValue row={k} fallback={t(`${k}Value`)} />
                   </td>
                 </tr>
               ))}

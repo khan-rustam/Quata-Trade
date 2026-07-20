@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useQuery } from "@tanstack/react-query";
+import { toDisplay } from "@quatatrade/shared";
+import { api } from "@/lib/api/client";
 import { motion, useReducedMotion } from "motion/react";
 import { Percent, Sparkles, Coins, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,12 +17,21 @@ export function FeeCalculator(): React.JSX.Element {
   const [promoMode, setPromoMode] = useState<boolean>(true);
   const [method, setMethod] = useState<"QUATAPAY" | "MOMO_ORANGE">("QUATAPAY");
 
-  // Flat deposit fee
-  const depositFee = 1;
+  // Read the configured schedule so this widget cannot illustrate a fee the
+  // platform does not actually charge. Falls back to the seeded defaults while
+  // loading / offline so the calculator always renders something coherent.
+  const { data: schedule } = useQuery({
+    queryKey: ["fee-schedule"],
+    queryFn: () => api.feeSchedule(),
+    staleTime: 5 * 60_000,
+  });
+  const depositFee = schedule ? Number(toDisplay(schedule.depositFee.fixed, "USDT_TRC20", 2)) : 1;
+  const quatapayPct = (schedule?.tradingFeeBps.QUATAPAY ?? 30) / 100;
+  const momoPct = (schedule?.tradingFeeBps.MTN_MOMO ?? 50) / 100;
 
   // Trading fee rate
   // If promo is active, trade fee is 0%. Otherwise, 0.3% for QuataPay, 0.5% for MoMo/OM
-  const tradeFeeRate = promoMode ? 0 : method === "QUATAPAY" ? 0.003 : 0.005;
+  const tradeFeeRate = promoMode ? 0 : (method === "QUATAPAY" ? quatapayPct : momoPct) / 100;
   const tradeFeeAmount = volume * tradeFeeRate;
 
   // Total fees (Trade + flat Deposit)
@@ -88,6 +100,8 @@ export function FeeCalculator(): React.JSX.Element {
             </div>
             <input
               type="range"
+              aria-label={t("calcVolumeAria")}
+              aria-valuetext={`${volume} USDT`}
               min="10"
               max="2000"
               step="10"
@@ -119,7 +133,7 @@ export function FeeCalculator(): React.JSX.Element {
                     : "border-border bg-surface-2/40 text-text-2 hover:bg-surface-2"
                 )}
               >
-                QuataPay (0.3%)
+                {t("calcRailQuatapay", { pct: quatapayPct })}
               </button>
               <button
                 key="method-momo-orange-btn"
@@ -132,7 +146,7 @@ export function FeeCalculator(): React.JSX.Element {
                     : "border-border bg-surface-2/40 text-text-2 hover:bg-surface-2"
                 )}
               >
-                MoMo / Orange Money (0.5%)
+                {t("calcRailMomo", { pct: momoPct })}
               </button>
             </div>
           </div>
@@ -146,12 +160,12 @@ export function FeeCalculator(): React.JSX.Element {
 
           <div className="space-y-3 font-money text-sm">
             <div className="flex justify-between items-center py-1.5 border-b border-border/40">
-              <span className="text-text-2 font-sans text-xs">Deposit Fee (Flat)</span>
+              <span className="text-text-2 font-sans text-xs">{t("calcDepositFee")}</span>
               <span className="text-text-1 font-semibold tabular-nums">{depositFee} USDT</span>
             </div>
             
             <div className="flex justify-between items-center py-1.5 border-b border-border/40">
-              <span className="text-text-2 font-sans text-xs">Trading Fee ({tradeFeeRate * 100}%)</span>
+              <span className="text-text-2 font-sans text-xs">{t("calcTradingFee", { pct: tradeFeeRate * 100 })}</span>
               <span className="text-text-1 font-semibold tabular-nums">{tradeFeeAmount.toFixed(2)} USDT</span>
             </div>
 
@@ -161,7 +175,7 @@ export function FeeCalculator(): React.JSX.Element {
             </div>
 
             <div className="flex justify-between items-center py-2.5">
-              <span className="text-text-1 font-sans text-xs font-bold">Total Net Received</span>
+              <span className="text-text-1 font-sans text-xs font-bold">{t("calcTotalNet")}</span>
               <span className="text-accent-400 text-lg font-bold tabular-nums">{netUSDT.toFixed(2)} USDT</span>
             </div>
           </div>
@@ -176,7 +190,7 @@ export function FeeCalculator(): React.JSX.Element {
             >
               <Zap size={16} className="text-accent-400 shrink-0 mt-0.5" />
               <div>
-                <div className="text-xs font-bold text-accent-400">Save ≈ {savings.toFixed(1)} USDT</div>
+                <div className="text-xs font-bold text-accent-400">{t("calcSavings", { amount: savings.toFixed(1) })}</div>
                 <div className="text-[10px] text-text-2 font-sans leading-relaxed mt-0.5">
                   Compared to traditional high-fee P2P exchangers.
                 </div>

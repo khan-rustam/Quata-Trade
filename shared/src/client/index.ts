@@ -37,6 +37,7 @@ import {
   type InternalTransferRequest,
   type WithdrawalRequest,
   zWithdrawalQuote,
+  zFeeSchedule,
 } from "../schemas/wallet.js";
 import {
   zOffer,
@@ -300,6 +301,8 @@ export class QuataApiClient {
   depositAddress = (asset: string) =>
     this.request("GET", `/api/v1/wallet/${asset}/deposit-address`, zDepositAddressResponse);
   deposits = (query?: Query) => this.request("GET", "/api/v1/wallet/deposits", zDepositsResponse, undefined, query);
+  /** Public: the live fee schedule the platform actually applies. */
+  feeSchedule = () => this.request("GET", "/api/v1/fees/schedule", zFeeSchedule);
   /** Fee + total for a prospective withdrawal (read-only; no state changes). */
   withdrawalQuote = (asset: string, amount: string) =>
     this.request("GET", "/api/v1/withdrawals/quote", zWithdrawalQuote, undefined, { asset, amount });

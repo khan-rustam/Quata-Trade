@@ -24,7 +24,7 @@
   },
   "landing": {
     "badge": "P2P protégé par séquestre",
-    "heroTitle": "De la crypto au cash. Protégé.",
+    "heroTitle": "De la crypto au cash. <br></br><accent>Protégé.</accent>",
     "heroSubtitle": "Échangez des USDT avec de vraies personnes au Cameroun via MTN Mobile Money, Orange Money ou QuataPay — chaque échange est bloqué sous séquestre jusqu'à votre paiement.",
     "ctaPrimary": "Commencer à échanger",
     "ctaHow": "Comment ça marche",
@@ -158,7 +158,8 @@
       "imprint": "Mentions légales",
       "about": "À propos",
       "blog": "Blog",
-      "careers": "Carrières"
+      "careers": "Carrières",
+      "download": "Télécharger l'app"
     },
     "download": "Download app"
   },
@@ -273,7 +274,14 @@
     "note3": "La tarification promotionnelle (y compris les transactions sans frais) peut évoluer ; tout nouveau frais est annoncé à l'avance et publié sur cette page.",
     "note4": "Vous êtes seul responsable de toute obligation fiscale découlant de votre utilisation de QuataTrade. Nous ne fournissons pas de conseils fiscaux.",
     "ctaStart": "Créez votre compte",
-    "ctaTerms": "Lire les conditions"
+    "ctaTerms": "Lire les conditions",
+    "calcVolumeAria": "Volume d'échange mensuel en USDT",
+    "calcRailQuatapay": "QuataPay ({pct} %)",
+    "calcRailMomo": "MoMo / Orange Money ({pct} %)",
+    "calcDepositFee": "Frais de dépôt (forfait)",
+    "calcTradingFee": "Frais de transaction ({pct} %)",
+    "calcTotalNet": "Total net reçu",
+    "calcSavings": "Économisez ≈ {amount} USDT"
   },
   "help": {
     "heroEyebrow": "Centre d'aide",

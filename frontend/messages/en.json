@@ -24,7 +24,7 @@
   },
   "landing": {
     "badge": "Escrow-protected P2P",
-    "heroTitle": "Crypto to cash. Protected.",
+    "heroTitle": "Crypto to cash. <br></br><accent>Protected.</accent>",
     "heroSubtitle": "Trade USDT with real people in Cameroon using MTN Mobile Money, Orange Money, or QuataPay — every trade locked in escrow until you're paid.",
     "ctaPrimary": "Start trading",
     "ctaHow": "How it works",
@@ -158,7 +158,8 @@
       "imprint": "Imprint",
       "about": "About",
       "blog": "Blog",
-      "careers": "Careers"
+      "careers": "Careers",
+      "download": "Download app"
     },
     "download": "Download app"
   },
@@ -273,7 +274,14 @@
     "note3": "Promotional pricing (including zero-fee trading) may change; any new fees are announced in advance and published on this page.",
     "note4": "You are solely responsible for any taxes arising from your use of QuataTrade. We do not provide tax advice.",
     "ctaStart": "Create your account",
-    "ctaTerms": "Read the terms"
+    "ctaTerms": "Read the terms",
+    "calcVolumeAria": "Monthly trading volume in USDT",
+    "calcRailQuatapay": "QuataPay ({pct}%)",
+    "calcRailMomo": "MoMo / Orange Money ({pct}%)",
+    "calcDepositFee": "Deposit fee (flat)",
+    "calcTradingFee": "Trading fee ({pct}%)",
+    "calcTotalNet": "Total net received",
+    "calcSavings": "Save ≈ {amount} USDT"
   },
   "help": {
     "heroEyebrow": "Help center",
