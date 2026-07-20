@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AdminHeldDepositDecision } from "@quatatrade/shared";
-import { adminHeldDepositsApi } from "@/lib/api/admin-client";
+import { adminApi } from "@/lib/api/admin-client";
 
 export type HoldFilter = "all" | "aml" | "policy";
 
@@ -10,7 +10,7 @@ export type HoldFilter = "all" | "aml" | "policy";
 export function useAdminHeldDeposits(page: number, pageSize: number, hold: HoldFilter) {
   return useQuery({
     queryKey: ["admin", "held-deposits", page, pageSize, hold],
-    queryFn: () => adminHeldDepositsApi.queue({ page, pageSize, hold }),
+    queryFn: () => adminApi.adminHeldDeposits({ page, pageSize, hold }),
   });
 }
 
@@ -31,8 +31,8 @@ export function useReviewHeldDeposit() {
       body: AdminHeldDepositDecision;
     }) =>
       decision === "release"
-        ? adminHeldDepositsApi.release(id, body)
-        : adminHeldDepositsApi.reject(id, body),
+        ? adminApi.adminReleaseHeldDeposit(id, body)
+        : adminApi.adminRejectHeldDeposit(id, body),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin"] }),
   });
 }

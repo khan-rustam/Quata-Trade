@@ -114,6 +114,9 @@ import {
   type RejectWithdrawalRequest,
   type UpdateSettingRequest,
   type FreezeUserRequest,
+  type AdminHeldDepositDecision,
+  zAdminHeldDepositRow,
+  zAdminHeldDepositsResponse,
 } from "../schemas/admin.js";
 import {
   zAppRelease,
@@ -434,6 +437,15 @@ export class QuataApiClient {
     this.request("POST", `/api/v1/admin/withdrawals/${id}/reject`, zAnyRecord, body);
   adminKycQueue = (query?: Query) =>
     this.request("GET", "/api/v1/admin/kyc/queue", zAdminKycQueueResponse, undefined, query);
+  // ---- held deposits (AML / policy holds) ----
+  // Release and reject are the ONLY exit from a hold: an undecided deposit is
+  // skipped by the confirmation job forever, so the funds stay uncreditable.
+  adminHeldDeposits = (query?: Query) =>
+    this.request("GET", "/api/v1/admin/deposits/held", zAdminHeldDepositsResponse, undefined, query);
+  adminReleaseHeldDeposit = (id: string, body: AdminHeldDepositDecision) =>
+    this.request("POST", `/api/v1/admin/deposits/held/${id}/release`, zAdminHeldDepositRow, body);
+  adminRejectHeldDeposit = (id: string, body: AdminHeldDepositDecision) =>
+    this.request("POST", `/api/v1/admin/deposits/held/${id}/reject`, zAdminHeldDepositRow, body);
   adminKycDocuments = (id: string) =>
     this.request("GET", `/api/v1/admin/kyc/${id}/documents`, zAdminKycDocumentsResponse);
   adminReviewKyc = (id: string, decision: "approve" | "reject" | "resubmit", body: KycReviewRequest): Promise<unknown> =>
