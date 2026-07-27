@@ -21,6 +21,7 @@ import { useRegister } from "@/hooks/use-auth";
 import { useCountries } from "@/hooks/use-countries";
 import { CM_MARKET } from "@/hooks/use-user-market";
 import { apiErrorMessage } from "@/lib/api/errors";
+import { pushCampaignEvent } from "@/lib/campaign";
 
 /** Fallback so the picker is never empty before /countries resolves (CM is always live). */
 const FALLBACK_COUNTRIES = [CM_MARKET];
@@ -88,6 +89,11 @@ export default function RegisterPage(): React.JSX.Element {
     setFormError(null);
     try {
       await registerMut.mutateAsync(values);
+      // Campaign conversion, fired only once the account exists so the ad
+      // platforms optimise against real sign-ups rather than attempts. It
+      // carries the utm_*/click-id tags captured on the campaign landing
+      // page and swallows its own errors, so it cannot break registration.
+      pushCampaignEvent("signup_complete");
       toast.success(tx("toastCreatedTitle"), tx("toastCreatedBody"));
       router.replace(`/verify-email?email=${encodeURIComponent(values.email)}`);
     } catch (err) {

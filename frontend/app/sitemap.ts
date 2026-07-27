@@ -26,6 +26,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const marketing = ["", "/how-it-works", "/fees", "/security", "/about", "/help", "/contact", "/status"];
   const legal = LEGAL_SLUGS.map((s) => `/legal/${s}`);
+  // `/signup` and its segment variants serve the same form as `/register`
+  // and canonical back to it, so they stay out of the sitemap — listing
+  // both would offer crawlers a duplicate. They work as ad targets
+  // regardless of sitemap membership.
   const auth = ["/login", "/register"];
 
   return [...marketing, ...legal, ...auth].map((path) => ({

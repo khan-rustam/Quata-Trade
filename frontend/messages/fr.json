@@ -1527,6 +1527,19 @@
     "alreadyHaveAccount": "Vous avez déjà un compte ?",
     "login": "Se connecter"
   },
+  "authSignup": {
+    "metaTitle": "Créez votre compte QuataTrade",
+    "metaDescription": "Achetez et vendez de l'USDT avec des personnes de votre pays. L'entiercement conserve la crypto jusqu'à confirmation des deux parties, pour que personne ne soit lésé.",
+    "traderEyebrow": "Pour les traders",
+    "traderTitle": "Échangez de l'USDT avec entiercement à chaque opération",
+    "traderBody": "Fixez vos taux, choisissez vos contreparties, et laissez l'entiercement garder la crypto jusqu'à réception du cash. Chaque échange est enregistré et contestable.",
+    "businessEyebrow": "Pour les entreprises",
+    "businessTitle": "Déplacez de l'USDT pour votre entreprise, en toute protection",
+    "businessBody": "Réglez fournisseurs et clients en USDT, avec entiercement à chaque échange et un historique complet à rapprocher.",
+    "trustEscrow": "Entiercement à chaque échange",
+    "trustDispute": "Litiges examinés par un humain",
+    "trustFees": "Frais affichés avant confirmation"
+  },
   "authForgot": {
     "title": "Réinitialisez votre mot de passe",
     "subtitle": "Nous vous enverrons un lien de réinitialisation par e-mail si le compte existe.",

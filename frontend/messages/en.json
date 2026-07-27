@@ -1527,6 +1527,19 @@
     "alreadyHaveAccount": "Already have an account?",
     "login": "Log in"
   },
+  "authSignup": {
+    "metaTitle": "Create your QuataTrade account",
+    "metaDescription": "Buy and sell USDT with people in your country. Escrow holds the crypto until both sides confirm, so neither party can be cheated.",
+    "traderEyebrow": "For traders",
+    "traderTitle": "Trade USDT with escrow on every deal",
+    "traderBody": "Set your own rates, choose who you deal with, and let escrow hold the crypto until the cash lands. Every trade is logged and disputable.",
+    "businessEyebrow": "For businesses",
+    "businessTitle": "Move USDT for your business, protected",
+    "businessBody": "Settle with suppliers and customers in USDT, with escrow on every trade and a full record you can reconcile against.",
+    "trustEscrow": "Escrow on every trade",
+    "trustDispute": "Disputes reviewed by a human",
+    "trustFees": "Fees shown before you confirm"
+  },
   "authForgot": {
     "title": "Reset your password",
     "subtitle": "We'll email you a reset link if the account exists.",
