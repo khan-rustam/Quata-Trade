@@ -22,7 +22,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { StatusStepper } from "@/components/trade/status-stepper";
 import { Countdown } from "@/components/trade/countdown";
 import { PaymentMethodChip } from "@/components/trade/payment-method-chip";
-import { Keyhole } from "@/components/brand/keyhole";
+import { EscrowLockGlyph } from "@/components/trade/escrow-lock-glyph";
 import { useToast } from "@/components/ui/toast";
 import { useMe } from "@/hooks/use-auth";
 import { useMessages, useSendMessage, useTrade } from "@/hooks/use-trade";
@@ -106,7 +106,8 @@ export default function TradeRoomPage(): React.JSX.Element {
         {trade.status === "ESCROW_LOCKED" && trade.paymentDeadline && (
           <div className="mt-4 flex items-center justify-between rounded-lg bg-surface-2 px-3 py-2">
             <span className="flex items-center gap-1.5 text-sm text-text-2">
-              <Keyhole size={16} className="text-accent-400" /> {tx("escrowLockedPayBefore")}
+              <EscrowLockGlyph status={trade.status} size={16} className="text-accent-400" />{" "}
+              {tx("escrowLockedPayBefore")}
             </span>
             <Countdown deadline={trade.paymentDeadline} onExpire={refresh} />
           </div>
@@ -175,6 +176,8 @@ export default function TradeRoomPage(): React.JSX.Element {
       {trade.status === "COMPLETED" && (
         <Alert tone="success" title={tx("tradeCompleteTitle")}>
           <span className="flex items-center gap-1.5">
+            {/* §11.7: the lock opens on release — the counterpart to the close at ESCROW_LOCKED */}
+            <EscrowLockGlyph status={trade.status} size={16} className="text-success" />
             <CheckCircle2 size={16} /> {tx("tradeCompleteBody")}
           </span>
         </Alert>
@@ -757,7 +760,8 @@ function ChatPanel({ tradeId, meId, disabled }: { tradeId: string; meId?: string
                   }
                 >
                   {m.body}
-                  <span className="mt-0.5 block text-[10px] text-text-3">{timeAgo(m.createdAt)}</span>
+                  {/* 12px floor (Documents/11 §11.4) — 11px is reserved for tracked eyebrows */}
+                  <span className="mt-0.5 block text-xs text-text-3">{timeAgo(m.createdAt)}</span>
                 </div>
               </div>
             );

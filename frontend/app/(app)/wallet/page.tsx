@@ -82,7 +82,8 @@ export default function WalletPage(): React.JSX.Element {
           <Skeleton className="mt-2 h-8 w-44" />
         ) : (
           <div className="mt-1">
-            <Usdt value={usdt?.available ?? "0"} size="xl" />
+            {/* §11.7 balance count-up — the one headline figure the user watches change */}
+            <Usdt value={usdt?.available ?? "0"} size="xl" animate />
           </div>
         )}
         <div className="mt-3 flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm">
