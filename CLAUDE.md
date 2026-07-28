@@ -54,10 +54,29 @@ an entry in `Documents/10-client-prompts-appendix.md` → Deviations Log.
 
 ## Project skills & tooling (Documents/12)
 
-- Project skills live in `.claude/skills/`: `quatatrade-ledger`, `quatatrade-escrow-fsm`,
-  `quatatrade-security-gates`, `quatatrade-api-contract`, `quatatrade-brand`.
-  **Consult the matching skill before working in its area.** Skills advise; on conflict,
-  `Documents/01–11` decide.
+Project skills live in `.claude/skills/`. **Consult the matching skill before working in
+its area.** Skills advise; on conflict, `Documents/01–11` decide.
+
+| Skill | Consult before touching |
+|---|---|
+| `quatatrade-ledger` | ledger, fees, balances, any amount |
+| `quatatrade-escrow-fsm` | trades, escrow, disputes, status transitions |
+| `quatatrade-security-gates` | audits, gates, shipping money-path code |
+| `quatatrade-api-contract` | endpoints, zod schemas, the typed client |
+| `quatatrade-brand` | any UI — tokens, type, copy, themes |
+| `quatatrade-motion` | animation, transitions, skeletons, the escrow keyhole |
+| `quatatrade-responsive` | layout, nav, tables, modals, touch targets |
+| `quatatrade-i18n` | any user-facing string, en/fr catalogues, formatting |
+| `quatatrade-testing` | any test, coverage gates, before merging money paths |
+| `quatatrade-code-style` | types, comments, naming, lint suppressions |
+| `quatatrade-commits` | every commit and PR |
+| `quatatrade-kyc-risk` | kyc, risk, screening, verification decisions |
+| `quatatrade-uploads` | file uploads, proofs, evidence, KYC docs, MinIO |
+| `quatatrade-realtime` | sockets, gateways, trade rooms, chat, admin monitor |
+| `quatatrade-admin-rbac` | admin routes, guards, audit log, dual approval, kill switches |
+
+The last 10 extend `Documents/12` §12.4's original five; see the Deviations Log entry
+dated 2026-07-28.
 - Dev-only MCP servers are configured in `.mcp.json` (Postgres read-only role, Context7,
   Playwright). Never point the DB connector at staging/prod; never install plugins/MCP on
   the signer host.

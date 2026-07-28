@@ -213,3 +213,91 @@ the latter is a self-contained admin feature scheduled as its own increment.
   documents). Defensible while the text is explicitly non-binding pending review by a
   Cameroon-qualified lawyer, but it must be translated before those pages can be relied on in a
   French-speaking market.
+
+### 2026-07-28 Claude Code skill expansion + repo-hygiene fixes
+
+| ID | Doc says | We did | Why |
+|---|---|---|---|
+| D34-skills | `Documents/12` §12.4 specifies exactly **five** custom skills, all of which exist | Added ten more: `quatatrade-motion`, `-responsive`, `-i18n`, `-testing`, `-code-style`, `-commits`, `-kyc-risk`, `-uploads`, `-realtime`, `-admin-rbac`. Registered in `CLAUDE.md` as a skill→area table. | §12.4 was written at Phase 0 against a five-module build. The repo now has 29 backend modules and 33+ migrations covering KYC, screening, disputes, chat, admin RBAC, uploads and promo — areas with banned behaviours (no KYC auto-approve, no LLM in risk, SVG banned, append-only audit chain) that no skill was carrying. Skills still only advise; Parts 01–11 still decide. |
+| D34-settings | §12.6 records `.claude/settings.json` as configured | **Not yet fixed — needs the developer.** Every `additionalDirectories` entry and several `allow` rules point at `/Users/its_pp/Desktop/trade/Quata-Trade/`, a different machine, so they are dead. Two entries are worse than dead: `Bash(ps eww *)` permits dumping any process's environment, and one allow embeds a demo password. | Patch supplied to the developer; writing this file is blocked to the agent by design. `ps eww` contradicts the standing rule that no secret reaches a Claude context, so it should be moved to `deny`. |
+| D34-lockfile | §02 names pnpm as the package manager, strict lockfile; §08 §H bans unaudited postinstall scripts | Deleted the tracked `frontend/package-lock.json` and added `package-lock.json` / `yarn.lock` to `.gitignore`. | The npm lockfile sat inside a pnpm workspace member. An `npm install` in `frontend/` would resolve independently of `pnpm-lock.yaml` **and bypass the `allowBuilds` postinstall allowlist in `pnpm-workspace.yaml`**, which is the §08 §H supply-chain control — `@scarf/scarf` telemetry and the `cpu-features`/`ssh2` native builds are denied there. |
+| D34-frontend-md | Not addressed | `frontend/CLAUDE.md` contained the single line `@AGENTS.md`, importing a file that exists nowhere in the repo. Replaced with the real frontend rules from §07 + §11. | A dangling import silently loaded nothing, so the frontend-specific rules (typed client only, no optimistic balances, no raw hex, no hardcoded strings) were not in context for any frontend session. |
+
+**Open after this pass:**
+
+- **`.claude/settings.json` still carries the stale paths and the `ps eww` allow** (D34-settings).
+  Needs a human edit; the patch is in the session notes.
+- **The whole of §11.7's signature motion was built and never mounted.** Verified by grep
+  across `app/` and `components/`: `AnimatedKeyhole` (keyhole draws closed) — **0 usages**;
+  `AnimatedNumber` (the 300ms balance count-up) — **0 usages**; `.qt-pulse-ring` — **0 call
+  sites**; `.qt-count-up` — **0 call sites**. Those four are precisely the two §11.7 items
+  "Balance updates: 300ms count-up in Plex Mono" and "when escrow locks, the keyhole glyph
+  draws itself closed with a soft `accent-400` pulse ring — 600ms, once". The trade room
+  renders the *static* `Keyhole` at escrow-lock instead, so the brand's one orchestrated
+  moment does not exist in the running product. Wiring it touches the trade room and the
+  wallet balance — money screens — so it is logged for a reviewed change rather than done
+  unattended.
+- **33 raw hex literals remain in components**, against §11.8's "components never hardcode
+  colors". `components/brand/animated-keyhole.tsx` holds 4 of them in SVG gradient stops and
+  the keyhole fill; because they are literals it would render dark-mode mint (`#2fd4a7`) on
+  light backgrounds, where the token deliberately resolves to `#0c7a62` for contrast. The
+  static `Keyhole` and `Logo` are clean — they use `currentColor`. Legitimate exceptions:
+  `components/trade/payment-method-chip.tsx` carries MTN/Orange partner brand colors, which
+  §11.6 requires to stay recognizable; those belong in a named token, not inline.
+**Fixed in this pass (UI/UX sweep, verified in-browser at 380px in EN and FR):**
+
+| Finding | Fix |
+|---|---|
+| 44px touch targets missed by the shared chrome, so every page inherited it — theme toggle 36×36, language toggle 57×36, header menu 36×36, footer socials 32×32, footer nav links ~16px tall, logo link 34px, simulator stepper buttons 38px | All raised to a 44px minimum hit area. Landing page went from **30 undersized targets to 2**, and both remainders are inline text links inside sentences (WCAG 2.5.8 inline exception) |
+| `animated-keyhole.tsx` held 6 raw hex literals, so it would render dark-mode mint on light surfaces | Now `var(--color-brand-500/900)`, `var(--color-accent-400)`, `var(--color-bg)` — theme-correct in both modes |
+| Trade-room chat timestamps at 10px | Raised to 12px (§11.4 floor; 11px is reserved for tracked eyebrows) |
+| Hero + footer section eyebrows at 10px | Raised to the sanctioned 11px tracked-eyebrow size |
+| **`escrow-simulator.tsx` shipped three hardcoded English strings** — "Previous", "Next Step", "Reset Demo" — on a public landing surface. The component already had `useTranslations`; the labels were simply missed, so French visitors saw English buttons | Added `landing.simulator.prev/next/reset` to both catalogues (en+fr parity now 2,143 ⇄ 2,143) and wired them |
+
+Verified: `pnpm --filter frontend lint` → 0 errors (4 pre-existing warnings, none from this pass);
+`typecheck` → clean; en/fr key parity intact; body horizontal scroll 0 at 380px in both languages;
+all 21 money figures on the landing page still Plex Mono + `tabular-nums`.
+
+### 2026-07-28 UI/UX completion pass (second sweep)
+
+Driven in a real browser across 12 public/auth routes × dark + light × French, plus 380 /
+768 / 1280. **Zero horizontal page scroll, zero unlabelled inputs, zero missing `alt`, and
+zero money-format errors on every route/theme combination measured.**
+
+| Finding | Fix |
+|---|---|
+| **§11.7's signature motion existed but was never mounted** (`AnimatedKeyhole`, `AnimatedNumber`, `.qt-pulse-ring`, `.qt-count-up` — all 0 usages) | New `components/trade/escrow-lock-glyph.tsx`: the keyhole draws closed with the `accent-400` pulse ring on entering `ESCROW_LOCKED`, and opens on release. Wired into the trade room at both the lock and the completed states; retires the two dead CSS classes. Fires on a real transition or on arrival, never on the room's poll/refresh, and renders the settled state instantly under `prefers-reduced-motion`. |
+| §11.7 "balance updates: 300ms count-up" unimplemented. `AnimatedNumber` counts from **0**, and its own doc says "for real platform stats only — never fabricate numbers on money surfaces" | Added an opt-in `animate` prop to `<Usdt>`, used on the wallet available-balance headline only. It animates **only between two server-confirmed values on a real change**, interpolates in **integer smallest units** so no frame is a float artifact, lands on the exact canonical value, and never counts from 0 on first paint. |
+| Light-mode AA failures: `success` #0e8a4d = **4.16:1** and `warning` #b67b0f = **3.40:1** as text on `paper-50`, against the 4.5:1 floor. §11.3 claims CI validates token pairs — it does not catch these | Darkened the light-theme tokens to `#0b7a43` (5.0:1) and `#8a5d08` (5.1:1). Dark theme untouched. Both themes now measure **0 contrast failures**. |
+| `button.tsx` danger variant used a fixed `text-[#101614]`, so the label was dark ink on the darker light-mode red | Now `text-bg`, matching `primary` — inverts correctly in both themes. |
+| `lightweight-chart.tsx` hardcoded the **dark-mode** success/danger values, so light-mode chart greens sat near 1.9:1 | Resolves `--color-success`/`--color-danger`/`--color-text-3` from the live custom properties, with SSR fallbacks; area fills use `color-mix` off the same token instead of a second hardcoded rgba pair. |
+| 10 partner-rail hex literals in `payment-method-chip.tsx` | Promoted to named `--color-rail-*` tokens. They stay fixed across themes because they are other companies' brand marks (§11.6) — that reasoning is now recorded in `globals.css`. |
+| Auth-layout gradient used brand hex literals | Now `var(--color-brand-700)` / `var(--color-accent-400)`. |
+| **Five more hardcoded English strings on French pages** | `offer-preview-card.tsx` had no `useTranslations` at all despite being used on the landing **and** the marketplace list — "Buys/Sells USDT", "Verified trader", the trades·rate line, "Limit", "Trade". Also `timeline-phone.tsx` `STEP 0{n}`, `escrow-simulator.tsx` "Escrow Live Demo", `fee-calculator.tsx` "Launch Promo (0%)" and "Payment Method". All keyed; en/fr parity now **2,152 ⇄ 2,152**. |
+| Markets search box had a placeholder but no accessible name | `aria-label` added. |
+| More undersized targets found at 768/1280 and on inner routes | `Segmented` (the shared buy/sell + market filter, `min-h-9`) → 44px, which fixes markets, fees and trade-browse at once; desktop **and** mobile header nav links; breadcrumb links (on nearly every page); auth-layout logo; footer socials given `shrink-0` (they compressed to 30px at desktop); OTP digit boxes 43→44px; the fee-calculator range slider, whose entire hit area was the 6px track. |
+| 8px text in the footer ("soon" badge), 9px fee badge in the simulator | Raised to the 11px tracked-eyebrow floor. |
+
+**Open / accepted after this pass:**
+
+- **`.claude/settings.json` still unfixed** (D34-settings) — needs a human edit; the agent is
+  blocked from writing it. The `Bash(ps eww *)` allow is the urgent part.
+- **`/verify-email` heading measures 4.44:1 vs the 4.5:1 floor** in both themes — a 0.06
+  miss on one string. Left for a deliberate call: nudging it means touching a heading colour
+  used elsewhere.
+- **Inline text links inside sentences remain under 44px** ("Se connecter", "Mot de passe
+  oublié", "Contacter le support", the narrow footer "Frais"). WCAG 2.5.8 explicitly exempts
+  links in a block of text; enlarging them would break the sentence line-height. Accepted.
+- **`app/(app)` and `app/admin` were not audited** — they need auth plus a running backend,
+  and Docker is unavailable in this environment, so `/admin` correctly redirects to
+  `/admin/login`. **Admin tables at 380px are the largest unaudited responsive risk.**
+- `AnimatedNumber` is still unused. It is correct for marketing stat counters and wrong for
+  balances (it counts from 0); it should be wired to a real stats surface or removed, not
+  pointed at money.
+
+**Deliberately not changed:** the ~34 remaining `text-[10px]` uses live inside
+`components/public/timeline-phone.tsx` and `escrow-steps.tsx`, which are a phone mockup and an
+animated diagram — a *depiction* of a screen rather than UI chrome, where enlarging the type
+would break the mockup's proportions. `payment-method-chip.tsx` keeps MTN/Orange partner hex
+values, which §11.6 requires to stay recognizable; they should become named tokens rather than
+inline literals, but that is a token-layer change, not a component fix.

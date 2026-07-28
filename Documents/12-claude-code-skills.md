@@ -60,6 +60,27 @@ Generic skills don't know our ledger rules. Use `skill-creator` to package Parts
 
 Each: `name` + sharp `description` (triggering), SKILL.md under ~300 lines linking to the full doc in `/docs`, and explicit constraints ("NEVER use number for amounts", "NEVER update trades.status directly").
 
+### 12.4b Second wave (added 2026-07-28 — Deviations Log D34-skills)
+
+The five above were scoped at Phase 0. The build now spans 29 backend modules and 33+
+migrations, so ten more skills cover the areas that had banned behaviours but no skill:
+
+| Skill | From | Trigger |
+|---|---|---|
+| **quatatrade-motion** | §11.7 + `globals.css` primitives | animation, transition, skeleton, reduced-motion, the escrow keyhole |
+| **quatatrade-responsive** | §11.8 density + §07 shell | layout, breakpoint, mobile, table overflow, touch target |
+| **quatatrade-i18n** | §11.9 + §07 | any user-facing string, en/fr catalogues, ICU formatting |
+| **quatatrade-testing** | §09 + §08H | any test, coverage gate, property/concurrency tests |
+| **quatatrade-code-style** | §02 banned list + §08H | types, comments, naming, lint suppressions |
+| **quatatrade-commits** | this repo's measured history | every commit and PR |
+| **quatatrade-kyc-risk** | §01 decisions + §08E/I | kyc, risk, screening — no auto-approve, no LLM in decisions |
+| **quatatrade-uploads** | §08F + §02 uploads | uploads, proofs, evidence, KYC docs, MinIO, presigned URLs |
+| **quatatrade-realtime** | §02 websockets + §07 trade room + §08E | sockets, gateways, rooms, chat, admin monitor |
+| **quatatrade-admin-rbac** | §08E/G + §06 | admin routes, guards, audit chain, dual approval, kill switches |
+
+Same rules apply: skills advise, Parts 01–11 decide, and each carries an explicit
+"NEVER do" list drawn from the docs rather than from general best practice.
+
 ## 12.5 Hard rules for this repo
 - Signer host: no Claude Code, no plugins, no MCP. Human-written code only.
 - Any new skill/plugin: read its SKILL.md and scripts before install; project-level install; note it in the Deviations Log if it affects workflow.
@@ -77,6 +98,8 @@ Each: `name` + sharp `description` (triggering), SKILL.md under ~300 lines linki
 | Custom skill **quatatrade-security-gates** (§12.4 #3) | `.claude/skills/quatatrade-security-gates/SKILL.md` |
 | Custom skill **quatatrade-brand** (§12.4 #4) | `.claude/skills/quatatrade-brand/SKILL.md` |
 | Custom skill **quatatrade-api-contract** (§12.4 #5) | `.claude/skills/quatatrade-api-contract/SKILL.md` |
+| Ten second-wave skills (§12.4b, 2026-07-28) | `.claude/skills/quatatrade-{motion,responsive,i18n,testing,code-style,commits,kyc-risk,uploads,realtime,admin-rbac}/SKILL.md` |
+| Skill→area routing table for all 15 | `CLAUDE.md` → "Project skills & tooling" |
 | MCP: Postgres (dev, read-only) + Context7 + Playwright (§12.3) | `.mcp.json` — approve servers on first session prompt |
 | Read-only DB role `quatatrade_readonly` (SELECT only) | migration `backend/src/db/migrations/0007_readonly_role.ts` |
 | Tier-1 official plugins pre-enabled (§12.1) | `.claude/settings.json` `enabledPlugins` |
