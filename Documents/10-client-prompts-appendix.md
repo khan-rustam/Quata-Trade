@@ -258,6 +258,41 @@ Verified: `pnpm --filter frontend lint` → 0 errors (4 pre-existing warnings, n
 `typecheck` → clean; en/fr key parity intact; body horizontal scroll 0 at 380px in both languages;
 all 21 money figures on the landing page still Plex Mono + `tabular-nums`.
 
+### 2026-07-28 Gate 3 integration triage
+
+Integration suite went **19 failures → 11** (116 passing). Both fixes were in test
+doubles; no production code was wrong.
+
+- **Deposits: 4/12 → 12/12.** `FakeTronGrid.getTransactionStatus` returned `null`
+  for any unseeded tx and no test ever seeded one. `credit()` re-verifies the tx
+  on-chain immediately before crediting (reorg protection) and defers silently on
+  `null`, so every credit path deferred — deposits sat at `SEEN`, no hold flag was
+  set, and eight tests asserted against code that could never run. Also fixed a
+  `String(jsonb)` → `"[object Object]"` bug in the deposit-fee test's outbox lookup;
+  its money assertions had already passed.
+
+- **Launch-limits question answered.** `deposit_policy` seeds `min_amount` 1 USDT
+  with no max; `launch_limits` seeds every ceiling to `"0"`, which the code treats
+  as disabled. **Real deposits will not be held** on the seeded defaults — only
+  sub-1-USDT ones. The ceilings are opt-in via admin settings.
+
+**Still failing (11), and they need a decision rather than a quick fix:**
+
+- **TOTP replay, ~7 failures.** `TotpService.consume()` accepts a code only if its
+  time-step is strictly newer than the last accepted one (§08 §E anti-replay).
+  Several tests generate a code, use it, then generate another within the same
+  30-second window — identical digits — and the guard correctly refuses the reuse.
+  **The control is right and the tests encode a behaviour that would be a
+  vulnerability.** Fixing them needs a genuine time-step advance (fake timers
+  around the DB calls); generating a future-step code does not work because
+  otplib's verification window is 0, so the server rejects it. Left failing rather
+  than weakened, since the assertion protects a real property.
+- **PIN lockout, 1 failure.** Expects `PinLockedError` after 5 wrong attempts, gets
+  `InvalidPinError` — the lock is not engaging at the asserted count. This one may
+  be a real off-by-one in the attempt counter and is worth checking before launch.
+- Remaining: a wallet balance-shape assertion (an extra key on the balances row)
+  and a wallet-config audit-entry count (expected 1, got 2).
+
 ### 2026-07-28 UI/UX completion pass (second sweep)
 
 Driven in a real browser across 12 public/auth routes × dark + light × French, plus 380 /
