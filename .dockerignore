@@ -1,0 +1,35 @@
+# Build context hygiene. Everything here either bloats the image, breaks caching,
+# or must never reach a container (Documents/08 §G: no secrets in images).
+node_modules
+**/node_modules
+.git
+.github
+**/dist
+**/.next
+**/coverage
+**/*.tsbuildinfo
+**/playwright-report
+**/test-results
+.playwright-mcp
+
+# secrets — .env.example only (Documents/02)
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+*.mnemonic
+*.seed
+
+# docs and local tooling are not needed at build time
+Documents
+*.md
+!backend/SIGNER.md
+.claude
+.vscode
+.idea
+.DS_Store
+.volumes

@@ -1,0 +1,168 @@
+# QuataTrade — production stack.
+#
+# Deliberately separate from docker-compose.yml, which is the DEV dependency
+# stack (hardcoded dev passwords, ports published to the host). This file:
+#   * builds and runs the app itself (api, worker, web)
+#   * takes every secret from the environment — nothing is baked into an image
+#     or committed here (Documents/02 "Secrets", Documents/08 §G)
+#   * publishes ONLY the web and api ports; postgres/redis/minio stay on the
+#     internal network (Documents/08 §G: "internal services not published")
+#
+# Usage:
+#   cp .env.example .env      # then fill it in — never commit .env
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml run --rm migrate
+#
+# The signer is NOT here. It runs on its own host, human-written, reachable only
+# over WireGuard (CLAUDE.md + backend/SIGNER.md). Never add it to this file.
+
+name: quatatrade-prod
+
+x-app-env: &app-env
+  NODE_ENV: production
+  DATABASE_URL: postgres://${POSTGRES_USER:?set POSTGRES_USER}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB}
+  REDIS_URL: redis://redis:6379
+  MINIO_ENDPOINT: http://minio:9000
+  MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+  MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "5" }
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:?}
+    command: postgres -c max_connections=200 -c shared_buffers=512MB
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks: [internal]
+    logging: *logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory-policy noeviction
+    volumes:
+      - redis_data:/data
+    networks: [internal]
+    logging: *logging
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?}
+    volumes:
+      - minio_data:/data
+    networks: [internal]
+    logging: *logging
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio: { condition: service_healthy }
+    networks: [internal]
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD} &&
+      mc mb --ignore-existing local/kyc local/proofs local/disputes local/chat &&
+      mc anonymous set none local/kyc &&
+      mc anonymous set none local/proofs &&
+      mc anonymous set none local/disputes &&
+      mc anonymous set none local/chat &&
+      exit 0"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?}
+    restart: "no"
+
+  # One-shot. Run explicitly before bringing api up on a new schema:
+  #   docker compose -f docker-compose.prod.yml run --rm migrate
+  migrate:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    image: quatatrade/api:latest
+    command: ["node", "--experimental-strip-types", "src/db/migrate.ts", "up"]
+    env_file: [.env]
+    environment: *app-env
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [internal]
+    restart: "no"
+    profiles: ["tools"]
+
+  api:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    image: quatatrade/api:latest
+    restart: unless-stopped
+    env_file: [.env]
+    environment: *app-env
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio: { condition: service_healthy }
+    ports:
+      # bound to loopback — nginx terminates TLS and proxies in
+      - "127.0.0.1:4000:4000"
+    networks: [internal]
+    logging: *logging
+
+  worker:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    image: quatatrade/api:latest
+    restart: unless-stopped
+    command: ["node", "dist/worker.js"]
+    env_file: [.env]
+    environment: *app-env
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    networks: [internal]
+    logging: *logging
+    # no HTTP listener, so the image's HTTP healthcheck does not apply
+    healthcheck:
+      disable: true
+
+  web:
+    build: { context: ., dockerfile: frontend/Dockerfile }
+    image: quatatrade/web:latest
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?set NEXT_PUBLIC_API_URL}
+    depends_on: [api]
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks: [internal]
+    logging: *logging
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  pg_data:
+  redis_data:
+  minio_data:

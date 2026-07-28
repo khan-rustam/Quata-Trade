@@ -2,6 +2,12 @@
 node_modules/
 .pnpm-store/
 
+# pnpm is the only package manager (Documents/02 §Runtime). A stray npm/yarn
+# lockfile bypasses the pnpm-workspace.yaml `allowBuilds` postinstall allowlist,
+# which is a Documents/08 §H supply-chain control — keep them out of the repo.
+package-lock.json
+yarn.lock
+
 # builds
 dist/
 build/

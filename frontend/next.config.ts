@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
@@ -21,6 +22,12 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false, // stop leaking `X-Powered-By: Next.js`
+  // Emit a self-contained server bundle so the container ships only the traced
+  // dependencies instead of the whole workspace node_modules.
+  output: "standalone",
+  // Standalone tracing has to start at the workspace root, or it misses the
+  // symlinked @quatatrade/shared package and the server 500s on boot.
+  outputFileTracingRoot: path.join(__dirname, ".."),
   transpilePackages: ["@quatatrade/shared"],
   images: {
     // DiceBear avatars (rendered unoptimized as SVG).
