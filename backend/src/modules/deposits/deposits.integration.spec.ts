@@ -48,9 +48,23 @@ class FakeTronGrid implements TronGridClient {
   }
 
   txStatus = new Map<string, { confirmations: number; success: boolean } | null>();
+  /**
+   * Defaults to "confirmed and successful" rather than null.
+   *
+   * `credit()` re-verifies the tx on-chain immediately before crediting (reorg
+   * protection — see deposit-confirmation.service.ts) and defers silently when
+   * this returns null. Defaulting to null meant EVERY credit path deferred, so
+   * deposits sat at SEEN, no hold flag was set, and eight tests here asserted
+   * against a code path that could never run.
+   *
+   * A test exercising a reorg, a reverted tx or a depth regression must set
+   * `txStatus` explicitly — that is the case worth being explicit about, not
+   * the happy path.
+   */
   async getTransactionStatus(txHash: string): Promise<{ confirmations: number; success: boolean } | null> {
     if (this.failing) throw new Error("simulated RPC outage");
-    return this.txStatus.get(txHash) ?? null;
+    if (this.txStatus.has(txHash)) return this.txStatus.get(txHash) ?? null;
+    return { confirmations: Number.MAX_SAFE_INTEGER, success: true };
   }
 
   balances = new Map<string, bigint>();
@@ -325,7 +339,12 @@ describe("deposits pipeline (Gate 3)", () => {
       .selectAll()
       .where("event_type", "=", "deposit.credited")
       .execute();
-    const payload = outbox.map((e) => String(e.payload)).find((p) => p.includes(transfer.txHash));
+    // `payload` is jsonb, so the driver hands back a parsed object — String() on it
+    // yields "[object Object]" and matches nothing. Serialise properly, while still
+    // tolerating a driver that returns raw text.
+    const payload = outbox
+      .map((e) => (typeof e.payload === "string" ? e.payload : JSON.stringify(e.payload)))
+      .find((p) => p.includes(transfer.txHash));
     expect(payload).toContain('"fee":"1000000"');
     expect(payload).toContain('"net":"99000000"');
   });
