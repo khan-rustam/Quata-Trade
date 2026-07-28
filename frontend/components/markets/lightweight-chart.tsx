@@ -4,10 +4,17 @@ import { useEffect, useRef } from "react";
 import { AreaSeries, CandlestickSeries, ColorType, CrosshairMode, createChart, type UTCTimestamp } from "lightweight-charts";
 import type { MarketChart } from "@quatatrade/shared";
 
-// A canvas library can't read Tailwind classes, so the semantic brand colours
-// (success/danger) are inlined here as literals (Documents/11 palette).
-const UP = "#4ade8c";
-const DOWN = "#f87171";
+// A canvas library can't read Tailwind classes, but it CAN read the CSS custom
+// properties the @theme block defines — so the semantic colours are resolved from
+// the live tokens instead of inlined. That matters because success/danger differ per
+// theme (#4ade8c/#f87171 on dark, #0e8a4d/#c93b3b on light): hardcoding the dark
+// values put light-mode greens at roughly 1.9:1 on a near-white chart background.
+// The fallbacks cover SSR, where there is no computed style to read.
+function token(name: string, fallback: string): string {
+  if (typeof document === "undefined") return fallback;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
 
 function dedupe<T extends { time: number }>(arr: T[]): T[] {
   const m = new Map<number, T>();
@@ -32,7 +39,13 @@ export function LightweightChart({ chart: data, kind }: { chart: MarketChart; ki
       (document.documentElement.dataset.theme === "dark" ||
         (!document.documentElement.dataset.theme && window.matchMedia?.("(prefers-color-scheme: dark)").matches));
     const gridColor = dark ? "rgba(148,163,184,0.10)" : "rgba(100,116,139,0.14)";
-    const textColor = dark ? "#8aa0a8" : "#5b6b6a";
+    // Axis labels ride the muted-text token so they track the theme with everything else.
+    const textColor = token("--color-text-3", dark ? "#869792" : "#64736e");
+    const UP = token("--color-success", dark ? "#4ade8c" : "#0e8a4d");
+    const DOWN = token("--color-danger", dark ? "#f87171" : "#c93b3b");
+    // Area fills need alpha, which a hex token can't carry — derive it via color-mix
+    // so the tint follows the same token rather than a second hardcoded rgba pair.
+    const tint = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
 
     const chart = createChart(el, {
       autoSize: true,
@@ -60,8 +73,8 @@ export function LightweightChart({ chart: data, kind }: { chart: MarketChart; ki
       const color = up ? UP : DOWN;
       const series = chart.addSeries(AreaSeries, {
         lineColor: color,
-        topColor: up ? "rgba(74,222,140,0.20)" : "rgba(248,113,113,0.20)",
-        bottomColor: up ? "rgba(74,222,140,0)" : "rgba(248,113,113,0)",
+        topColor: tint(color, 20),
+        bottomColor: tint(color, 0),
         lineWidth: 2,
         priceLineVisible: false,
       });

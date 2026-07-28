@@ -6,16 +6,16 @@ import { cn } from "@/lib/utils";
  * cosmetic; availability per market is admin-controlled). */
 const META: Record<PaymentMethod, { label: string; dot: string }> = {
   QUATAPAY: { label: "QuataPay", dot: "bg-accent-400" },
-  MTN_MOMO: { label: "MTN MoMo", dot: "bg-[#FFCB05]" },
-  ORANGE_MONEY: { label: "Orange Money", dot: "bg-[#FF7900]" },
-  BANK_TRANSFER: { label: "Bank transfer", dot: "bg-[#5B7CFA]" },
-  MPESA: { label: "M-Pesa", dot: "bg-[#4CAF50]" },
-  AIRTEL_MONEY: { label: "Airtel Money", dot: "bg-[#ED1C24]" },
-  MOOV_MONEY: { label: "Moov Money", dot: "bg-[#F58220]" },
-  WAVE: { label: "Wave", dot: "bg-[#1DC8FF]" },
-  VODAFONE_CASH: { label: "Vodafone Cash", dot: "bg-[#E60000]" },
-  OPAY: { label: "OPay", dot: "bg-[#1DCF6B]" },
-  PALMPAY: { label: "PalmPay", dot: "bg-[#6C2BD9]" },
+  MTN_MOMO: { label: "MTN MoMo", dot: "bg-rail-mtn" },
+  ORANGE_MONEY: { label: "Orange Money", dot: "bg-rail-orange" },
+  BANK_TRANSFER: { label: "Bank transfer", dot: "bg-rail-bank" },
+  MPESA: { label: "M-Pesa", dot: "bg-rail-mpesa" },
+  AIRTEL_MONEY: { label: "Airtel Money", dot: "bg-rail-airtel" },
+  MOOV_MONEY: { label: "Moov Money", dot: "bg-rail-moov" },
+  WAVE: { label: "Wave", dot: "bg-rail-wave" },
+  VODAFONE_CASH: { label: "Vodafone Cash", dot: "bg-rail-vodafone" },
+  OPAY: { label: "OPay", dot: "bg-rail-opay" },
+  PALMPAY: { label: "PalmPay", dot: "bg-rail-palmpay" },
 };
 
 /** The display name for a rail. Exported so no surface has to re-derive it —

@@ -41,6 +41,21 @@
   --radius-card: 12px;
   --radius-btn: 10px;
   --radius-chip: 999px;
+
+  /* Payment-rail partner marks (Documents/11 §11.6). These are other companies'
+   * brand colours, so they are fixed in both themes and are NOT ours to restyle —
+   * they only ever appear as a small dot on a neutral chip, never as a surface.
+   * Named here so components reference tokens rather than inline hex (§11.8). */
+  --color-rail-mtn: #ffcb05;
+  --color-rail-orange: #ff7900;
+  --color-rail-bank: #5b7cfa;
+  --color-rail-mpesa: #4caf50;
+  --color-rail-airtel: #ed1c24;
+  --color-rail-moov: #f58220;
+  --color-rail-wave: #1dc8ff;
+  --color-rail-vodafone: #e60000;
+  --color-rail-opay: #1dcf6b;
+  --color-rail-palmpay: #6c2bd9;
 }
 
 /* Light mode mirrors dark (Documents/11 §11.3) — never pure white pages/black text */
@@ -60,9 +75,14 @@
   --color-text-2: #5c6b67;
   /* text-3: darkened so small muted text clears WCAG 4.5:1 on the light surfaces */
   --color-text-3: #64736e;
-  --color-success: #0e8a4d;
+  /* success/warning darkened from the Part 11 light values so they clear WCAG AA as
+   * TEXT on paper-50 (#f6f9f8), which is how the offer cards and fee badges use them.
+   * Measured on the real pages: #0e8a4d gave 4.16:1 and #b67b0f gave 3.40:1 — both
+   * under the 4.5:1 body-text floor in §11.3. These read 5.0:1 and 5.1:1. Same
+   * reasoning as accent-400 above; the dark-theme values are untouched. */
+  --color-success: #0b7a43;
   --color-danger: #c93b3b;
-  --color-warning: #b67b0f;
+  --color-warning: #8a5d08;
   --color-info: #2563eb;
   --color-escrow: #0e5f55;
 }
@@ -139,6 +159,23 @@ body {
   }
   100% {
     box-shadow: 0 0 0 0 rgba(47, 212, 167, 0);
+  }
+}
+
+/* The signature moment (Documents/11 §11.7): the keyhole draws itself closed when
+ * escrow locks. Paired with .qt-pulse-ring by components/trade/escrow-lock-glyph.tsx.
+ * Stroke-dashoffset animates on the GPU-cheap side of the budget and the glyph is
+ * 16px, so this stays within the §11.7 "transform/opacity only" spirit. */
+@keyframes qt-draw-ring {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes qt-keyhole-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+    transform-origin: 16px 16px;
   }
 }
 

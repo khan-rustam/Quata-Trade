@@ -12,11 +12,11 @@ export default function AuthLayout({ children }: { children: ReactNode }): React
         className="pointer-events-none absolute inset-0 -z-10 opacity-20"
         style={{
           background:
-            "radial-gradient(50% 40% at 20% 0%, #0e5f55 0%, transparent 60%), radial-gradient(45% 45% at 90% 10%, #2fd4a7 0%, transparent 55%)",
+            "radial-gradient(50% 40% at 20% 0%, var(--color-brand-700) 0%, transparent 60%), radial-gradient(45% 45% at 90% 10%, var(--color-accent-400) 0%, transparent 55%)",
         }}
       />
       <header className="flex items-center justify-between px-5 py-4">
-        <Link href="/" aria-label="QuataTrade home">
+        <Link href="/" aria-label="QuataTrade home" className="inline-flex min-h-11 items-center">
           <Logo size={20} />
         </Link>
         <div className="flex items-center gap-1">

@@ -28,14 +28,16 @@ export function AnimatedKeyhole({
       role="img"
       aria-label="Funds locked in escrow"
     >
+      {/* Tokens, not literals (Documents/11 §11.8): accent-400 resolves to #2fd4a7 on
+        * dark and #0c7a62 on light, where the mint would fail WCAG on a pale surface. */}
       <defs>
         <linearGradient id="qk-body" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#159e85" />
-          <stop offset="1" stopColor="#0b3b36" />
+          <stop offset="0" stopColor="var(--color-brand-500)" />
+          <stop offset="1" stopColor="var(--color-brand-900)" />
         </linearGradient>
         <radialGradient id="qk-glow" cx="50%" cy="48%" r="50%">
-          <stop offset="0" stopColor="#2fd4a7" stopOpacity="0.5" />
-          <stop offset="1" stopColor="#2fd4a7" stopOpacity="0" />
+          <stop offset="0" stopColor="var(--color-accent-400)" stopOpacity="0.5" />
+          <stop offset="1" stopColor="var(--color-accent-400)" stopOpacity="0" />
         </radialGradient>
       </defs>
 
@@ -53,7 +55,7 @@ export function AnimatedKeyhole({
       {/* shackle — drops + seats into the body */}
       <motion.path
         d="M67 98 V74 a33 33 0 0 1 66 0 V98"
-        stroke="#2fd4a7"
+        stroke="var(--color-accent-400)"
         strokeWidth="12"
         strokeLinecap="round"
         fill="none"
@@ -70,7 +72,7 @@ export function AnimatedKeyhole({
         height="88"
         rx="20"
         fill="url(#qk-body)"
-        stroke="#2fd4a7"
+        stroke="var(--color-accent-400)"
         strokeWidth="2.5"
         initial={{ y: reduce ? 0 : 10, opacity: reduce ? 1 : 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -83,9 +85,11 @@ export function AnimatedKeyhole({
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, delay: reduce ? 0 : 0.6 }}
       >
-        <circle cx="100" cy="128" r="12" fill="#0e1416" />
-        <path d="M100 134 L93 160 H107 Z" fill="#0e1416" />
-        <circle cx="100" cy="128" r="6" fill="#2fd4a7" />
+        {/* The cut-out reads as a hole in the lock body, so it takes the page
+          * background token rather than a fixed near-black. */}
+        <circle cx="100" cy="128" r="12" fill="var(--color-bg)" />
+        <path d="M100 134 L93 160 H107 Z" fill="var(--color-bg)" />
+        <circle cx="100" cy="128" r="6" fill="var(--color-accent-400)" />
       </motion.g>
     </svg>
   );

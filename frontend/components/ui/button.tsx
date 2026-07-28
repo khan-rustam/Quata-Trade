@@ -20,7 +20,9 @@ const variants: Record<Variant, string> = {
   secondary:
     "bg-surface-2 text-text-1 border border-border hover:bg-surface-3 disabled:text-text-3",
   ghost: "bg-transparent text-text-1 hover:bg-surface-2",
-  danger: "bg-danger text-[#101614] hover:opacity-90 disabled:opacity-50",
+  // text-bg (not a fixed ink literal) so the label inverts with the theme: dark ink on
+  // the light dark-mode red, near-white on the darker light-mode red. Matches `primary`.
+  danger: "bg-danger text-bg hover:opacity-90 disabled:opacity-50",
 };
 
 const sizes: Record<Size, string> = {
