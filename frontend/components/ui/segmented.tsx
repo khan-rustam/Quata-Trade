@@ -68,7 +68,9 @@ export function Segmented<T extends string>({
               }
             }}
             className={cn(
-              "min-h-9 rounded-[8px] px-3 text-sm font-medium transition-colors",
+              // 44px minimum touch target (Documents/11 §11.8) — this control is the
+              // buy/sell and market-filter switch on mobile, so it must be thumb-sized.
+              "min-h-11 rounded-[8px] px-3 text-sm font-medium transition-colors",
               active ? activeTone : "text-text-2 hover:text-text-1",
             )}
           >

@@ -108,7 +108,11 @@
       "step2Desc": "You send cash directly to the seller via {method} off-platform.",
       "step3Title": "3. Release USDT",
       "step3Desc": "Once payment is verified, the escrow releases the USDT to your wallet.",
-      "feeBadge": "{pct}% fee"
+      "feeBadge": "{pct}% fee",
+      "prev": "Previous",
+      "next": "Next step",
+      "reset": "Reset demo",
+      "liveDemo": "Escrow live demo"
     },
     "escrowActive": "ESCROW ACTIVE"
   },
@@ -250,7 +254,8 @@
     "phFieldAmount": "Amount: {amount} XAF",
     "phReference": "Reference: {ref}",
     "phCheckFirst": "Check your bank or MoMo app first!",
-    "phBuyerCredited": "Buyer credited successfully"
+    "phBuyerCredited": "Buyer credited successfully",
+    "phStepLabel": "STEP {n}"
   },
   "security": {
     "heroEyebrow": "Security & trust",
@@ -328,7 +333,8 @@
     "calcPaymentMethod": "Payment method",
     "calcBreakdown": "Estimated cost breakdown",
     "calcWithdrawalFee": "Withdrawal platform fee",
-    "calcSavingsNote": "Compared to traditional high-fee P2P exchangers."
+    "calcSavingsNote": "Compared to traditional high-fee P2P exchangers.",
+    "calcPromoMode": "Launch promo (0%)"
   },
   "help": {
     "heroEyebrow": "Help center",
@@ -739,7 +745,13 @@
     "verified": "Verified",
     "trades": "trades",
     "perUsdt": "per USDT",
-    "available": "Available"
+    "available": "Available",
+    "buysUsdt": "Buys USDT",
+    "sellsUsdt": "Sells USDT",
+    "verifiedTrader": "Verified trader",
+    "tradesAndRate": "{count} trades · {rate}%",
+    "limit": "Limit",
+    "tradeCta": "Trade"
   },
   "tradeNew": {
     "selectPaymentMethod": "Select at least one payment method",

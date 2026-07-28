@@ -110,7 +110,7 @@ export function Hero(): React.JSX.Element {
             {...rise(0.24)}
           >
             <div className="absolute -right-16 -top-16 h-28 w-28 rounded-full bg-accent-400/5 blur-xl group-hover:bg-accent-400/10 transition-all pointer-events-none" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-3 block mb-3">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-text-3 block mb-3">
               {t("payWith")}
             </span>
             <div className="flex flex-wrap gap-2">

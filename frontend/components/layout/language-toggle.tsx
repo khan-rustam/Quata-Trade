@@ -23,7 +23,7 @@ export function LanguageToggle(): React.JSX.Element {
       aria-label={tx("ariaSwitch", {
         lang: next === "fr" ? tx("french") : tx("english"),
       })}
-      className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
+      className="flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
     >
       <Languages size={16} aria-hidden />
       <span className="uppercase">{locale}</span>

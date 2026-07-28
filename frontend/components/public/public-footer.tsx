@@ -135,13 +135,13 @@ export function PublicFooter(): React.JSX.Element {
                   target="_blank"
                   rel="noreferrer noopener"
                   aria-label={s.label}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface-2/20 text-text-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent-400/40 hover:bg-surface-2 hover:text-accent-400 shadow-sm"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-2/20 text-text-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent-400/40 hover:bg-surface-2 hover:text-accent-400 shadow-sm"
                 >
-                  {s.key === "facebook" && <Facebook size={14} />}
-                  {s.key === "x" && <Twitter size={14} />}
-                  {s.key === "instagram" && <Instagram size={14} />}
-                  {s.key === "linkedin" && <Linkedin size={14} />}
-                  {s.key === "telegram" && <Send size={14} />}
+                  {s.key === "facebook" && <Facebook size={16} />}
+                  {s.key === "x" && <Twitter size={16} />}
+                  {s.key === "instagram" && <Instagram size={16} />}
+                  {s.key === "linkedin" && <Linkedin size={16} />}
+                  {s.key === "telegram" && <Send size={16} />}
                 </a>
               ))}
             </div>
@@ -151,7 +151,7 @@ export function PublicFooter(): React.JSX.Element {
           {COLUMNS.map((col, idx) => (
             <div key={col.titleKey} className={cn("relative space-y-5", idx >= 0 && "lg:pl-8 lg:border-l lg:border-border/30")}>
               <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-text-3">
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-text-3">
                   {/* titleKey is a key, not a label — rendering it raw printed
                       "product" / "support" / "legal" / "company" to every visitor. */}
                   {t(col.titleKey)}
@@ -164,14 +164,14 @@ export function PublicFooter(): React.JSX.Element {
                     {l.soon ? (
                       <span className="inline-flex items-center gap-1.5 text-xs text-text-3 font-semibold uppercase tracking-wide">
                         {t(`links.${l.key}`)}
-                        <span className="rounded-md bg-surface-2 px-1 py-0.5 text-[8px] text-text-3 font-bold">
+                        <span className="rounded-md bg-surface-2 px-1 py-0.5 text-[11px] tracking-wide text-text-3 font-bold">
                           {t("soon")}
                         </span>
                       </span>
                     ) : (
                       <Link
                         href={l.href}
-                        className="group inline-flex items-center text-xs text-text-2 font-medium transition-all duration-200 hover:text-accent-400 hover:translate-x-1"
+                        className="group inline-flex min-h-11 items-center text-xs text-text-2 font-medium transition-all duration-200 hover:text-accent-400 hover:translate-x-1"
                       >
                         {/* Dot indicator that zips out on hover */}
                         <span className="h-1 w-0 rounded-full bg-accent-400 opacity-0 mr-0 transition-all duration-300 group-hover:w-1.5 group-hover:h-1.5 group-hover:opacity-100 group-hover:mr-2" />

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowRight, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
 import type { Offer } from "@quatatrade/shared";
 import { Avatar } from "@/components/ui/avatar";
@@ -21,6 +22,7 @@ export function OfferPreviewCard({
   href?: string;
   className?: string;
 }): React.JSX.Element {
+  const tx = useTranslations("tradeBrowse");
   const buys = offer.side === "BUY";
   const verified = offer.trader.kycTier >= 2;
 
@@ -42,7 +44,7 @@ export function OfferPreviewCard({
           )}
         >
           {buys ? <TrendingUp size={13} aria-hidden /> : <TrendingDown size={13} aria-hidden />}
-          {buys ? "Buys USDT" : "Sells USDT"}
+          {buys ? tx("buysUsdt") : tx("sellsUsdt")}
         </span>
         <span className="font-money text-lg tabular-nums text-text-1">
           {formatRate(offer.priceXafPerUnit)}
@@ -55,10 +57,13 @@ export function OfferPreviewCard({
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="truncate font-medium text-text-1">{offer.trader.displayName}</span>
-            {verified && <ShieldCheck size={14} className="shrink-0 text-accent-400" aria-label="Verified trader" />}
+            {verified && <ShieldCheck size={14} className="shrink-0 text-accent-400" aria-label={tx("verifiedTrader")} />}
           </div>
           <div className="font-money text-xs tabular-nums text-text-2">
-            {offer.trader.completedTrades} trades · {offer.trader.completionRate.toFixed(1)}%
+            {tx("tradesAndRate", {
+              count: offer.trader.completedTrades,
+              rate: offer.trader.completionRate.toFixed(1),
+            })}
           </div>
         </div>
       </div>
@@ -71,14 +76,17 @@ export function OfferPreviewCard({
 
       <div className="flex items-center justify-between border-t border-border pt-3 text-xs text-text-2">
         <span className="inline-flex items-center gap-1">
-          Limit
+          {tx("limit")}
           <span className="font-money tabular-nums text-text-1">
             <Usdt value={offer.minTrade} showUnit={false} size="sm" />–<Usdt value={offer.maxTrade} showUnit={false} size="sm" />
           </span>
           USDT
         </span>
-        <Link href={href} className="inline-flex items-center gap-1 font-medium text-accent-400 group-hover:gap-1.5">
-          Trade <ArrowRight size={13} aria-hidden />
+        <Link
+          href={href}
+          className="inline-flex min-h-11 items-center gap-1 font-medium text-accent-400 group-hover:gap-1.5"
+        >
+          {tx("tradeCta")} <ArrowRight size={13} aria-hidden />
         </Link>
       </div>
       </div>

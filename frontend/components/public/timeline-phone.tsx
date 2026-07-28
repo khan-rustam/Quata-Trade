@@ -270,7 +270,7 @@ export function TimelinePhone(): React.JSX.Element {
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
                   </span>
                   <div className="text-[10px] font-semibold text-accent-400 tracking-wider mb-0.5">
-                    STEP 0{stepNum}
+                    {t("phStepLabel", { n: `0${stepNum}` })}
                   </div>
                   <h4 className="font-display text-sm font-semibold text-text-1">{title}</h4>
                   <p className="mt-1 text-xs text-text-2 leading-relaxed">{body}</p>

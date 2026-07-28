@@ -15,7 +15,7 @@ export function ThemeToggle(): React.JSX.Element {
       type="button"
       onClick={toggleTheme}
       aria-label={theme === "dark" ? tx("switchToLight") : tx("switchToDark")}
-      className="flex h-9 w-9 items-center justify-center rounded-lg text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
+      className="flex h-11 w-11 items-center justify-center rounded-lg text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
     >
       {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
     </button>

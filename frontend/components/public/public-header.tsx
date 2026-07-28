@@ -23,7 +23,7 @@ export function PublicHeader(): React.JSX.Element {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 md:px-6">
-        <Link href="/" aria-label="QuataTrade home">
+        <Link href="/" aria-label="QuataTrade home" className="inline-flex min-h-11 items-center">
           <Logo size={20} />
         </Link>
 
@@ -32,7 +32,7 @@ export function PublicHeader(): React.JSX.Element {
             <Link
               key={l.href}
               href={l.href}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-text-2 transition-colors hover:text-text-1"
+              className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-text-2 transition-colors hover:text-text-1"
             >
               {t(l.key)}
             </Link>
@@ -55,7 +55,7 @@ export function PublicHeader(): React.JSX.Element {
           </Link>
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-text-1 md:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-text-1 md:hidden"
             aria-label={open ? t("closeMenu") : t("openMenu")}
             aria-expanded={open}
             onClick={() => setOpen((o) => !o)}
@@ -73,7 +73,7 @@ export function PublicHeader(): React.JSX.Element {
                 key={l.href}
                 href={l.href}
                 onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-text-1 hover:bg-surface-2"
+                className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-text-1 hover:bg-surface-2"
               >
                 {t(l.key)}
               </Link>

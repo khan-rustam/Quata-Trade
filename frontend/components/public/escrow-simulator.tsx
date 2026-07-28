@@ -152,7 +152,7 @@ export function EscrowSimulator(): React.JSX.Element {
                       </div>
                       
                       {/* Bottom row: fee badge */}
-                      <span className={cn("rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase", config.badgeClass)}>
+                      <span className={cn("rounded-md px-1.5 py-0.5 text-[11px] font-bold tracking-wide uppercase", config.badgeClass)}>
                         {t("feeBadge", { pct: railPct(m) })}
                       </span>
                     </button>
@@ -192,7 +192,7 @@ export function EscrowSimulator(): React.JSX.Element {
           <div>
             <div className="flex justify-between items-center mb-4">
               <span className="text-xs font-semibold uppercase tracking-wider text-text-3">
-                Escrow Live Demo
+                {t("liveDemo")}
               </span>
               <div className="flex gap-1.5">
                 {[0, 1, 2].map((i) => (
@@ -249,17 +249,17 @@ export function EscrowSimulator(): React.JSX.Element {
               key="prev-btn"
               type="button"
               onClick={() => setStep((s) => (s > 0 ? s - 1 : 2))}
-              className="flex-1 rounded-btn border border-border bg-surface-3/30 py-2.5 text-xs font-semibold hover:bg-surface-3 transition-colors"
+              className="min-h-11 flex-1 rounded-btn border border-border bg-surface-3/30 py-2.5 text-xs font-semibold hover:bg-surface-3 transition-colors"
             >
-              Previous
+              {t("prev")}
             </button>
             <button
               key="next-btn"
               type="button"
               onClick={() => setStep((s) => (s < 2 ? s + 1 : 0))}
-              className="flex-1 rounded-btn bg-accent-400 py-2.5 text-xs font-semibold text-bg hover:bg-accent-400/90 transition-colors shadow-lg shadow-accent-400/10"
+              className="min-h-11 flex-1 rounded-btn bg-accent-400 py-2.5 text-xs font-semibold text-bg hover:bg-accent-400/90 transition-colors shadow-lg shadow-accent-400/10"
             >
-              {step === 2 ? "Reset Demo" : "Next Step"}
+              {step === 2 ? t("reset") : t("next")}
             </button>
           </div>
         </div>

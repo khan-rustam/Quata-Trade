@@ -108,7 +108,11 @@
       "step2Desc": "Vous envoyez le cash au vendeur via {method} hors plateforme.",
       "step3Title": "3. Libération de l'USDT",
       "step3Desc": "Une fois le paiement confirmé, l'escrow libère l'USDT vers votre portefeuille.",
-      "feeBadge": "{pct} % de frais"
+      "feeBadge": "{pct} % de frais",
+      "prev": "Précédent",
+      "next": "Étape suivante",
+      "reset": "Réinitialiser la démo",
+      "liveDemo": "Démo du séquestre en direct"
     },
     "escrowActive": "SÉQUESTRE ACTIF"
   },
@@ -250,7 +254,8 @@
     "phFieldAmount": "Montant : {amount} XAF",
     "phReference": "Référence : {ref}",
     "phCheckFirst": "Vérifiez d'abord votre banque ou votre appli MoMo !",
-    "phBuyerCredited": "Acheteur crédité avec succès"
+    "phBuyerCredited": "Acheteur crédité avec succès",
+    "phStepLabel": "ÉTAPE {n}"
   },
   "security": {
     "heroEyebrow": "Sécurité et confiance",
@@ -328,7 +333,8 @@
     "calcPaymentMethod": "Moyen de paiement",
     "calcBreakdown": "Estimation détaillée des coûts",
     "calcWithdrawalFee": "Frais de retrait de la plateforme",
-    "calcSavingsNote": "Par rapport aux plateformes P2P traditionnelles à frais élevés."
+    "calcSavingsNote": "Par rapport aux plateformes P2P traditionnelles à frais élevés.",
+    "calcPromoMode": "Promo de lancement (0 %)"
   },
   "help": {
     "heroEyebrow": "Centre d'aide",
@@ -739,7 +745,13 @@
     "verified": "Vérifié",
     "trades": "échanges",
     "perUsdt": "par USDT",
-    "available": "Disponible"
+    "available": "Disponible",
+    "buysUsdt": "Achète des USDT",
+    "sellsUsdt": "Vend des USDT",
+    "verifiedTrader": "Trader vérifié",
+    "tradesAndRate": "{count} échanges · {rate} %",
+    "limit": "Limite",
+    "tradeCta": "Échanger"
   },
   "tradeNew": {
     "selectPaymentMethod": "Sélectionnez au moins un moyen de paiement",

@@ -194,7 +194,13 @@ export function MarketsView(): React.JSX.Element {
             )}
             <div className="relative">
               <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-3" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("searchPlaceholder")} className="w-64 pl-9" />
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                aria-label={tx("searchPlaceholder")}
+                placeholder={tx("searchPlaceholder")}
+                className="w-64 pl-9"
+              />
             </div>
           </div>
         </div>

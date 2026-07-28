@@ -72,7 +72,7 @@ export function FeeCalculator(): React.JSX.Element {
                   : "text-text-2 hover:text-text-1"
               )}
             >
-              Launch Promo (0%)
+              {t("calcPromoMode")}
             </button>
             <button
               key="standard-mode-btn"
@@ -102,6 +102,8 @@ export function FeeCalculator(): React.JSX.Element {
             <input
               id="fee-calc-volume"
               type="range"
+              // 44px hit area (Documents/11 §11.8) — the visible track stays slim.
+              style={{ minHeight: 44 }}
               aria-label={t("calcVolumeLabel")}
               aria-valuetext={`${volume} USDT`}
               min="10"
@@ -121,7 +123,7 @@ export function FeeCalculator(): React.JSX.Element {
           {/* {t("calcPaymentMethod")} Option Selector (Only visible for Standard Rates) */}
           <div className={cn("transition-all duration-300", promoMode ? "opacity-40 pointer-events-none" : "opacity-100")}>
             <label className="text-xs font-semibold uppercase tracking-wider text-text-3">
-              Payment Method
+              {t("calcPaymentMethod")}
             </label>
             <div className="mt-2 flex gap-3">
               <button

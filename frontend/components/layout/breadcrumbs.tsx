@@ -87,7 +87,7 @@ export function Breadcrumbs({ contained = false }: { contained?: boolean }): Rea
         <li>
           <Link
             href={isAdmin ? "/admin" : "/"}
-            className="flex items-center gap-1 text-text-3 transition-colors hover:text-text-1"
+            className="flex min-h-11 items-center gap-1 text-text-3 transition-colors hover:text-text-1"
           >
             {isAdmin ? <LayoutDashboard size={13} /> : <Home size={13} />}
             <span>{isAdmin ? tx("admin") : tx("home")}</span>
@@ -99,7 +99,7 @@ export function Breadcrumbs({ contained = false }: { contained?: boolean }): Rea
             {c.isLast || c.nonLink ? (
               <span className={c.isLast ? "font-medium text-text-1" : "text-text-3"}>{c.label}</span>
             ) : (
-              <Link href={c.href} className="text-text-3 transition-colors hover:text-text-1">
+              <Link href={c.href} className="inline-flex min-h-11 items-center text-text-3 transition-colors hover:text-text-1">
                 {c.label}
               </Link>
             )}
