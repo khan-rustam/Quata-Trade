@@ -43,21 +43,21 @@ module.exports = {
   apps: [
     {
       ...common,
-      name: "quatatrade-api",
+      name: "QuataTrade-S",
       cwd: BACKEND,
       script: "dist/main.js",
       node_args: "--enable-source-maps",
     },
     {
       ...common,
-      name: "quatatrade-worker",
+      name: "QuataTrade-W",
       cwd: BACKEND,
       script: "dist/worker.js",
       node_args: "--enable-source-maps",
     },
     {
       ...common,
-      name: "quatatrade-web",
+      name: "QuataTrade-F",
       cwd: FRONTEND,
       // Next.js production server. `next build` output (.next) must exist first.
       script: "node_modules/next/dist/bin/next",

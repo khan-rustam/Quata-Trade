@@ -52,7 +52,7 @@ WEB_URL="${QT_WEB_URL:-https://quatatrade.com}"
 ECOSYSTEM="${QT_ECOSYSTEM:-$APP_DIR/ecosystem.config.cjs}"
 SKIP_MIGRATE="${QT_SKIP_MIGRATE:-0}"
 WEB_PORT="${QT_WEB_PORT:-3800}"
-PM2_APPS=(quatatrade-api quatatrade-worker quatatrade-web)
+PM2_APPS=(QuataTrade-S QuataTrade-W QuataTrade-F)
 
 # backend/.env is the single source of truth for the API/worker NODE_ENV
 # (staging + SIGNER_MODE=mock on the test box). If the box exports NODE_ENV
@@ -96,7 +96,7 @@ rollback() {
   fi
   warn "Code rolled back. NOTE: database migrations are NOT auto-reverted."
   warn "Migrations here are additive, so old code runs fine against the newer schema."
-  warn "Logs:  pm2 logs quatatrade-api   |   pm2 logs quatatrade-worker"
+  warn "Logs:  pm2 logs QuataTrade-S   |   pm2 logs QuataTrade-W"
   exit 1
 }
 
@@ -220,7 +220,7 @@ check_url "$WEB_URL" 8                      || verify_fail=1   # public web root
 echo
 if [ "$verify_fail" -ne 0 ]; then
   warn "Deploy applied $NEW_COMMIT but some checks did not pass."
-  warn "Inspect:  pm2 status   |   pm2 logs quatatrade-api   |   pm2 logs quatatrade-web"
+  warn "Inspect:  pm2 status   |   pm2 logs QuataTrade-S   |   pm2 logs QuataTrade-F"
   exit 2
 fi
 
