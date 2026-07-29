@@ -11,7 +11,7 @@ import { decryptSecret, encryptSecret } from "../../common/crypto";
 import { matchedTotpStep } from "../../common/auth/totp-step";
 import { InvalidCodeError, InvalidCredentialsError, TotpAlreadyEnabledError, TotpNotConfiguredError } from "./auth.errors";
 
-const TOTP_ISSUER = "QuataTrade";
+const TOTP_ISSUER = "Quata-Trade";
 
 export interface TotpSetup {
   otpauthUrl: string;
@@ -55,6 +55,9 @@ export class TotpService {
       .executeTakeFirst();
     if (res.numUpdatedRows === 0n) throw new TotpAlreadyEnabledError();
 
+    // Renders as "Quata-Trade (<label>)". This table has no display-name
+    // column, so the email is the label here — unlike the other platforms,
+    // which use the person's name. Worth revisiting if a name is added.
     const otpauthUrl = authenticator.keyuri(user.email, TOTP_ISSUER, secret);
     const qrDataUrl = await toDataURL(otpauthUrl);
     await this.audit.log({
