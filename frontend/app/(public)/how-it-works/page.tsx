@@ -11,7 +11,7 @@ import { ArrowRight } from "lucide-react";
 
 export function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/how-it-works", {
-    title: "How it works — QuataTrade",
+    title: "How it works",
     description: "Buyer and seller flows on QuataTrade, and how escrow protects every trade.",
   });
 }

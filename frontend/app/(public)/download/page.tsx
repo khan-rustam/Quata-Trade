@@ -7,7 +7,7 @@ import { buildMetadata } from "@/lib/seo-engine";
 
 export function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/download", {
-    title: "Get the app — QuataTrade",
+    title: "Get the app",
     description:
       "Install QuataTrade on your phone or desktop for one-tap access, a full-screen app experience, and a safer, faster way to trade.",
   });

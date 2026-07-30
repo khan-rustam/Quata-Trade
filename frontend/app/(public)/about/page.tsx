@@ -10,7 +10,7 @@ import { CameroonMap } from "@/components/public/cameroon-map";
 
 export function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/about", {
-    title: "About — QuataTrade",
+    title: "About",
     description: "QuataTrade is a Cameroon-first P2P crypto marketplace built on trust and escrow protection.",
   });
 }

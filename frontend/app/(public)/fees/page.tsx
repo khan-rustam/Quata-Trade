@@ -11,7 +11,7 @@ import { buildMetadata } from "@/lib/seo-engine";
 
 export function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/fees", {
-    title: "Fees — QuataTrade",
+    title: "Fees",
     description:
       "QuataTrade's fee schedule — trading, deposit and withdrawal fees, published live from the rates we actually charge. No hidden fees.",
   });

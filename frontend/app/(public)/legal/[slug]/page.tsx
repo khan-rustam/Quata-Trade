@@ -10,7 +10,7 @@ export function generateStaticParams(): { slug: string }[] {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const doc = LEGAL_DOCS[slug];
-  if (!doc) return { title: "Legal — QuataTrade" };
+  if (!doc) return { title: "Legal" };
   return {
     title: `${doc.title} — QuataTrade`,
     description: doc.summary,

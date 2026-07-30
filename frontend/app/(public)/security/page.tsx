@@ -17,7 +17,7 @@ import { buildMetadata } from "@/lib/seo-engine";
 
 export function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/security", {
-    title: "Security & Trust — QuataTrade",
+    title: "Security & Trust",
     description: "How QuataTrade protects your account and your funds: escrow, 2FA, cold storage, KYC, and dispute protection.",
   });
 }

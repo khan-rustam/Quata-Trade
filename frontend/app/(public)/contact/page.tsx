@@ -9,7 +9,7 @@ import { buildMetadata } from "@/lib/seo-engine";
 
 export function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/contact", {
-    title: "Contact & Support — QuataTrade",
+    title: "Contact & Support",
     description: "Get help with your QuataTrade account, trades, and disputes.",
   });
 }

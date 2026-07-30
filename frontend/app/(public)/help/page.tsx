@@ -22,7 +22,7 @@ import { FaqStructuredData } from "../structured-data";
 
 export function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/help", {
-    title: "Help Center — QuataTrade",
+    title: "Help Center",
     description: "Guides for getting started, verification, buying, selling, payments, wallet, disputes, and security.",
   });
 }
