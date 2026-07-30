@@ -2,11 +2,17 @@ import type { ReactNode } from "react";
 import { PublicHeader } from "@/components/public/public-header";
 import { PublicFooter } from "@/components/public/public-footer";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { SiteStructuredData } from "./structured-data";
 
 /** Marketing + legal shell: header + footer on every public page (Documents/14). */
 export default function PublicLayout({ children }: { children: ReactNode }): React.JSX.Element {
   return (
     <div className="flex min-h-screen flex-col relative overflow-hidden bg-bg">
+      {/* Organization / WebSite / FinancialService markup on every public page.
+          The static floor under EngineJsonLd, which renders nothing when the SEO
+          engine has no blocks for a path — see structured-data.tsx. */}
+      <SiteStructuredData />
+
       {/* Dynamic Background Grid & Ambient Glow across all public routes */}
       <div className="absolute inset-0 -z-25 bg-grid-pattern opacity-20 pointer-events-none" />
       <div 

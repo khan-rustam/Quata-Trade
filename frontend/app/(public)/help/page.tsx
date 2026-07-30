@@ -18,6 +18,7 @@ import { Section, SectionHeading } from "@/components/public/marketing";
 import { Reveal } from "@/components/motion/reveal";
 import { getFaqs } from "@/lib/content-server";
 import { buildMetadata } from "@/lib/seo-engine";
+import { FaqStructuredData } from "../structured-data";
 
 export function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/help", {
@@ -59,6 +60,10 @@ export default async function HelpPage(): Promise<React.JSX.Element> {
 
   return (
     <>
+      {/* FAQPage markup built from the SAME array rendered below — Google
+          requires the marked-up Q&As to be visible on this page. */}
+      <FaqStructuredData faqs={faqs} />
+
       <Section narrow>
         <Reveal>
           <SectionHeading as="h1" eyebrow={t("heroEyebrow")} title={t("heroTitle")} subtitle={t("heroSubtitle")} />
