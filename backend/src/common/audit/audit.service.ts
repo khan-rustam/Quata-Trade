@@ -10,9 +10,51 @@ export interface AuditEntry {
   actorId: string | null;
   action: string;
   targetType?: string;
+  /**
+   * Row id of the thing acted on. `audit_logs.target_id` is a **uuid**
+   * column, so a non-uuid value here is a Postgres 22P02 at write time.
+   * Non-uuid identifiers (a settings key, a slug) are moved into `metadata`
+   * automatically — see `normalizeTarget`.
+   */
   targetId?: string;
   ip?: string;
   metadata?: Record<string, unknown>;
+}
+
+/** Canonical 8-4-4-4-12 hex form. */
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Keep a non-uuid `targetId` from failing the write.
+ *
+ * `target_id` is a uuid column, and a caller passing a natural key instead of
+ * a row id — a settings key, a slug — makes Postgres reject the INSERT with
+ * 22P02. That failure does not merely lose an audit row: `log()` is called
+ * INSIDE the operation it records, so the exception propagates and 500s a
+ * request whose actual work already succeeded. The caller is told the
+ * operation failed when it did not, which is the worst possible shape for a
+ * bug on a write path.
+ *
+ * So a non-uuid target is preserved in `metadata.targetRef` and dropped from
+ * the column. Nothing is lost, the chain stays intact, and the operation
+ * being audited survives its own audit record.
+ */
+function normalizeTarget(entry: AuditEntry): AuditEntry {
+  const id = entry.targetId;
+  if (id === undefined) return entry;
+  if (UUID_RE.test(id)) return entry;
+  return {
+    ...entry,
+    targetId: undefined,
+    // An empty string is not a uuid either — Postgres rejects it the same
+    // way — but there is no reference worth keeping, so it is simply dropped
+    // rather than recorded as `targetRef: ""`.
+    metadata:
+      id === ""
+        ? entry.metadata
+        : { ...(entry.metadata ?? {}), targetRef: id },
+  };
 }
 
 /**
@@ -50,7 +92,11 @@ function canonicalJson(value: Record<string, unknown>): string {
 export class AuditService {
   constructor(@Inject(DB) private readonly db: Kysely<Database>) {}
 
-  async log(entry: AuditEntry, trx?: Transaction<Database>): Promise<string> {
+  async log(rawEntry: AuditEntry, trx?: Transaction<Database>): Promise<string> {
+    // Applied before the hash is computed, so the canonical JSON and the
+    // stored row describe the same thing — normalising afterwards would
+    // silently break `verifyChain()`.
+    const entry = normalizeTarget(rawEntry);
     const run = async (t: Transaction<Database>): Promise<string> => {
       await sql`SELECT pg_advisory_xact_lock(hashtext('audit_chain'))`.execute(t);
       // Order the chain by `seq` (append-order, migration 0008), NEVER created_at:
