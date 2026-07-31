@@ -40,6 +40,18 @@ async function bootstrap(): Promise<void> {
   app.enableCors({
     origin: config.get("WEB_ORIGIN", { infer: true }),
     credentials: true,
+    // MUST be listed explicitly. This app runs on Fastify, and
+    // `@fastify/cors` defaults `methods` to GET,HEAD,POST — NOT the
+    // Express-style GET,HEAD,PUT,PATCH,POST,DELETE that `enableCors`
+    // documentation and most Nest examples assume.
+    //
+    // Leaving it to the default silently broke every PATCH/PUT/DELETE route
+    // in the browser: the CORS preflight answered "GET,HEAD,POST", so the
+    // request never left the page and surfaced as a bare "Failed to fetch".
+    // curl and the integration tests were unaffected (neither sends a
+    // preflight), which is why it survived — 20 client methods across
+    // content, admin, KYC, disputes and settings were affected.
+    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
 
   // Health/ops probes + Prometheus scrape live at the ROOT (no /api/v1 prefix) so

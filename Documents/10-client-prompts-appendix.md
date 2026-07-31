@@ -437,3 +437,39 @@ that the ciphertext never contains the plaintext in any encoding, that the
 IV is fresh per write, that a wrong master key fails closed rather than
 returning plausible garbage, and that the admin key takes precedence over
 env. en/fr catalogue parity held at **2,185 ⇄ 2,185** (33 new keys each).
+
+
+---
+
+## Bug found while shipping the AI admin screen — 2026-07-31 · CORS blocked every PATCH/PUT/DELETE in the browser
+
+Not a deviation; a live defect the AI work happened to surface. Recorded here
+because of what it says about the test strategy.
+
+**Symptom.** Saving the OpenAI key in `Admin → Content → AI` failed with a
+bare "Failed to fetch". GETs on the same screen worked.
+
+**Cause.** `main.ts` called `app.enableCors({ origin, credentials })` without
+`methods`. This app runs on **Fastify**, and `@fastify/cors` defaults
+`methods` to `GET,HEAD,POST` — not the Express-style
+`GET,HEAD,PUT,PATCH,POST,DELETE` that Nest's `enableCors` documentation and
+most examples imply. The preflight therefore answered `GET,HEAD,POST`, the
+browser never sent the real request, and the failure surfaced with no useful
+message.
+
+**Blast radius — far wider than the AI screen.** Every non-GET/POST route was
+unreachable from a browser: **9 DELETE, 9 PATCH and 2 PUT** client methods
+across content, admin, KYC, disputes and settings. Deleting an FAQ, deleting
+a review, updating company details, changing an enquiry status — all of it.
+
+**Why nothing caught it.** Nothing in CI performs a CORS preflight. curl does
+not. Supertest does not. The integration suite calls handlers directly. A
+browser is the only client that runs this check, and there was no browser in
+the loop — so the defect shipped and stayed until someone clicked a button.
+
+**Fix.** `methods` is now listed explicitly, with a comment saying why it
+must not be dropped again. `backend/src/main.cors.spec.ts` asserts the
+preflight ANSWER for GET/POST/PUT/PATCH/DELETE, and separately that an
+unknown origin is still refused — so "make CORS work" cannot quietly become
+"allow everyone". The test was verified to FAIL with the fix removed (3 of 6
+cases) before being kept.
