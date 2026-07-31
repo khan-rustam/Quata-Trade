@@ -26,6 +26,14 @@ import { sql, type Kysely } from "kysely";
  * Column-for-column parallel to `sessions` on purpose: the rotation and
  * reuse-detection logic is the same algorithm, and two tables that drift
  * apart in shape become two algorithms that drift apart in behaviour.
+ *
+ * ⚠ This migration SHIPPED WITHOUT ITS GRANT and took admin login down with
+ * `permission denied for table admin_sessions`. The API connects as the
+ * restricted `quatatrade_app` role; 0006's blanket grant only covered tables
+ * existing at that time, so every new table needs its own. Fixed in
+ * 0035_admin_sessions_grants, which also sets ALTER DEFAULT PRIVILEGES so the
+ * next new table cannot repeat it. Left uncorrected here on purpose: what ran
+ * on production and what this file says should not diverge.
  */
 export async function up(db: Kysely<unknown>): Promise<void> {
   await sql`
