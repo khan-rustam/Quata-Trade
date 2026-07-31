@@ -473,3 +473,62 @@ preflight ANSWER for GET/POST/PUT/PATCH/DELETE, and separately that an
 unknown origin is still refused — so "make CORS work" cannot quietly become
 "allow everyone". The test was verified to FAIL with the fix removed (3 of 6
 cases) before being kept.
+
+
+---
+
+## Deviation — 2026-07-31 · D20 REVERSED: admins get a rotating refresh session
+
+**D20 said:** "Admin sessions = 10-min access JWT re-login, no refresh cookie
+in v1 — smaller attack surface for the highest-privilege principals."
+
+**Reversed, deliberately.** D20 is right about credentials and wrong about
+people. In practice it logged admins out several times an hour, mid-task, and
+the failure surfaced as an unexplained error rather than "your session
+expired" — it was first reported here as an OpenAI key that "won't save". The
+observed behaviour it produced was a SUPER_ADMIN re-typing their password many
+times a day, which is a worse posture than one rotating credential: reflexive
+re-authentication is exactly what phishing relies on.
+
+**What replaces it.** The access token is unchanged — still short, still
+memory-only, still never in localStorage (the frontend CLAUDE.md rule stands).
+What is new is a rotating refresh token in an httpOnly cookie:
+
+| Property | Why it is what makes 24h defensible |
+|---|---|
+| `httpOnly` | Script cannot read it. This is the entire difference from a token in localStorage, which is what was originally asked for. |
+| `Secure`, `SameSite=strict` | Never crosses plain HTTP; closes CSRF against the admin panel. |
+| Path-scoped to `/api/v1/admin/auth` | Does not ride on ordinary admin API calls — only refresh and logout need it. |
+| Rotated on every use | A captured token is useful for minutes, not a day. |
+| Reuse detection | A revoked token coming back revokes the WHOLE rotation chain, in both directions — the thief's live token dies too. Using a stolen session is what destroys it. |
+| Absolute expiry | A rotation inherits the original deadline; it never extends it. Without this, an attacker with a live token could refresh forever and 24h would silently become permanent. |
+| Admin re-read on every refresh | A deactivated admin cannot mint another access token. A self-contained 24-hour JWT could not offer this at any price. |
+
+`ADMIN_SESSION_TTL_HOURS` (default and **maximum** 24) governs it. The cap is
+deliberate: this covers ledger adjustments, wallet config, withdrawal
+approvals and KYC. If a longer session is ever wanted the answer is device
+trust, not a bigger number.
+
+**New table** `admin_sessions` (migration 0034) — separate from `sessions`
+because `sessions.user_id` is `REFERENCES users(id)` and an admin is a
+different principal. Column-for-column parallel on purpose: same algorithm,
+and two tables that drift in shape become two algorithms that drift in
+behaviour.
+
+**Also fixed while here:** the shared client's 401 hook excluded
+`/api/v1/auth/` from re-entry but not `/api/v1/admin/auth/`. Once admins had a
+refresh route, a failing refresh would have 401'd, triggered the hook, and
+called refresh again — an unbounded loop hammering the API from a login
+screen. And the browser client now serialises concurrent refreshes: a
+dashboard fires several queries at once, so an expired token produces a burst
+of 401s, and without a shared in-flight promise the second refresh would
+present an already-rotated token and trip reuse detection — logging the admin
+out and looking, from the server's side, exactly like a session hijack.
+
+**Verification.** `pnpm typecheck` clean across shared/backend/frontend;
+`pnpm lint` 0 errors; `vitest` 39 passed. Migration 0034 applied against a
+real `admins` table: DDL applies, the unique index rejects a duplicate
+`refresh_hash`, `ON DELETE CASCADE` removes an admin's sessions, and
+`down()` + re-`up()` is clean. The full 34-migration chain could not be run
+locally — 0006 creates a restricted DB role this environment cannot grant —
+so 0034 was verified in isolation against the FK it depends on.

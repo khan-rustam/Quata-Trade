@@ -107,6 +107,22 @@ export interface AppReleasesTable {
   created_at: Timestamp;
 }
 
+/**
+ * Admin refresh sessions (migration 0034). Mirrors `SessionsTable` — same
+ * rotation + reuse-detection algorithm, different principal table.
+ */
+export interface AdminSessionsTable {
+  id: string;
+  admin_id: string;
+  refresh_hash: string;
+  ip: string | null;
+  user_agent: string | null;
+  expires_at: ColumnType<Date, Date | string, Date | string>;
+  revoked_at: ColumnType<Date | null, Date | null | undefined, Date | null>;
+  rotated_from: string | null;
+  created_at: Timestamp;
+}
+
 export interface AdminsTable {
   id: string;
   email: string;
@@ -527,6 +543,7 @@ export interface Database {
   sessions: SessionsTable;
   auth_tokens: AuthTokensTable;
   admins: AdminsTable;
+  admin_sessions: AdminSessionsTable;
   app_releases: AppReleasesTable;
   accounts: AccountsTable;
   journal_entries: JournalEntriesTable;

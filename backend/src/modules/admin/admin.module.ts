@@ -7,6 +7,7 @@ import { DisputesModule } from "../disputes/disputes.module";
 import { WithdrawalsModule } from "../withdrawals/withdrawals.module";
 import { WalletModule } from "../wallet/wallet.module";
 import { AdminAuthService } from "./admin-auth.service";
+import { AdminSessionService } from "./admin-session.service";
 import { AdminService } from "./admin.service";
 import { SystemHealthService } from "./system-health.service";
 import { AdminTeamService } from "./admin-team.service";
@@ -26,7 +27,7 @@ import { AdminController } from "./admin.controller";
 @Module({
   imports: [AuditModule, SettingsModule, LedgerModule, KycModule, DisputesModule, WithdrawalsModule, WalletModule],
   controllers: [AdminAuthController, AdminController],
-  providers: [AdminAuthService, AdminService, SystemHealthService, AdminTeamService, AlertsAdminService, WalletAdminService, HeldDepositsService],
-  exports: [AdminAuthService, AdminService],
+  providers: [AdminAuthService, AdminSessionService, AdminService, SystemHealthService, AdminTeamService, AlertsAdminService, WalletAdminService, HeldDepositsService],
+  exports: [AdminAuthService, AdminSessionService, AdminService],
 })
 export class AdminModule {}

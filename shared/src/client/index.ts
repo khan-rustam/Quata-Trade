@@ -227,7 +227,13 @@ export class QuataApiClient {
     // the new token — otherwise a token that expires mid-request (e.g. a withdrawal)
     // fails with a spurious error even though the session is still valid. Skip the
     // auth endpoints themselves (login/refresh/logout) so a failed refresh can't loop.
-    const isAuthPath = path.startsWith("/api/v1/auth/");
+    // Both auth surfaces are excluded. `/api/v1/admin/auth/refresh` MUST be
+    // here: without it, a failing admin refresh 401s, triggers onUnauthorized,
+    // which calls refresh again — an unbounded loop that hammers the API from
+    // a login screen. The user path has always been excluded for the same
+    // reason; the admin path was added when admins gained a refresh token.
+    const isAuthPath =
+      path.startsWith("/api/v1/auth/") || path.startsWith("/api/v1/admin/auth/");
     if (res.status === 401 && !isAuthPath && this.opts.onUnauthorized) {
       await this.opts.onUnauthorized();
       res = await this.sendOnce(urlStr, method, body);
@@ -420,6 +426,15 @@ export class QuataApiClient {
   // ---- admin (uses a separate admin token; RBAC enforced server-side) ----
   adminLogin = (body: AdminLoginRequest) =>
     this.request("POST", "/api/v1/admin/auth/login", zAuthTokensResponse, body);
+  /**
+   * Swap the httpOnly refresh cookie for a fresh access token.
+   *
+   * Carries no body and no Authorization header on purpose — the cookie IS the
+   * credential, and this is the call made precisely when the access token has
+   * expired.
+   */
+  adminRefresh = () => this.request("POST", "/api/v1/admin/auth/refresh", zAuthTokensResponse);
+  adminLogout = (): Promise<Ok> => this.request("POST", "/api/v1/admin/auth/logout", zOk);
   adminMe = () => this.request("GET", "/api/v1/admin/me", zAdminProfile);
   adminUpdateProfile = (body: AdminUpdateProfileRequest): Promise<AdminProfile> =>
     this.request("PATCH", "/api/v1/admin/profile", zAdminProfile, body);

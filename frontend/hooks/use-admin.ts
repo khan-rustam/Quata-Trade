@@ -3,9 +3,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
 import type { AdminLoginRequest } from "@quatatrade/shared";
-import { adminApi, getAdminToken, setAdminToken, subscribeAdminToken } from "@/lib/api/admin-client";
+import {
+  adminApi,
+  endAdminSession,
+  getAdminToken,
+  setAdminToken,
+  subscribeAdminToken,
+} from "@/lib/api/admin-client";
 
-/** Reactive admin-token presence (no localStorage; memory only). */
+/** Reactive admin-token presence (memory only — the durable half of the
+ *  session is an httpOnly cookie this code cannot read). */
 export function useAdminToken(): string | null {
   return useSyncExternalStore(subscribeAdminToken, getAdminToken, () => null);
 }
@@ -25,9 +32,16 @@ export function useAdminLogin() {
   });
 }
 
+/**
+ * Log out for real: revoke the session server-side, clear the cookie, then
+ * drop local state.
+ *
+ * Clearing only the in-memory token would leave the refresh cookie alive — the
+ * next page load would silently restore the session, and "log out" would
+ * visibly not log the admin out.
+ */
 export function adminLogout(qcClear: () => void): void {
-  setAdminToken(null);
-  qcClear();
+  void endAdminSession().finally(qcClear);
 }
 
 export function useAdminKpis() {

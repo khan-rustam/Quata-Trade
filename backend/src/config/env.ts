@@ -38,6 +38,21 @@ export const envSchema = z.object({
   JWT_ACCESS_SECRET: z.string().min(32, "JWT secret must be ≥32 chars"),
   JWT_ACCESS_TTL_SECONDS: z.coerce.number().int().min(60).max(900).default(600),
   REFRESH_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
+  /**
+   * How long an admin stays signed in without re-entering a password.
+   *
+   * ABSOLUTE, not sliding — a rotation inherits the original deadline rather
+   * than extending it, so this is a hard ceiling on a session's life, not a
+   * timer an active attacker can keep resetting.
+   *
+   * Capped at 24h deliberately. This governs the highest-privilege principals
+   * on the platform (ledger adjustments, wallet config, withdrawal approvals,
+   * KYC), and the credential is only defensible because it is short-lived,
+   * httpOnly and rotating. Raising this cap would remove the first of those
+   * three; if a longer session is ever wanted, the answer is device trust, not
+   * a bigger number here.
+   */
+  ADMIN_SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(24).default(24),
   MASTER_ENCRYPTION_KEY: z
     .string()
     .refine((v) => Buffer.from(v, "base64").length === 32, "MASTER_ENCRYPTION_KEY must be 32 bytes base64"),

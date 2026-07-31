@@ -23,6 +23,10 @@ export interface AdminTokens {
   accessToken: string;
   accessTokenExpiresIn: number;
   totpRequired: boolean;
+  /** Who authenticated. Empty while a TOTP challenge is outstanding — there is
+   *  no authenticated admin yet at that point, and returning one would invite
+   *  a caller to open a session on a half-finished login. */
+  adminId: string;
 }
 
 const LOGIN_MAX_FAILURES = 5;
@@ -92,7 +96,7 @@ export class AdminAuthService {
     if (admin.totp_enabled) {
       if (!dto.totpCode) {
         // password verified, but the admin has 2FA on — ask the client for a code
-        return { accessToken: "", accessTokenExpiresIn: 0, totpRequired: true };
+        return { accessToken: "", accessTokenExpiresIn: 0, totpRequired: true, adminId: "" };
       }
       if (!(await this.totpMatches(admin, dto.totpCode))) {
         await this.loginFailed(limiterKey, admin.id, "bad_totp", ip);
@@ -117,6 +121,7 @@ export class AdminAuthService {
       accessToken,
       accessTokenExpiresIn: this.config.get("JWT_ACCESS_TTL_SECONDS", { infer: true }),
       totpRequired: false,
+      adminId: admin.id,
     };
   }
 
