@@ -55,11 +55,24 @@ const zChatCompletion = z.object({
 });
 
 export interface AiConfig {
+  /** Env fallback. The admin-set key in `AiCredentialsService` wins. */
   apiKey: string;
   baseUrl: string;
   model: string;
   maxOutputTokens: number;
   timeoutMs: number;
+}
+
+/**
+ * Where the live key comes from.
+ *
+ * An interface rather than a direct dependency on `AiCredentialsService` so
+ * this service stays constructible in a test with one object literal — the
+ * spec has no database, and it should not need one to assert how a prompt is
+ * built.
+ */
+export interface AiKeySource {
+  resolveKey(): Promise<string>;
 }
 
 const SYSTEM_BASE =
@@ -97,18 +110,39 @@ const LOCALE_NAMES: Record<string, string> = {
 export class AiService {
   private readonly log = new Logger(AiService.name);
 
-  constructor(private readonly config: AiConfig) {}
+  constructor(
+    private readonly config: AiConfig,
+    /** Omitted in unit tests, where the env key in `config` is enough. */
+    private readonly keys?: AiKeySource,
+  ) {}
+
+  /**
+   * The key to use right now: admin-set if there is one, env otherwise.
+   *
+   * Resolved per call rather than cached, because an admin rotating the key
+   * in the settings screen expects the very next draft to use it. The read is
+   * one indexed row against a table the app already touches constantly.
+   */
+  private async currentKey(): Promise<string> {
+    if (this.keys) {
+      const resolved = (await this.keys.resolveKey()).trim();
+      if (resolved !== "") return resolved;
+    }
+    return this.config.apiKey.trim();
+  }
 
   /**
    * Whether the feature can run. Never leaks the key or any part of it —
    * `reason` is a fixed string, not a diagnostic built from the value.
    */
-  status(): AiStatus {
-    const enabled = this.config.apiKey.trim() !== "";
+  async status(): Promise<AiStatus> {
+    const enabled = (await this.currentKey()) !== "";
     return {
       enabled,
       model: this.config.model,
-      reason: enabled ? null : "OPENAI_API_KEY is not configured",
+      reason: enabled
+        ? null
+        : "No OpenAI API key is configured. Set one in Admin -> Content -> AI.",
     };
   }
 
@@ -143,7 +177,8 @@ export class AiService {
 
   /** One Chat Completions round-trip, validated on the way back. */
   private async complete(userContent: string): Promise<AiDraftResponse> {
-    if (this.config.apiKey.trim() === "") {
+    const apiKey = await this.currentKey();
+    if (apiKey === "") {
       throw new AiDisabledError();
     }
 
@@ -160,7 +195,7 @@ export class AiService {
         signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${this.config.apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           model: this.config.model,

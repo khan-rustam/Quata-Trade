@@ -14,11 +14,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Segmented } from "@/components/ui/segmented";
 import { useToast } from "@/components/ui/toast";
+import { AiSettingsSection } from "@/components/admin/ai-settings-section";
 import { adminApi } from "@/lib/api/admin-client";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 
-type Tab = "company" | "faq" | "reviews";
+type Tab = "company" | "faq" | "reviews" | "ai";
 const SOCIALS = ["facebook", "x", "instagram", "linkedin", "telegram"] as const;
 
 export default function AdminContentPage(): React.JSX.Element {
@@ -35,11 +36,13 @@ export default function AdminContentPage(): React.JSX.Element {
           { value: "company", label: tx("tabCompany") },
           { value: "faq", label: tx("tabFaq") },
           { value: "reviews", label: tx("tabReviews") },
+          { value: "ai", label: tx("tabAi") },
         ]}
       />
       {tab === "company" && <CompanySection />}
       {tab === "faq" && <FaqSection />}
       {tab === "reviews" && <ReviewSection />}
+      {tab === "ai" && <AiSettingsSection />}
     </div>
   );
 }

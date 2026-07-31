@@ -85,3 +85,38 @@ export const zAiStatus = z
   })
   .strict();
 export type AiStatus = z.infer<typeof zAiStatus>;
+
+/**
+ * The OpenAI credential surface — admin only, WRITE-ONLY.
+ *
+ * There is deliberately no field here that could carry the key back out. The
+ * screen shows whether one is configured, where it came from, who set it and
+ * a truncated one-way fingerprint — enough to answer "is this the key I
+ * pasted?" and nothing that could reconstruct it.
+ */
+export const zAiCredentialStatus = z
+  .object({
+    configured: z.boolean(),
+    /** "admin" = set in this screen, "env" = falling back to the env var. */
+    source: z.enum(["admin", "env"]).nullable(),
+    /** First 8 hex chars of sha256(key). Identifies; never reconstructs. */
+    fingerprint: z.string().nullable(),
+    updatedAt: z.string().nullable(),
+    updatedBy: z.string().nullable(),
+  })
+  .strict();
+export type AiCredentialStatus = z.infer<typeof zAiCredentialStatus>;
+
+export const zSetAiCredentialRequest = z
+  .object({
+    // Bounded, and required to look like a key rather than a pasted sentence:
+    // a mistyped value silently disables drafting until someone notices.
+    apiKey: z
+      .string()
+      .trim()
+      .min(20, "That does not look like an API key")
+      .max(300)
+      .regex(/^[A-Za-z0-9_\-.]+$/, "An API key has no spaces or symbols"),
+  })
+  .strict();
+export type SetAiCredentialRequest = z.infer<typeof zSetAiCredentialRequest>;

@@ -1,6 +1,8 @@
 import { Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { AuditModule } from "../../common/audit/audit.module";
 import type { Env } from "../../config/env";
+import { AiCredentialsService } from "./ai-credentials.service";
 import { AiService, type AiConfig } from "./ai.service";
 
 /**
@@ -16,7 +18,8 @@ import { AiService, type AiConfig } from "./ai.service";
  *
  * Config is resolved once from validated env into a plain object, following
  * `deposits.config.ts` — tests construct it directly rather than standing up
- * a ConfigService.
+ * a ConfigService. The API KEY inside it is only the fallback;
+ * `AiCredentialsService` supplies the admin-set one and wins.
  */
 export function aiConfigFromEnv(config: ConfigService<Env, true>): AiConfig {
   return {
@@ -31,18 +34,21 @@ export function aiConfigFromEnv(config: ConfigService<Env, true>): AiConfig {
 export const AI_CONFIG = "AI_CONFIG";
 
 @Module({
+  imports: [AuditModule],
   providers: [
     {
       provide: AI_CONFIG,
       inject: [ConfigService],
       useFactory: (config: ConfigService<Env, true>) => aiConfigFromEnv(config),
     },
+    AiCredentialsService,
     {
       provide: AiService,
-      inject: [AI_CONFIG],
-      useFactory: (cfg: AiConfig) => new AiService(cfg),
+      inject: [AI_CONFIG, AiCredentialsService],
+      useFactory: (cfg: AiConfig, keys: AiCredentialsService) =>
+        new AiService(cfg, keys),
     },
   ],
-  exports: [AiService],
+  exports: [AiService, AiCredentialsService],
 })
 export class AiModule {}

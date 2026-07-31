@@ -9,6 +9,14 @@ import {
 } from "../schemas/auth.js";
 import { zAnyRecord, zOk, type Ok } from "../schemas/common.js";
 import {
+  zAiCredentialStatus,
+  zAiDraftResponse,
+  zAiStatus,
+  type AiDraftRequest,
+  type AiTranslateRequest,
+  type SetAiCredentialRequest,
+} from "../schemas/ai.js";
+import {
   zSessionsResponse,
   zUserProfile,
   type ChangeEmailRequest,
@@ -393,6 +401,21 @@ export class QuataApiClient {
     this.request("GET", "/api/v1/admin/content/enquiries", zEnquiryList, undefined, query);
   adminUpdateEnquiryStatus = (id: string, body: UpdateEnquiryStatusRequest): Promise<Ok> =>
     this.request("PATCH", `/api/v1/admin/content/enquiries/${id}`, zOk, body);
+
+  // ---- content AI (drafting + translation; credentials are SUPER-only) ----
+  // Note there is no method that READS the key back — the API has no such
+  // route, and adding one here would be the first step toward wanting it.
+  adminAiStatus = () => this.request("GET", "/api/v1/admin/content/ai/status", zAiStatus);
+  adminAiDraft = (body: AiDraftRequest) =>
+    this.request("POST", "/api/v1/admin/content/ai/draft", zAiDraftResponse, body);
+  adminAiTranslate = (body: AiTranslateRequest) =>
+    this.request("POST", "/api/v1/admin/content/ai/translate", zAiDraftResponse, body);
+  adminAiCredentials = () =>
+    this.request("GET", "/api/v1/admin/content/ai/credentials", zAiCredentialStatus);
+  adminSetAiCredentials = (body: SetAiCredentialRequest) =>
+    this.request("PUT", "/api/v1/admin/content/ai/credentials", zAiCredentialStatus, body);
+  adminClearAiCredentials = () =>
+    this.request("DELETE", "/api/v1/admin/content/ai/credentials", zAiCredentialStatus);
 
   // ---- admin (uses a separate admin token; RBAC enforced server-side) ----
   adminLogin = (body: AdminLoginRequest) =>

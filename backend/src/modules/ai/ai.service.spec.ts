@@ -85,18 +85,58 @@ afterEach(() => {
 });
 
 describe("AiService.status", () => {
-  it("reports disabled with no key, and never echoes the key", () => {
-    const s = new AiService(config({ apiKey: "" })).status();
+  it("reports disabled with no key, and never echoes the key", async () => {
+    const s = await new AiService(config({ apiKey: "" })).status();
     expect(s.enabled).toBe(false);
-    expect(s.reason).toBe("OPENAI_API_KEY is not configured");
+    expect(s.reason).toContain("No OpenAI API key is configured");
     expect(JSON.stringify(s)).not.toContain(SECRET);
   });
 
-  it("reports enabled with a key, still without the key", () => {
-    const s = new AiService(config()).status();
+  it("reports enabled with a key, still without the key", async () => {
+    const s = await new AiService(config()).status();
     expect(s.enabled).toBe(true);
     expect(s.reason).toBeNull();
     expect(JSON.stringify(s)).not.toContain(SECRET);
+  });
+});
+
+describe("AiService key precedence", () => {
+  it("prefers the admin-set key over the env fallback", async () => {
+    fetchMock.mockResolvedValue(okResponse("drafted"));
+    const ADMIN_KEY = "sk-admin-set-key-999";
+    const svc = new AiService(config(), {
+      resolveKey: async () => ADMIN_KEY,
+    });
+
+    await svc.draft({ kind: "faq_answer", prompt: "x", locale: "en" });
+
+    const { init } = callAt(0);
+    expect((init.headers as Record<string, string>).Authorization).toBe(
+      `Bearer ${ADMIN_KEY}`,
+    );
+  });
+
+  it("falls back to env when the admin has not set one", async () => {
+    fetchMock.mockResolvedValue(okResponse("drafted"));
+    const svc = new AiService(config(), { resolveKey: async () => "" });
+
+    await svc.draft({ kind: "faq_answer", prompt: "x", locale: "en" });
+
+    const { init } = callAt(0);
+    expect((init.headers as Record<string, string>).Authorization).toBe(
+      `Bearer ${SECRET}`,
+    );
+  });
+
+  it("is disabled when neither source has a key", async () => {
+    const svc = new AiService(config({ apiKey: "" }), {
+      resolveKey: async () => "",
+    });
+    expect((await svc.status()).enabled).toBe(false);
+    await expect(
+      svc.draft({ kind: "faq_answer", prompt: "x", locale: "en" }),
+    ).rejects.toBeInstanceOf(AiDisabledError);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

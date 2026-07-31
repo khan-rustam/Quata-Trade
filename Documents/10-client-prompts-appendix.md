@@ -400,5 +400,40 @@ no network call when disabled, fence placement, bearer header, output cap,
 locale selection, translation direction, rate-limit/timeout/malformed-shape/
 empty-completion handling, and two key-leak assertions).
 
-**Not built:** the admin UI. The endpoints and the shared zod schemas exist;
-no frontend screen calls them yet.
+**Admin UI + admin-held key (added same day).** The key is no longer
+env-only. `Admin → Content → AI` has two cards: a credential card and a
+drafting playground.
+
+- **Storage.** `settings` row `openai_credentials`, value
+  `{ api_key_enc, fingerprint, set_at }`. `api_key_enc` is AES-256-GCM via
+  the same `common/crypto.ts` helper that protects TOTP seeds, keyed by
+  `MASTER_ENCRYPTION_KEY`. No migration — `settings` is already a generic KV
+  store, and a secret in its own table would only advertise itself.
+- **Write-only.** No endpoint returns the key; there is no route that could.
+  The screen shows *configured / not configured*, the source (admin or env),
+  who set it, when, and the first 8 hex chars of `sha256(key)`. That
+  fingerprint is the fleet convention for identifying a secret without
+  printing it, and it is strictly better than the usual `sk-…abcd` preview,
+  which puts real key material into screenshots and screen shares.
+- **RBAC.** Drafting stays on `RBAC.editSettings`. Credentials are
+  `RBAC.manageAdmins` — SUPER_ADMIN only — because holding the credential
+  that bills the OpenAI account is a different job from writing an FAQ.
+- **Audited.** `ai.credentials.set` and `ai.credentials.cleared` write
+  hash-chained audit rows carrying the fingerprint, so an investigator can
+  correlate which key was live during a window without the log ever holding
+  one.
+- **Precedence.** DB wins over env; clearing falls back to env. An admin who
+  pastes a key expects the next draft to use it, and the fallback is what
+  makes this safe to adopt without a flag day. A decrypt failure (rotated
+  master key, tampered row) reports the feature unconfigured and logs loudly
+  rather than 500ing a content screen.
+
+Endpoints: `GET/PUT/DELETE /api/v1/admin/content/ai/credentials`.
+
+**Verification (this pass).** `pnpm typecheck` clean across
+shared/backend/frontend; `pnpm lint` backend clean, frontend 4 pre-existing
+warnings in untouched files; `vitest src/modules/ai/` — 22 passed, including
+that the ciphertext never contains the plaintext in any encoding, that the
+IV is fresh per write, that a wrong master key fails closed rather than
+returning plausible garbage, and that the admin key takes precedence over
+env. en/fr catalogue parity held at **2,185 ⇄ 2,185** (33 new keys each).

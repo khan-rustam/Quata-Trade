@@ -1,22 +1,30 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpException,
   HttpStatus,
   Post,
+  Put,
+  Req,
 } from "@nestjs/common";
 import {
   zAiDraftRequest,
   zAiTranslateRequest,
+  zSetAiCredentialRequest,
+  type AiCredentialStatus,
   type AiDraftRequest,
   type AiDraftResponse,
   type AiStatus,
   type AiTranslateRequest,
+  type SetAiCredentialRequest,
 } from "@quatatrade/shared";
 import { ZodPipe } from "../../common/zod.pipe";
-import { Roles } from "../../common/auth/decorators";
+import { CurrentAdminId, Roles } from "../../common/auth/decorators";
+import type { AuthenticatedRequest } from "../../common/auth/jwt.types";
 import { RBAC } from "../admin/admin.rbac";
+import { AiCredentialsService } from "../ai/ai-credentials.service";
 import { AiDisabledError, AiUpstreamError } from "../ai/ai.errors";
 import { AiService } from "../ai/ai.service";
 
@@ -41,7 +49,10 @@ import { AiService } from "../ai/ai.service";
  */
 @Controller("admin/content/ai")
 export class ContentAiController {
-  constructor(private readonly ai: AiService) {}
+  constructor(
+    private readonly ai: AiService,
+    private readonly credentials: AiCredentialsService,
+  ) {}
 
   /**
    * Whether drafting is usable, so the admin UI can hide the buttons rather
@@ -49,8 +60,47 @@ export class ContentAiController {
    */
   @Roles(...RBAC.editSettings)
   @Get("status")
-  status(): AiStatus {
+  status(): Promise<AiStatus> {
     return this.ai.status();
+  }
+
+  // ── credentials ─────────────────────────────────────────────────────────
+  //
+  // SUPER_ADMIN only, deliberately narrower than the drafting endpoints
+  // above. Using the feature is a content job; holding the key that bills the
+  // OpenAI account is not, and `RBAC.editSettings` also includes
+  // FINANCE_ADMIN. This matches how `manageWalletConfig` and `manageAdmins`
+  // are scoped.
+
+  /**
+   * Whether a key is configured, where it came from, and its fingerprint.
+   * Never the key — there is no code path that returns it.
+   */
+  @Roles(...RBAC.manageAdmins)
+  @Get("credentials")
+  credentialStatus(): Promise<AiCredentialStatus> {
+    return this.credentials.status();
+  }
+
+  /** Store a new key, encrypted at rest. Audited. */
+  @Roles(...RBAC.manageAdmins)
+  @Put("credentials")
+  setCredentials(
+    @Body(new ZodPipe(zSetAiCredentialRequest)) dto: SetAiCredentialRequest,
+    @CurrentAdminId() adminId: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AiCredentialStatus> {
+    return this.credentials.set(dto.apiKey, { id: adminId, ip: req.ip });
+  }
+
+  /** Remove the admin-set key. Falls back to the env var, if one is set. */
+  @Roles(...RBAC.manageAdmins)
+  @Delete("credentials")
+  clearCredentials(
+    @CurrentAdminId() adminId: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AiCredentialStatus> {
+    return this.credentials.clear({ id: adminId, ip: req.ip });
   }
 
   @Roles(...RBAC.editSettings)
