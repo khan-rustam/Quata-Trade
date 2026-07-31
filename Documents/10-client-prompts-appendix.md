@@ -336,3 +336,69 @@ animated diagram — a *depiction* of a screen rather than UI chrome, where enla
 would break the mockup's proportions. `payment-method-chip.tsx` keeps MTN/Orange partner hex
 values, which §11.6 requires to stay recognizable; they should become named tokens rather than
 inline literals, but that is a token-layer change, not a component fix.
+
+---
+
+## Deviation — 2026-07-31 · OpenAI for admin content drafting and translation
+
+**What changed.** A new `ai` module (`backend/src/modules/ai/`) calls the OpenAI
+Chat Completions API, reachable only from two admin endpoints:
+
+```
+GET  /admin/content/ai/status      is drafting configured?
+POST /admin/content/ai/draft       draft an FAQ answer / company blurb / review reply
+POST /admin/content/ai/translate   translate copy between EN and FR
+```
+
+Both are behind `RBAC.editSettings` (SUPER_ADMIN + FINANCE_ADMIN), the same gate
+as the rest of content administration.
+
+**Why it is a deviation.** `Documents/01 §22` defers "AI support chat" and `07
+§49` says to use human tickets instead. This is not that feature — no customer
+ever reaches it — but it is the first LLM call in the codebase, so it is logged
+rather than assumed to be in scope.
+
+**What it explicitly does NOT do**, because four separate documents forbid it
+(`01 §18`, `02 §100`, `06 §65`, `CLAUDE.md §Risk`):
+
+- No LLM in the fraud/risk decision path. `AiModule` is imported by
+  `ContentModule` and by nothing else; importing it into `risk/`, `kyc/`,
+  `disputes/`, `escrow/`, `ledger/` or `withdrawals/` is the prohibited thing,
+  and both the module and the service docstrings say so at the point a
+  contributor would be about to do it.
+- No KYC document processing. `01 §42`'s "no training pipeline in v1" stands —
+  nothing is sent for training, and no KYC data reaches the module.
+- No writes. The endpoints return text. Publishing still goes through the
+  existing `POST /admin/content/faqs`, so a draft nobody approves changes
+  nothing and removing the feature removes it completely.
+
+**Configuration.** `OPENAI_API_KEY` (empty = feature off everywhere, which is
+the default including in production), `OPENAI_BASE_URL`, `OPENAI_MODEL`,
+`OPENAI_MAX_OUTPUT_TOKENS`, `OPENAI_TIMEOUT_MS`. The key lives in the VPS `.env`
+only; `.env.example` carries the names. No production guard — this is
+load-bearing for nothing.
+
+**Prompt injection.** Admin-supplied text is treated as untrusted even though
+the admin is trusted: an FAQ topic gets pasted from a customer email, and a
+review reply is drafted against a review a stranger wrote. Operator text is
+fenced in `<<<INPUT>>>` delimiters and the system message states that fenced
+content is data, never instructions. That is mitigation, not a guarantee —
+which is why the output is never executed, never stored automatically, and
+never published without a human pressing Save.
+
+**Key handling.** The key is never logged, never returned, and never included
+in an error message. On an upstream failure only the HTTP status is logged: an
+OpenAI error body can echo the request back, and the request carries both the
+operator's text and, in the headers, the key. `status()` returns a fixed
+`reason` string rather than anything derived from the value. Tests assert the
+key is absent from `status()` output and from a 429 error path whose upstream
+body deliberately contains it.
+
+**Verification.** `pnpm typecheck` clean across shared/backend/frontend;
+`vitest src/modules/ai/ai.service.spec.ts` — 12 passed (disabled-without-key,
+no network call when disabled, fence placement, bearer header, output cap,
+locale selection, translation direction, rate-limit/timeout/malformed-shape/
+empty-completion handling, and two key-leak assertions).
+
+**Not built:** the admin UI. The endpoints and the shared zod schemas exist;
+no frontend screen calls them yet.
