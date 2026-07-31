@@ -123,6 +123,30 @@ export const envSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().default(""),
   TELEGRAM_CHAT_ID: z.string().default(""),
 
+  // ---------------------------------------------------------------
+  // OpenAI — CONTENT DRAFTING AND TRANSLATION ONLY
+  // ---------------------------------------------------------------
+  // Deliberately narrow. `Documents/01 §risk`, `02` (tech-stack "do not"),
+  // `06` (risk module) and `CLAUDE.md` all forbid LLM calls in the fraud/risk
+  // decision path, and `07` defers AI support chat in favour of human tickets.
+  // This key exists so an admin can DRAFT site copy and translate it to
+  // French, with a human publishing the result. It must never reach a risk,
+  // KYC, dispute or money code path. See Documents/10 → Deviations Log.
+  //
+  // Empty key = feature off, everywhere, with no other configuration needed:
+  // the module reports `enabled: false` and the admin UI hides the buttons.
+  // That is the default, including in production — this is not load-bearing
+  // for any user-facing flow, so it does not get a production guard.
+  OPENAI_API_KEY: z.string().default(""),
+  OPENAI_BASE_URL: z.string().url().default("https://api.openai.com/v1"),
+  OPENAI_MODEL: z.string().default("gpt-4o-mini"),
+  // A hard ceiling on generated length. Copy drafting does not need more, and
+  // an unbounded max_tokens is how a stuck loop becomes an invoice.
+  OPENAI_MAX_OUTPUT_TOKENS: z.coerce.number().int().min(64).max(4_000).default(800),
+  // Wall-clock budget for one call. An admin is watching a spinner; a request
+  // that has not returned in this long has failed as far as they are concerned.
+  OPENAI_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(30_000),
+
   // Market data (informational Markets page). CoinGecko primary; CoinCap failover.
   // Free tiers work with no key; a key raises rate limits. Responses are Redis-cached.
   COINGECKO_API_URL: z.string().url().default("https://api.coingecko.com/api/v3"),
