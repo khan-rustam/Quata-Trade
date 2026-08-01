@@ -1024,7 +1024,11 @@
     "statusPending": "en attente",
     "statusRejected": "rejeté",
     "statusResubmit": "à resoumettre",
-    "statusNone": "aucun"
+    "statusNone": "aucun",
+    "captureHintFront": "Recto de votre pièce d'identité — remplissez le cadre, les quatre coins visibles",
+    "captureHintBack": "Verso de votre pièce d'identité — remplissez le cadre, les quatre coins visibles",
+    "captureHintPassport": "Page photo de votre passeport — remplissez le cadre",
+    "captureHintSelfie": "Tenez votre document à côté de votre visage, les deux bien visibles"
   },
   "accountNotifications": {
     "title": "Notifications",
@@ -1620,7 +1624,9 @@
     "errUploadFailed": "Échec de l'envoi",
     "uploading": "Envoi en cours…",
     "hint": "JPG, PNG, WebP ou PDF · max 5 Mo",
-    "removeFile": "Supprimer le fichier"
+    "removeFile": "Supprimer le fichier",
+    "chooseFile": "Choisir un fichier",
+    "captureHintDefault": "Placez le document dans le cadre"
   },
   "adminLedgerAdjustment": {
     "pageTitle": "Ajustement du grand livre",
@@ -2389,5 +2395,13 @@
     "resentBody": "Si cette adresse doit être vérifiée, un nouveau code est en route.",
     "resendFailed": "Impossible de renvoyer l’e-mail. Réessayez dans un instant.",
     "dismiss": "Fermer"
+  },
+  "documentCamera": {
+    "close": "Fermer l'appareil photo",
+    "shutter": "Prendre la photo",
+    "retake": "Reprendre",
+    "usePhoto": "Utiliser cette photo",
+    "previewAlt": "Photo que vous venez de prendre",
+    "reviewHint": "Tout est-il lisible et bien dans le cadre ?"
   }
 }

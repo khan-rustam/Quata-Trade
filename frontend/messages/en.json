@@ -1024,7 +1024,11 @@
     "statusPending": "pending",
     "statusRejected": "rejected",
     "statusResubmit": "resubmit",
-    "statusNone": "none"
+    "statusNone": "none",
+    "captureHintFront": "Front of your ID — fill the frame, all four corners visible",
+    "captureHintBack": "Back of your ID — fill the frame, all four corners visible",
+    "captureHintPassport": "Photo page of your passport — fill the frame",
+    "captureHintSelfie": "Hold your document beside your face, both clearly visible"
   },
   "accountNotifications": {
     "title": "Notifications",
@@ -1620,7 +1624,9 @@
     "errUploadFailed": "Upload failed",
     "uploading": "Uploading…",
     "hint": "JPG, PNG, WebP or PDF · max 5 MB",
-    "removeFile": "Remove file"
+    "removeFile": "Remove file",
+    "chooseFile": "Choose a file instead",
+    "captureHintDefault": "Fit the document inside the frame"
   },
   "adminLedgerAdjustment": {
     "pageTitle": "Ledger adjustment",
@@ -2389,5 +2395,13 @@
     "resentBody": "If that address needs verifying, a new code is on its way.",
     "resendFailed": "Could not resend the email. Please try again shortly.",
     "dismiss": "Dismiss"
+  },
+  "documentCamera": {
+    "close": "Close camera",
+    "shutter": "Take photo",
+    "retake": "Retake",
+    "usePhoto": "Use photo",
+    "previewAlt": "Photo you just took",
+    "reviewHint": "Is everything readable and inside the frame?"
   }
 }

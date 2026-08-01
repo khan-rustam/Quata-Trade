@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Check, Loader2, Upload, X } from "lucide-react";
+import { Camera, Check, ImageUp, Loader2, X } from "lucide-react";
 import { KYC_UPLOAD_MIMES } from "@quatatrade/shared";
 import { api } from "@/lib/api/client";
 import { apiErrorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
+import { DocumentCamera, type CameraFacing } from "./document-camera";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -15,18 +16,32 @@ export function DocumentUpload({
   label,
   onUploaded,
   onCleared,
+  facing = "environment",
+  captureHint,
 }: {
   label: string;
   onUploaded: (key: string) => void;
   onCleared: () => void;
+  /** "user" flips to the front lens + a face-shaped guide, for the selfie. */
+  facing?: CameraFacing;
+  /** What to line up in the frame, e.g. "Front of your ID card". */
+  captureHint?: string;
 }): React.JSX.Element {
   const tx = useTranslations("documentUpload");
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<"idle" | "uploading" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState<string>();
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   const pick = () => inputRef.current?.click();
+
+  // Camera unavailable — denied, absent, blocked by an in-app browser. Drop
+  // straight to the picker rather than stranding the user on a dead step.
+  const fallbackToPicker = useCallback(() => {
+    setCameraOpen(false);
+    pick();
+  }, []);
 
   const onFile = async (file: File) => {
     setError(null);
@@ -65,7 +80,7 @@ export function DocumentUpload({
     <div>
       <button
         type="button"
-        onClick={state === "done" ? undefined : pick}
+        onClick={state === "done" ? undefined : () => setCameraOpen(true)}
         className={cn(
           "flex w-full items-center gap-3 rounded-xl border border-dashed px-4 py-3 text-left transition-colors",
           state === "done" ? "border-success/40 bg-success/5" : state === "error" ? "border-danger/40" : "border-border hover:bg-surface-2",
@@ -82,7 +97,7 @@ export function DocumentUpload({
           ) : state === "done" ? (
             <Check size={18} />
           ) : (
-            <Upload size={18} />
+            <Camera size={18} />
           )}
         </span>
         <span className="min-w-0 flex-1">
@@ -106,12 +121,37 @@ export function DocumentUpload({
           </span>
         )}
       </button>
+      {/* The picker stays reachable on purpose. A photo already in the gallery,
+          a scan emailed from a desktop, or a PDF of a passport page are all
+          legitimate — the camera is the guided default, not the only door. */}
+      {state !== "done" && (
+        <button
+          type="button"
+          onClick={pick}
+          className="mt-1.5 flex items-center gap-1.5 text-xs text-text-3 underline-offset-2 hover:text-text-2 hover:underline"
+        >
+          <ImageUp size={13} /> {tx("chooseFile")}
+        </button>
+      )}
       {error && (
         <p role="alert" className="mt-1 text-xs text-danger">
           {error}
         </p>
       )}
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+
+      <DocumentCamera
+        open={cameraOpen}
+        facing={facing}
+        title={label}
+        hint={captureHint ?? tx("captureHintDefault")}
+        onCapture={(file) => {
+          setCameraOpen(false);
+          void onFile(file);
+        }}
+        onClose={() => setCameraOpen(false)}
+        onFallback={fallbackToPicker}
+      />
     </div>
   );
 }

@@ -131,11 +131,29 @@ export default function KycPage(): React.JSX.Element {
           </div>
 
           <div className="space-y-2">
-            <DocumentUpload label={tx("docFront")} onUploaded={setFront} onCleared={() => setFront(undefined)} />
+            {/* Each slot names what to frame. "Document — front" alone left
+                people guessing which side of a passport counts as the front. */}
+            <DocumentUpload
+              label={tx("docFront")}
+              captureHint={tx(docType === "passport" ? "captureHintPassport" : "captureHintFront")}
+              onUploaded={setFront}
+              onCleared={() => setFront(undefined)}
+            />
             {docType !== "passport" && (
-              <DocumentUpload label={tx("docBack")} onUploaded={setBack} onCleared={() => setBack(undefined)} />
+              <DocumentUpload
+                label={tx("docBack")}
+                captureHint={tx("captureHintBack")}
+                onUploaded={setBack}
+                onCleared={() => setBack(undefined)}
+              />
             )}
-            <DocumentUpload label={tx("selfie")} onUploaded={setSelfie} onCleared={() => setSelfie(undefined)} />
+            <DocumentUpload
+              label={tx("selfie")}
+              facing="user"
+              captureHint={tx("captureHintSelfie")}
+              onUploaded={setSelfie}
+              onCleared={() => setSelfie(undefined)}
+            />
           </div>
 
           <label className="flex items-start gap-2.5 text-sm text-text-2">
