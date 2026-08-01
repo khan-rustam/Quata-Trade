@@ -6,9 +6,12 @@ import { DB } from "../../db/database.module";
 import { REDIS } from "../../common/redis/redis.module";
 import type { Database } from "../../db/types";
 import { SettingsService } from "../settings/settings.service";
+import { MAX_EMAIL_ATTEMPTS } from "../notify/notify.store";
 
 /** A BROADCAST withdrawal older than this is "stuck" (matches the reconciliation job's intent). */
 const STALE_BROADCAST_MS = 30 * 60_000;
+/** Window for the "mail is actually going out" counter. */
+const DELIVERED_WINDOW_MS = 24 * 60 * 60_000;
 
 /**
  * Read-only system-health snapshot for the admin monitoring page (Layer A).
@@ -46,12 +49,34 @@ export class SystemHealthService {
         outbox: { pending: 0, retrying: 0, oldestPendingAgeSec: null },
         withdrawals: { stuckBroadcast: 0, riskHold: 0, pendingApproval: 0 },
         workload: { openDisputes: 0, pendingKyc: 0 },
+        mail: { queued: 0, retrying: 0, dead: 0, deliveredLast24h: 0, oldestQueuedAgeSec: null },
       };
     }
 
     const staleCutoff = new Date(Date.now() - STALE_BROADCAST_MS);
-    const [kill, outboxPending, outboxRetry, oldestPending, stuck, riskHold, pendingApproval, openDisputes, pendingKyc] =
-      await Promise.all([
+    const deliveredSince = new Date(Date.now() - DELIVERED_WINDOW_MS);
+    /** Live (still retryable) queued mail — the same predicate EmailSendJob sweeps on. */
+    const liveQueued = this.db
+      .selectFrom("notifications")
+      .where("channel", "=", "email")
+      .where("status", "=", "queued")
+      .where("attempts", "<", MAX_EMAIL_ATTEMPTS);
+    const [
+      kill,
+      outboxPending,
+      outboxRetry,
+      oldestPending,
+      stuck,
+      riskHold,
+      pendingApproval,
+      openDisputes,
+      pendingKyc,
+      mailQueued,
+      mailRetrying,
+      mailDead,
+      mailDelivered,
+      oldestQueuedMail,
+    ] = await Promise.all([
         this.settings.killSwitches(),
         this.db
           .selectFrom("outbox")
@@ -95,10 +120,30 @@ export class SystemHealthService {
           .select((eb) => eb.fn.countAll<bigint>().as("n"))
           .where("status", "=", "PENDING")
           .executeTakeFirstOrThrow(),
+        liveQueued.select((eb) => eb.fn.countAll<bigint>().as("n")).executeTakeFirstOrThrow(),
+        liveQueued
+          .where("attempts", ">", 0)
+          .select((eb) => eb.fn.countAll<bigint>().as("n"))
+          .executeTakeFirstOrThrow(),
+        this.db
+          .selectFrom("notifications")
+          .select((eb) => eb.fn.countAll<bigint>().as("n"))
+          .where("channel", "=", "email")
+          .where("status", "=", "queued")
+          .where("attempts", ">=", MAX_EMAIL_ATTEMPTS)
+          .executeTakeFirstOrThrow(),
+        this.db
+          .selectFrom("notifications")
+          .select((eb) => eb.fn.countAll<bigint>().as("n"))
+          .where("channel", "=", "email")
+          .where("status", "=", "delivered")
+          .where("delivered_at", ">=", deliveredSince)
+          .executeTakeFirstOrThrow(),
+        liveQueued.select(sql<Date | null>`MIN(created_at)`.as("oldest")).executeTakeFirst(),
       ]);
 
-    const oldest = oldestPending?.oldest ?? null;
-    const oldestPendingAgeSec = oldest ? Math.max(0, Math.floor((Date.now() - new Date(oldest).getTime()) / 1000)) : null;
+    const ageSec = (at: Date | null | undefined): number | null =>
+      at ? Math.max(0, Math.floor((Date.now() - new Date(at).getTime()) / 1000)) : null;
 
     return {
       checkedAt: new Date().toISOString(),
@@ -110,7 +155,7 @@ export class SystemHealthService {
       outbox: {
         pending: Number(outboxPending.n),
         retrying: Number(outboxRetry.n),
-        oldestPendingAgeSec,
+        oldestPendingAgeSec: ageSec(oldestPending?.oldest),
       },
       withdrawals: {
         stuckBroadcast: Number(stuck.n),
@@ -120,6 +165,13 @@ export class SystemHealthService {
       workload: {
         openDisputes: Number(openDisputes.n),
         pendingKyc: Number(pendingKyc.n),
+      },
+      mail: {
+        queued: Number(mailQueued.n),
+        retrying: Number(mailRetrying.n),
+        dead: Number(mailDead.n),
+        deliveredLast24h: Number(mailDelivered.n),
+        oldestQueuedAgeSec: ageSec(oldestQueuedMail?.oldest),
       },
     };
   }

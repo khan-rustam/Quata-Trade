@@ -5,6 +5,7 @@ import { computeFee } from "../fees/fees";
 import * as argon2 from "argon2";
 import { matchedTotpStep } from "../../common/auth/totp-step";
 import { TronWeb } from "tronweb";
+import { EMAIL_VERIFICATION_REQUIRED } from "@quatatrade/shared";
 import type {
   AddWithdrawalAddressRequest,
   AdminRole,
@@ -186,7 +187,9 @@ export class WithdrawalsService {
     const amount = BigInt(dto.amount);
     const user = await this.db.selectFrom("users").selectAll().where("id", "=", userId).executeTakeFirst();
     if (!user || user.status !== "active") throw new WithdrawalNotEligibleError("account is not active");
-    if (!user.email_verified_at) throw new WithdrawalNotEligibleError("email verification required");
+    // Same wording as EmailVerifiedGuard (shared constant) so the frontend
+    // recognises this rejection and offers a resend, not a dead end.
+    if (!user.email_verified_at) throw new WithdrawalNotEligibleError(EMAIL_VERIFICATION_REQUIRED);
     if (user.kyc_tier < 1) throw new WithdrawalNotEligibleError("KYC verification (tier 1) required");
     if (!user.totp_enabled || !user.totp_secret_enc) {
       throw new WithdrawalNotEligibleError("two-factor authentication must be enabled for withdrawals");

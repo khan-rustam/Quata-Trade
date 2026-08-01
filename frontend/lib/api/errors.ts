@@ -1,5 +1,21 @@
-import { ApiClientError } from "@quatatrade/shared";
+import { ApiClientError, EMAIL_VERIFICATION_REQUIRED } from "@quatatrade/shared";
 import { ZodError } from "zod";
+
+/**
+ * True when the server refused because the account's email is still unverified
+ * (EmailVerifiedGuard, or the withdrawal eligibility check).
+ *
+ * The Nest error envelope carries no machine-readable code, so both sides match
+ * on the shared constant rather than a literal. Callers use this to show their
+ * own translated copy + a resend action instead of surfacing the raw English
+ * server message, which would hardcode English into a bilingual product.
+ */
+export function isEmailVerificationRequired(err: unknown): boolean {
+  if (!(err instanceof ApiClientError) || err.status !== 403) return false;
+  const body = err.body as { message?: string | string[] } | null;
+  const message = Array.isArray(body?.message) ? body.message.join(" ") : body?.message;
+  return message === EMAIL_VERIFICATION_REQUIRED;
+}
 
 /**
  * Extract a human-readable message from an ApiClientError body or Error.

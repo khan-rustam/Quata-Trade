@@ -17,7 +17,7 @@ import { useToast } from "@/components/ui/toast";
 import { useMe } from "@/hooks/use-auth";
 import { api } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
-import { apiErrorMessage } from "@/lib/api/errors";
+import { apiErrorMessage, isEmailVerificationRequired } from "@/lib/api/errors";
 
 const STATUS_TONE = {
   APPROVED: "success",
@@ -29,6 +29,7 @@ const STATUS_TONE = {
 
 export default function KycPage(): React.JSX.Element {
   const tx = useTranslations("accountKyc");
+  const tc = useTranslations("common");
   const { data: me } = useMe();
   const qc = useQueryClient();
   const toast = useToast();
@@ -68,7 +69,9 @@ export default function KycPage(): React.JSX.Element {
       await qc.invalidateQueries({ queryKey: qk.kycStatus });
       toast.success(tx("toastSuccessTitle"), tx("toastSuccessBody"));
     } catch (err) {
-      setError(apiErrorMessage(err, tx("errorSubmit")));
+      // The server's own wording is English-only; translate this one refusal
+      // ourselves and point at the banner that can actually resolve it.
+      setError(isEmailVerificationRequired(err) ? tc("emailVerificationRequired") : apiErrorMessage(err, tx("errorSubmit")));
     } finally {
       setBusy(false);
     }

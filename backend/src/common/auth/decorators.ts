@@ -10,6 +10,15 @@ export const ROLES_KEY = "roles";
 /** Admin route: allowed roles per the RBAC matrix (Documents/06). */
 export const Roles = (...roles: AdminRole[]) => SetMetadata(ROLES_KEY, roles);
 
+export const REQUIRES_VERIFIED_EMAIL_KEY = "requiresVerifiedEmail";
+/**
+ * Action that must not run on an unverified email — KYC, deposits, trading,
+ * transfers. Enforced by EmailVerifiedGuard. Deliberately NOT applied to login
+ * or to read-only browsing: the rule is "verify before you transact", not
+ * "verify before you look around" (see EmailVerifiedGuard).
+ */
+export const RequiresVerifiedEmail = () => SetMetadata(REQUIRES_VERIFIED_EMAIL_KEY, true);
+
 /** Injects the verified token payload. */
 export const CurrentAuth = createParamDecorator((_: unknown, ctx: ExecutionContext): AccessTokenPayload => {
   const req = ctx.switchToHttp().getRequest<AuthenticatedRequest>();

@@ -24,7 +24,7 @@ import {
   type Ok,
   type UpdateOfferRequest,
 } from "@quatatrade/shared";
-import { CurrentUserId } from "../../common/auth/decorators";
+import { CurrentUserId, RequiresVerifiedEmail } from "../../common/auth/decorators";
 import { ZodPipe } from "../../common/zod.pipe";
 import { DB } from "../../db/database.module";
 import type { Database } from "../../db/types";
@@ -53,6 +53,7 @@ export class OffersController {
   ) {}
 
   @Post()
+  @RequiresVerifiedEmail()
   async create(
     @CurrentUserId() userId: string,
     @Body(new ZodPipe(zCreateOfferRequest)) dto: CreateOfferRequest,

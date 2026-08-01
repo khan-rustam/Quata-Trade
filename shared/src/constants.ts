@@ -196,3 +196,15 @@ export type UpdateType = (typeof UPDATE_TYPES)[number];
 /** Lifecycle of a release row (mirrors the app_releases CHECK). */
 export const RELEASE_STATUSES = ["published", "rolled_back", "archived"] as const;
 export type ReleaseStatus = (typeof RELEASE_STATUSES)[number];
+
+/**
+ * The 403 message every "you must verify your email first" rejection carries.
+ *
+ * Sign-up itself is deliberately NOT blocked on a verified email — an unverified
+ * user may log in and browse — but KYC, deposits, trading and withdrawals are.
+ * The Nest error envelope (`zApiError`) has no machine-readable code field, so
+ * the frontend recognises this rejection by an exact message match and offers
+ * "resend verification" instead of a dead end. Backend and frontend therefore
+ * MUST import this constant rather than repeat the literal.
+ */
+export const EMAIL_VERIFICATION_REQUIRED = "email verification required";

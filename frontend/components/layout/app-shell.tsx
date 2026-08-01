@@ -12,6 +12,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/toast";
 import { ThemeToggle } from "./theme-toggle";
 import { LanguageToggle } from "./language-toggle";
+import { VerifyEmailBanner } from "./verify-email-banner";
 import { useLogout, useMe } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
@@ -181,6 +182,7 @@ export function AppShell({ children }: { children: ReactNode }): React.JSX.Eleme
 
         {/* content */}
         <main id="main-content" className="min-w-0 flex-1 px-4 py-5 pb-24 md:px-8 md:pb-8">
+          <VerifyEmailBanner />
           {children}
         </main>
       </div>

@@ -193,7 +193,8 @@
     "copied": "Copié",
     "addToWatchlist": "Ajouter à la liste de suivi",
     "removeFromWatchlist": "Retirer de la liste de suivi",
-    "copy": "Copier"
+    "copy": "Copier",
+    "emailVerificationRequired": "Vérifiez votre adresse e-mail avant de pouvoir effectuer cette action — utilisez la bannière en haut de la page pour renvoyer le code."
   },
   "howItWorks": {
     "heroEyebrow": "Comment ça marche",
@@ -1737,7 +1738,17 @@
     "openDisputes": "Litiges ouverts",
     "pendingKyc": "KYC à examiner",
     "checkedAt": "Vérifié à {time}",
-    "autoRefresh": "actualisation automatique toutes les 15 s"
+    "autoRefresh": "actualisation automatique toutes les 15 s",
+    "mailTitle": "Envoi des e-mails",
+    "mailDelivered": "Remis (24 h)",
+    "mailDeliveredHint": "Transmis au serveur SMTP",
+    "mailQueued": "En attente",
+    "mailRetrying": "Nouvelle tentative",
+    "mailRetryingHint": "SMTP a refusé au moins une fois",
+    "mailDead": "Abandonnés",
+    "mailDeadHint": "Tentatives épuisées — jamais envoyés",
+    "mailDeadTitle": "Des e-mails n’ont jamais été remis",
+    "mailDeadBody": "{count} e-mail(s) ont épuisé toutes les tentatives et ne seront jamais envoyés. Les codes de vérification et les réinitialisations de mot de passe passent par cette file — vérifiez les identifiants SMTP et le processus worker, puis relancez l’envoi pour les utilisateurs concernés."
   },
   "adminTeam": {
     "pageTitle": "Équipe et administrateurs",
@@ -2367,5 +2378,16 @@
     "draftBannerTitle": "Brouillon — en attente de revue juridique.",
     "draftBannerBody": "Cette page décrit le fonctionnement de QuataTrade et signale chaque point que l'exploitant et un avocat qualifié au Cameroun doivent confirmer. Elle n'a pas encore de valeur juridique.",
     "toSupply": "À fournir :"
+  },
+  "verifyEmailBanner": {
+    "title": "Vérifiez votre adresse e-mail",
+    "body": "Nous avons envoyé un code à {email}. Confirmez-le pour débloquer les dépôts, les échanges et les retraits — vous pouvez continuer à naviguer entre-temps.",
+    "enterCode": "Saisir le code",
+    "resend": "Renvoyer l’e-mail",
+    "resendIn": "Renvoyer dans {seconds} s",
+    "resentTitle": "E-mail envoyé",
+    "resentBody": "Si cette adresse doit être vérifiée, un nouveau code est en route.",
+    "resendFailed": "Impossible de renvoyer l’e-mail. Réessayez dans un instant.",
+    "dismiss": "Fermer"
   }
 }

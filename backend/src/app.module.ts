@@ -8,6 +8,11 @@ import { validateEnv, type Env } from "./config/env";
 import { DatabaseModule } from "./db/database.module";
 import { JwtAuthGuard } from "./common/auth/jwt-auth.guard";
 import { RolesGuard } from "./common/auth/roles.guard";
+import {
+  EMAIL_VERIFICATION_LOOKUP,
+  EmailVerifiedGuard,
+  KyselyEmailVerificationLookup,
+} from "./common/auth/email-verified.guard";
 import { AuditModule } from "./common/audit/audit.module";
 import { AlertsModule } from "./common/alerts/alerts.module";
 import { RedisModule } from "./common/redis/redis.module";
@@ -126,6 +131,9 @@ import { MarketsModule } from "./modules/markets/markets.module";
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    // MUST stay after JwtAuthGuard — it reads the principal that guard resolves.
+    { provide: EMAIL_VERIFICATION_LOOKUP, useClass: KyselyEmailVerificationLookup },
+    { provide: APP_GUARD, useClass: EmailVerifiedGuard },
   ],
 })
 export class AppModule {}

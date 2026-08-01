@@ -193,7 +193,8 @@
     "copied": "Copied",
     "addToWatchlist": "Add to watchlist",
     "removeFromWatchlist": "Remove from watchlist",
-    "copy": "Copy"
+    "copy": "Copy",
+    "emailVerificationRequired": "Verify your email address before you can do this — use the banner at the top of the page to resend the code."
   },
   "howItWorks": {
     "heroEyebrow": "How it works",
@@ -1737,7 +1738,17 @@
     "openDisputes": "Open disputes",
     "pendingKyc": "KYC to review",
     "checkedAt": "Checked at {time}",
-    "autoRefresh": "auto-refreshes every 15s"
+    "autoRefresh": "auto-refreshes every 15s",
+    "mailTitle": "Email delivery",
+    "mailDelivered": "Delivered (24h)",
+    "mailDeliveredHint": "Successfully handed to SMTP",
+    "mailQueued": "Queued",
+    "mailRetrying": "Retrying",
+    "mailRetryingHint": "SMTP refused at least once",
+    "mailDead": "Given up on",
+    "mailDeadHint": "Past max attempts — never sent",
+    "mailDeadTitle": "Emails were never delivered",
+    "mailDeadBody": "{count} email(s) exhausted every retry and will never be sent. Verification codes and password resets are in this queue — check the SMTP credentials and the worker process, then re-queue affected users."
   },
   "adminTeam": {
     "pageTitle": "Team & admins",
@@ -2367,5 +2378,16 @@
     "draftBannerTitle": "Draft — pending legal review.",
     "draftBannerBody": "This page describes how QuataTrade works and marks every detail the operator and a Cameroon-qualified lawyer must confirm. It is not yet legally binding.",
     "toSupply": "To supply:"
+  },
+  "verifyEmailBanner": {
+    "title": "Verify your email address",
+    "body": "We sent a code to {email}. Confirm it to unlock deposits, trading and withdrawals — you can keep browsing in the meantime.",
+    "enterCode": "Enter code",
+    "resend": "Resend email",
+    "resendIn": "Resend in {seconds}s",
+    "resentTitle": "Email sent",
+    "resentBody": "If that address needs verifying, a new code is on its way.",
+    "resendFailed": "Could not resend the email. Please try again shortly.",
+    "dismiss": "Dismiss"
   }
 }

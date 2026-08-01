@@ -34,5 +34,23 @@ export const zSystemHealthResponse = z.object({
     openDisputes: z.number().int(),
     pendingKyc: z.number().int(),
   }),
+  /**
+   * Email delivery health. Without this an SMTP outage is invisible: sign-up
+   * still returns 201, the row just sits queued forever, and nobody finds out
+   * until users complain that no code arrived. `dead` is the alarming one —
+   * those rows have exhausted their retries and will NEVER be sent again.
+   */
+  mail: z.object({
+    /** waiting for the worker's next 30s sweep — a few is normal */
+    queued: z.number().int(),
+    /** queued AND already failed at least once — SMTP is refusing */
+    retrying: z.number().int(),
+    /** past max attempts: given up on, permanently undelivered */
+    dead: z.number().int(),
+    /** successfully handed to SMTP in the last 24h — the "it works" signal */
+    deliveredLast24h: z.number().int(),
+    /** age of the oldest still-queued mail; climbing = the worker is stuck/down */
+    oldestQueuedAgeSec: z.number().int().nullable(),
+  }),
 });
 export type SystemHealthResponse = z.infer<typeof zSystemHealthResponse>;

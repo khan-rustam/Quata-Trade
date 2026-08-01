@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common";
 import { zKycSubmitRequest, type KycStatusResponse, type KycSubmitRequest } from "@quatatrade/shared";
 import { ZodPipe } from "../../common/zod.pipe";
-import { CurrentUserId } from "../../common/auth/decorators";
+import { CurrentUserId, RequiresVerifiedEmail } from "../../common/auth/decorators";
 import { KycService, type KycSubmitResult } from "./kyc.service";
 import { zKycUploadRequest, type KycUploadRequest, type KycUploadResponse } from "./kyc.schemas";
 import {
@@ -29,6 +29,7 @@ export class KycController {
   constructor(private readonly kyc: KycService) {}
 
   @Post("upload")
+  @RequiresVerifiedEmail()
   @HttpCode(201)
   async upload(
     @CurrentUserId() userId: string,
@@ -44,6 +45,7 @@ export class KycController {
   }
 
   @Post("submit")
+  @RequiresVerifiedEmail()
   @HttpCode(201)
   async submit(
     @CurrentUserId() userId: string,

@@ -36,7 +36,7 @@ import {
   type Trade,
   type TradesQuery,
 } from "@quatatrade/shared";
-import { CurrentUserId } from "../../common/auth/decorators";
+import { CurrentUserId, RequiresVerifiedEmail } from "../../common/auth/decorators";
 import { RiskService } from "../risk/risk.service";
 import { ZodPipe } from "../../common/zod.pipe";
 import { DB } from "../../db/database.module";
@@ -166,6 +166,7 @@ export class TradesController {
   }
 
   @Post()
+  @RequiresVerifiedEmail()
   async open(
     @CurrentUserId() userId: string,
     @Body(new ZodPipe(zOpenTradeRequest)) dto: OpenTradeRequest,

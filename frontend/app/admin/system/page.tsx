@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, AlertTriangle, Database, Server, Radio, Inbox, ShieldAlert } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Database, Server, Radio, Inbox, ShieldAlert, Mail, MailX, MailCheck } from "lucide-react";
 import type { ServiceStatus } from "@quatatrade/shared";
 import { AdminTitle, RefreshButton, StatCards } from "@/components/admin/admin-ui";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -93,6 +93,44 @@ export default function SystemHealthPage(): React.JSX.Element {
                 footnote={tx("stuckHint")}
               />
               <StatTile label={tx("riskHold")} value={data.withdrawals.riskHold} icon={<ShieldAlert size={15} />} />
+            </StatCards>
+          </div>
+
+          {/* Mail delivery — a silently dropped verification email is the one
+              failure that looks exactly like success from every other angle:
+              sign-up still returns 201. `dead` is the alarm. */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-text-2">{tx("mailTitle")}</p>
+            {data.mail.dead > 0 ? (
+              <Alert tone="danger" title={tx("mailDeadTitle")}>
+                {tx("mailDeadBody", { count: data.mail.dead })}
+              </Alert>
+            ) : null}
+            <StatCards>
+              <StatTile
+                label={tx("mailDelivered")}
+                value={data.mail.deliveredLast24h}
+                icon={<MailCheck size={15} />}
+                footnote={tx("mailDeliveredHint")}
+              />
+              <StatTile
+                label={tx("mailQueued")}
+                value={<span className={data.mail.queued > 0 ? "text-warning" : undefined}>{data.mail.queued}</span>}
+                icon={<Mail size={15} />}
+                footnote={tx("oldestPending", { age: fmtAge(data.mail.oldestQueuedAgeSec) })}
+              />
+              <StatTile
+                label={tx("mailRetrying")}
+                value={<span className={data.mail.retrying > 0 ? "text-warning" : undefined}>{data.mail.retrying}</span>}
+                icon={<AlertTriangle size={15} />}
+                footnote={tx("mailRetryingHint")}
+              />
+              <StatTile
+                label={tx("mailDead")}
+                value={<span className={data.mail.dead > 0 ? "text-danger" : undefined}>{data.mail.dead}</span>}
+                icon={<MailX size={15} />}
+                footnote={tx("mailDeadHint")}
+              />
             </StatCards>
           </div>
 

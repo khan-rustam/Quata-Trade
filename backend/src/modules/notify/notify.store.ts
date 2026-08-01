@@ -11,6 +11,14 @@ import type { Database } from "../../db/types";
 
 export const NOTIFY_STORE = Symbol("NOTIFY_STORE");
 
+/**
+ * After this many failed sends a queued email row is abandoned — never retried,
+ * never delivered. Lives here rather than in the worker's job so the API's
+ * system-health page can count "dead" rows against the SAME threshold the
+ * worker gives up at; two copies would silently disagree.
+ */
+export const MAX_EMAIL_ATTEMPTS = 8;
+
 export interface NewNotification {
   id: string;
   userId: string;

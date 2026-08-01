@@ -3,19 +3,19 @@ import { Cron } from "@nestjs/schedule";
 import { ConfigService } from "@nestjs/config";
 import type { Env } from "../config/env";
 import { MAILER, type Mailer } from "../modules/notify/notify.mailer";
-import { NOTIFY_STORE, type NotifyStore } from "../modules/notify/notify.store";
+import { MAX_EMAIL_ATTEMPTS, NOTIFY_STORE, type NotifyStore } from "../modules/notify/notify.store";
 import { renderTemplate, TEMPLATE_NAMES, type TemplateName } from "../modules/notify/notify.templates";
 
 const BATCH_SIZE = 50;
-/** after this many failed attempts a row is left dead (no longer picked up) */
-const MAX_ATTEMPTS = 8;
 
 /**
  * Delivery arm of the notify pipeline: sends QUEUED email rows (channel=email,
  * status=queued). Covers verification + password-reset emails (their code/token
  * live in the row payload) AND retries any domain-notification email that failed
  * its inline send. Marks delivered on success, attempts+1 on failure; rows past
- * MAX_ATTEMPTS stop being retried. Runs every 30s with a running-flag guard.
+ * MAX_EMAIL_ATTEMPTS stop being retried — the admin system-health page surfaces
+ * those as `mail.dead` so an abandoned verification email cannot stay invisible.
+ * Runs every 30s with a running-flag guard.
  * Worker-only (the API has no ScheduleModule, so @Cron is inert there).
  */
 @Injectable()
@@ -37,7 +37,7 @@ export class EmailSendJob {
     if (this.running) return;
     this.running = true;
     try {
-      const due = await this.store.dueEmails(BATCH_SIZE, MAX_ATTEMPTS);
+      const due = await this.store.dueEmails(BATCH_SIZE, MAX_EMAIL_ATTEMPTS);
       if (due.length === 0) return;
       const emails = await this.store.userEmails(due.map((d) => d.userId));
 

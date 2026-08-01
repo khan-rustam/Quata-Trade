@@ -27,7 +27,7 @@ import type {
   BlockchainStatusResponse,
 } from "@quatatrade/shared";
 import { serializeAmount, zAssetCode, zInternalTransferRequest, zPagination } from "@quatatrade/shared";
-import { CurrentUserId } from "../../common/auth/decorators";
+import { CurrentUserId, RequiresVerifiedEmail } from "../../common/auth/decorators";
 import { ZodPipe } from "../../common/zod.pipe";
 import { InsufficientFundsError } from "../ledger/ledger.errors";
 import { SettingsService } from "../settings/settings.service";
@@ -104,6 +104,7 @@ export class WalletController {
   }
 
   @Get(":asset/deposit-address")
+  @RequiresVerifiedEmail()
   async depositAddress(
     @CurrentUserId() userId: string,
     @Param("asset", new ZodPipe(zAssetCode)) asset: AssetCode,
@@ -128,6 +129,7 @@ export class WalletController {
   }
 
   @Post("transfer")
+  @RequiresVerifiedEmail()
   async transfer(
     @CurrentUserId() userId: string,
     @Body(new ZodPipe(zInternalTransferRequest)) dto: InternalTransferRequest,
