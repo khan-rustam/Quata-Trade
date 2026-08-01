@@ -27,8 +27,10 @@ import {
 import { zPublicTrader } from "../schemas/traders.js";
 import {
   zKycStatusResponse,
+  zKycSubmitResponse,
   zKycUploadResponse,
   type KycSubmitRequest,
+  type KycSubmitResponse,
   type KycUploadRequest,
 } from "../schemas/kyc.js";
 import {
@@ -289,7 +291,8 @@ export class QuataApiClient {
   // ---- kyc ----
   kycStatus = () => this.request("GET", "/api/v1/kyc/status", zKycStatusResponse);
   kycUpload = (body: KycUploadRequest) => this.request("POST", "/api/v1/kyc/upload", zKycUploadResponse, body);
-  kycSubmit = (body: KycSubmitRequest): Promise<Ok> => this.request("POST", "/api/v1/kyc/submit", zOk, body);
+  kycSubmit = (body: KycSubmitRequest): Promise<KycSubmitResponse> =>
+    this.request("POST", "/api/v1/kyc/submit", zKycSubmitResponse, body);
 
   // ---- markets (public, informational) ----
   marketsGlobal = () => this.request("GET", "/api/v1/markets/global", zMarketGlobal);

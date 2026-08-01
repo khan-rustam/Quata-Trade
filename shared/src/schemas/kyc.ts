@@ -15,6 +15,26 @@ export const zKycSubmitRequest = z
   .strict();
 export type KycSubmitRequest = z.infer<typeof zKycSubmitRequest>;
 
+/**
+ * What `POST /api/v1/kyc/submit` actually returns.
+ *
+ * The client previously parsed this reply with `zOk` (`{ ok: true }`), which
+ * the endpoint has never sent — it returns the created submission. The
+ * submission therefore succeeded, the "documents received" email went out,
+ * and the client then threw while validating the response, showing the user
+ * a raw Zod issue array over a request that had in fact worked.
+ *
+ * Declaring the real shape here — rather than making the endpoint return
+ * `{ ok: true }` — keeps the submission id and status, which the UI needs to
+ * show the pending state without a second round trip to `/kyc/status`.
+ */
+export const zKycSubmitResponse = z.object({
+  id: zUuid,
+  tier: z.number().int(),
+  status: z.enum(KYC_STATUSES),
+});
+export type KycSubmitResponse = z.infer<typeof zKycSubmitResponse>;
+
 export const zKycStatusResponse = z.object({
   tier: z.number().int(),
   status: z.enum(KYC_STATUSES),

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { Kysely } from "kysely";
-import type { KycStatusResponse, KycSubmitRequest } from "@quatatrade/shared";
+import type { KycStatusResponse, KycSubmitRequest, KycSubmitResponse } from "@quatatrade/shared";
 import { DB } from "../../db/database.module";
 import type { Database } from "../../db/types";
 import { newId } from "../../common/ids";
@@ -17,11 +17,19 @@ import {
 } from "./kyc.rules";
 import { SubmissionNotFoundError } from "./kyc.errors";
 
-export interface KycSubmitResult {
-  id: string;
-  tier: number;
-  status: "PENDING";
-}
+/**
+ * The submit reply.
+ *
+ * Aliased to the SHARED schema's inferred type rather than declared
+ * independently. It was declared here before, the client parsed the reply
+ * with `zOk` (`{ ok: true }`), and nothing connected the two — so the
+ * endpoint and its contract disagreed silently. The submission succeeded,
+ * the email went out, and the user saw a raw Zod issue array.
+ *
+ * Tying them together means a future change to the response shape fails at
+ * compile time instead of at a user's screen.
+ */
+export type KycSubmitResult = KycSubmitResponse;
 
 /**
  * kyc — user-facing side (Documents/06 "kyc": MANUAL DECISION ONLY).

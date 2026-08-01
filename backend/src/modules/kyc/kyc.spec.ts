@@ -15,6 +15,7 @@ import {
   TierProgressionError,
 } from "./kyc.errors";
 import { MAX_BASE64_LENGTH, zKycUploadRequest } from "./kyc.schemas";
+import { KYC_STATUSES, zKycSubmitResponse } from "@quatatrade/shared";
 
 /** Build a buffer starting with the given bytes, padded to `size`. */
 const buf = (bytes: number[], size = bytes.length): Buffer => {
@@ -158,5 +159,59 @@ describe("kyc file-key ownership (IDOR guard, Documents/08 §E)", () => {
 
   it("rejects a mixed batch when any single key is foreign", () => {
     expect(() => assertFileKeysOwned(me, [`${me}/ok.jpg`, `${other}/steal.jpg`])).toThrow(FileOwnershipError);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// The submit RESPONSE contract
+//
+// The bug: the typed client parsed this reply with `zOk` (`{ ok: true }`),
+// which the endpoint has never sent — it returns the created submission.
+// So the submission succeeded, the "documents received" email went out, and
+// the client then threw validating the response. The user saw a raw Zod
+// issue array over an operation that had in fact worked, and had no way to
+// tell whether to submit again.
+//
+// These assert the shape the SERVICE returns satisfies the SHARED schema
+// the client parses with. Neither side can drift without this going red.
+// ─────────────────────────────────────────────────────────────────────
+describe("kyc submit response contract (shared schema ↔ service return)", () => {
+  it("the shape the service returns parses against the shared schema", () => {
+    // Exactly what KycService.submit() returns.
+    const serviceReturn = {
+      id: "3f2504e0-4f89-11d3-9a0c-0305e82c3301",
+      tier: 1,
+      status: "PENDING" as const,
+    };
+    expect(() => zKycSubmitResponse.parse(serviceReturn)).not.toThrow();
+  });
+
+  it("rejects the old `{ ok: true }` shape the client used to expect", () => {
+    // Proves the two contracts really were incompatible — this is the
+    // mismatch that reached a user's screen.
+    expect(() => zKycSubmitResponse.parse({ ok: true })).toThrow();
+  });
+
+  it("requires a real submission id, so a pending state can be rendered", () => {
+    // The reason the fix keeps the submission shape instead of changing the
+    // endpoint to return `{ ok: true }`: the UI needs the id to show the
+    // pending submission without a second call to /kyc/status.
+    expect(() =>
+      zKycSubmitResponse.parse({ id: "not-a-uuid", tier: 1, status: "PENDING" }),
+    ).toThrow();
+  });
+
+  it("accepts every KYC status, not just PENDING", () => {
+    // Submit returns PENDING today, but the schema is the contract for the
+    // field — pinning it to a literal would break a future resubmit flow.
+    for (const status of KYC_STATUSES) {
+      expect(() =>
+        zKycSubmitResponse.parse({
+          id: "3f2504e0-4f89-11d3-9a0c-0305e82c3301",
+          tier: 1,
+          status,
+        }),
+      ).not.toThrow();
+    }
   });
 });
