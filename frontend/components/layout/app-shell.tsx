@@ -4,31 +4,21 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type ComponentType, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { BadgeCheck, Bell, Home, LineChart, LogOut, Repeat, Settings, ShieldCheck, User, Wallet } from "lucide-react";
+import { BadgeCheck, Bell, LogOut, Settings, ShieldCheck, User } from "lucide-react";
 import type { LucideProps } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
-import { Keyhole } from "@/components/brand/keyhole";
 import { Avatar } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/toast";
 import { ThemeToggle } from "./theme-toggle";
 import { LanguageToggle } from "./language-toggle";
 import { VerifyEmailBanner } from "./verify-email-banner";
+import { MobileBottomNav, NAV_ITEMS as NAV, isNavActive as isActive } from "./mobile-bottom-nav";
 import { useLogout, useMe } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
-interface NavItem {
-  href: string;
-  labelKey: "home" | "markets" | "trade" | "wallet" | "account";
-  icon: ComponentType<LucideProps>;
-}
-
-const NAV: NavItem[] = [
-  { href: "/home", labelKey: "home", icon: Home },
-  { href: "/markets", labelKey: "markets", icon: LineChart },
-  { href: "/trade", labelKey: "trade", icon: Repeat },
-  { href: "/wallet", labelKey: "wallet", icon: Wallet },
-  { href: "/account", labelKey: "account", icon: User },
-];
+// NAV and isActive now live in ./mobile-bottom-nav — one definition, used by
+// this shell and by the public shell, so the two can never disagree about
+// which tab is highlighted.
 
 const MENU: { href: string; icon: ComponentType<LucideProps>; key: "profile" | "security" | "verification" | "account" }[] = [
   { href: "/account/profile", icon: User, key: "profile" },
@@ -37,9 +27,6 @@ const MENU: { href: string; icon: ComponentType<LucideProps>; key: "profile" | "
   { href: "/account", icon: Settings, key: "account" },
 ];
 
-function isActive(href: string, pathname: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
 
 export function AppShell({ children }: { children: ReactNode }): React.JSX.Element {
   const t = useTranslations("nav");
@@ -187,30 +174,7 @@ export function AppShell({ children }: { children: ReactNode }): React.JSX.Eleme
         </main>
       </div>
 
-      {/* mobile bottom nav */}
-      <nav
-        aria-label={tx("primaryNav")}
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-bg/95 backdrop-blur md:hidden"
-      >
-        {NAV.map((item) => {
-          const active = isActive(item.href, pathname);
-          const Icon = item.href === "/trade" ? Keyhole : item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors",
-                active ? "text-accent-400" : "text-text-2",
-              )}
-            >
-              <Icon size={20} aria-hidden />
-              {t(item.labelKey)}
-            </Link>
-          );
-        })}
-      </nav>
+      <MobileBottomNav />
     </div>
   );
 }

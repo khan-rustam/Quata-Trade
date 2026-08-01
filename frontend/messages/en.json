@@ -20,7 +20,8 @@
     "profile": "Profile details",
     "verification": "Verification",
     "signOut": "Sign out",
-    "signedOut": "Signed out"
+    "signedOut": "Signed out",
+    "openApp": "Open app"
   },
   "landing": {
     "badge": "Escrow-protected P2P",

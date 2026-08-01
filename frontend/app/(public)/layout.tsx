@@ -3,6 +3,7 @@ import { PublicHeader } from "@/components/public/public-header";
 import { PublicFooter } from "@/components/public/public-footer";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { SiteStructuredData } from "./structured-data";
+import { PublicBottomNav } from "@/components/layout/public-bottom-nav";
 
 /** Marketing + legal shell: header + footer on every public page (Documents/14). */
 export default function PublicLayout({ children }: { children: ReactNode }): React.JSX.Element {
@@ -30,6 +31,12 @@ export default function PublicLayout({ children }: { children: ReactNode }): Rea
         {children}
       </main>
       <PublicFooter />
+
+      {/* Signed-in visitors keep the app's bottom nav here. /markets is a
+          public route but also a tab in that bar — without this the bar
+          vanished the moment they tapped it, stranding them in the marketing
+          shell with no way back. Renders nothing for logged-out visitors. */}
+      <PublicBottomNav />
     </div>
   );
 }

@@ -20,7 +20,8 @@
     "profile": "Profil",
     "verification": "Vérification",
     "signOut": "Se déconnecter",
-    "signedOut": "Déconnecté"
+    "signedOut": "Déconnecté",
+    "openApp": "Ouvrir l'app"
   },
   "landing": {
     "badge": "P2P protégé par séquestre",
