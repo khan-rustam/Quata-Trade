@@ -61,10 +61,17 @@ export class EmailVerifiedGuard implements CanActivate {
     if (!required) return true;
 
     const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    // Admin principals are governed by RolesGuard; JwtAuthGuard has already
-    // rejected anonymous callers, so a missing principal here cannot be reached
-    // through the HTTP pipeline — treat it as not-our-concern rather than 403.
-    if (!req.auth || req.auth.typ !== "user") return true;
+    // Fail CLOSED on anything that is not a user principal.
+    //
+    // Neither case is reachable today: JwtAuthGuard rejects anonymous callers,
+    // and RolesGuard throws for a non-user principal on a user-space route
+    // before this guard runs. So arriving here means the route was
+    // misconfigured — most plausibly `@Public()` added to a money path, which
+    // would skip JwtAuthGuard and leave `req.auth` unset. Returning true there
+    // would silently delete the gate from a KYC/deposit/trade/transfer route,
+    // and nothing else would notice. A generic 403 (not the email-verification
+    // message, which would be a lie about the cause) is the safe answer.
+    if (!req.auth || req.auth.typ !== "user") throw new ForbiddenException();
 
     if (!(await this.lookup.isVerified(req.auth.sub))) {
       throw new ForbiddenException(EMAIL_VERIFICATION_REQUIRED);

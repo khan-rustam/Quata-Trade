@@ -89,8 +89,13 @@ describe("EmailVerifiedGuard — gated actions require a verified email", () => 
 describe("EmailVerifiedGuard — read-only browsing stays open", () => {
   const guard = new EmailVerifiedGuard(new Reflector(), lookup);
 
-  async function allows(cls: Type<unknown>, handler: Handler): Promise<boolean> {
-    const req: AuthenticatedRequest = { auth: userAuth(UNVERIFIED), headers: {} };
+  /** Defaults to the unverified user; pass `auth` explicitly for principal cases. */
+  async function allows(
+    cls: Type<unknown>,
+    handler: Handler,
+    auth: AccessTokenPayload | undefined = userAuth(UNVERIFIED),
+  ): Promise<boolean> {
+    const req: AuthenticatedRequest = { auth, headers: {} };
     const ctx = new ExecutionContextHost([req], cls, handler);
     try {
       return await guard.canActivate(ctx);
@@ -115,10 +120,30 @@ describe("EmailVerifiedGuard — read-only browsing stays open", () => {
     });
   }
 
-  it("ignores admin principals — admin routes are governed by RolesGuard", async () => {
-    const auth: AccessTokenPayload = { sub: "admin-1", typ: "admin", sid: "s" };
-    const req: AuthenticatedRequest = { auth, headers: {} };
+  /**
+   * Fail-closed cases. Neither is reachable over HTTP today — JwtAuthGuard
+   * rejects anonymous callers, and RolesGuard throws on a non-user principal
+   * for user-space routes before this guard runs. They are asserted anyway
+   * because the ONLY way to reach them is a future misconfiguration (most
+   * plausibly `@Public()` landing on a money route), and the guard must refuse
+   * rather than wave that through.
+   */
+  // Built inline, NOT via allows(): passing `undefined` to a parameter with a
+  // default value triggers the default, which would quietly turn this back into
+  // a plain unverified-user test that passes no matter what the guard does.
+  it("refuses a gated route when there is no principal at all", async () => {
+    const req: AuthenticatedRequest = { headers: {} };
     const ctx = new ExecutionContextHost([req], KycController, KycController.prototype.submit);
-    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it("refuses a gated route for a non-user (admin) principal", async () => {
+    const auth: AccessTokenPayload = { sub: "admin-1", typ: "admin", sid: "s" };
+    expect(await allows(KycController, KycController.prototype.submit, auth)).toBe(false);
+  });
+
+  it("still lets an admin principal through on an UNGATED route", async () => {
+    const auth: AccessTokenPayload = { sub: "admin-1", typ: "admin", sid: "s" };
+    expect(await allows(KycController, KycController.prototype.status, auth)).toBe(true);
   });
 });
