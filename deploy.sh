@@ -176,6 +176,29 @@ log "building shared -> backend -> frontend"
 pnpm build
 ok "build complete"
 
+# frontend/next.config.ts sets `output: "standalone"`. Next emits the
+# self-contained server but does NOT copy the client assets into that tree —
+# that is the caller's job. Without this the standalone server boots and 404s
+# every CSS/JS chunk and everything under public/.
+#
+# The server is NOT at .next/standalone/server.js here: outputFileTracingRoot
+# points at the monorepo root, so Next mirrors the app's path inside the
+# bundle and emits .next/standalone/frontend/server.js. Locate it rather than
+# hardcode, so this keeps working if that root ever changes.
+SA_SERVER="$(find frontend/.next/standalone -maxdepth 3 -name server.js 2>/dev/null | head -1)"
+if [ -n "$SA_SERVER" ]; then
+  SA_DIR="$(dirname "$SA_SERVER")"
+  log "syncing standalone assets into ${SA_DIR}"
+  rm -rf "${SA_DIR}/.next/static" "${SA_DIR}/public"
+  cp -r frontend/.next/static "${SA_DIR}/.next/static" \
+    || die "failed to copy .next/static into the standalone tree"
+  if [ -d frontend/public ]; then
+    cp -r frontend/public "${SA_DIR}/public" \
+      || die "failed to copy public/ into the standalone tree"
+  fi
+  ok "standalone assets synced"
+fi
+
 # ------------------------------ migrate -------------------------------------
 if [ "$SKIP_MIGRATE" = "1" ]; then
   warn "QT_SKIP_MIGRATE=1 — skipping database migrations"

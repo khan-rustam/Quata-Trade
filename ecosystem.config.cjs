@@ -59,9 +59,22 @@ module.exports = {
       ...common,
       name: "QuataTrade-F",
       cwd: FRONTEND,
-      // Next.js production server. `next build` output (.next) must exist first.
-      script: "node_modules/next/dist/bin/next",
-      args: "start",
+      // Next.js production server. `next build` output must exist first.
+      //
+      // frontend/next.config.ts sets `output: "standalone"`, which Next
+      // explicitly does not support under `next start` — it warned on every
+      // boot and left the live process serving a .next/ tree that the next
+      // build was overwriting underneath it. That is what produced the
+      // MODULE_NOT_FOUND / ChunkLoadError burst on the /account/kyc chunk.
+      //
+      // The path is nested: outputFileTracingRoot is the monorepo root, so
+      // Next mirrors the app's path and emits standalone/frontend/server.js.
+      // deploy.sh copies .next/static + public/ in after each build.
+      //
+      // PORT is read from the env by the standalone server (it ignores CLI
+      // flags). HOSTNAME is deliberately not set, so it keeps binding
+      // 0.0.0.0 exactly as `next start` did — nginx fronts it and ufw is on.
+      script: ".next/standalone/frontend/server.js",
       env: { PORT: WEB_PORT, NODE_ENV: "production" },
     },
   ],
