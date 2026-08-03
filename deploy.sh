@@ -24,7 +24,17 @@
 set -Eeuo pipefail
 
 # --- Resolve our real location BEFORE any git operation can rewrite this file ---
-SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/$(basename "${BASH_SOURCE[0]}")"
+# Resolved ONCE and carried across the re-exec. Previously this recomputed on
+# every entry, so after `exec bash "$_copy"` SELF became the throwaway copy
+# itself — which made the cleanup guard below ("$QT_SELF_COPY" != "$SELF")
+# always false, so the trap was never installed and every deploy since
+# 2026-07-07 left a ~10 KB copy behind in /tmp (38 of them by 2026-08-03).
+# It also makes the stale-script check further down meaningful.
+if [ -z "${QT_SELF:-}" ]; then
+  QT_SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/$(basename "${BASH_SOURCE[0]}")"
+fi
+export QT_SELF
+SELF="$QT_SELF"
 : "${QT_APP_DIR:="$(dirname "$SELF")"}"
 export QT_APP_DIR
 
@@ -145,7 +155,11 @@ node -e 'process.exit(parseInt(process.versions.node.split(".")[0],10) >= 22 ? 0
 ok "preflight ok — node $(node -v), pnpm $(pnpm -v)"
 
 # Capture rollback point AFTER preflight so it only arms once we're committed.
-PREV_COMMIT="$(git rev-parse HEAD)"
+# Carried across the stale-script re-exec below: that re-entry happens AFTER
+# `git reset --hard`, so recomputing here would set the rollback target to the
+# commit we just deployed and quietly make rollback a no-op.
+PREV_COMMIT="${QT_PREV_COMMIT:-$(git rev-parse HEAD)}"
+export QT_PREV_COMMIT="$PREV_COMMIT"
 log "current commit: $PREV_COMMIT"
 
 # ------------------------------- pull ---------------------------------------
@@ -161,6 +175,25 @@ if [ "$PREV_COMMIT" = "$NEW_COMMIT" ]; then
   warn "no new commits — redeploying $NEW_COMMIT"
 else
   ok "updated $PREV_COMMIT -> $NEW_COMMIT"
+fi
+
+# The throwaway copy we are running was taken BEFORE the reset above, so if
+# this deploy updated deploy.sh itself, everything below is the OLD logic —
+# any step the update added would be skipped while the deploy still reports
+# success. Hand over to the pulled version exactly once. PREV_COMMIT is
+# exported, so the rollback target survives.
+if [ "${QT_REEXEC_PULLED:-}" != "1" ] && ! cmp -s "$SELF" "${QT_SELF_COPY:-/dev/null}"; then
+  warn "deploy.sh changed in this pull — restarting with the new version"
+  _new_copy="$(mktemp)"
+  cp "$SELF" "$_new_copy"
+  # exec replaces the process, so the EXIT trap never runs — remove the old
+  # copy by hand before handing over.
+  if [ -n "${QT_SELF_COPY:-}" ] && [ "$QT_SELF_COPY" != "$SELF" ]; then
+    rm -f "$QT_SELF_COPY"
+  fi
+  trap - ERR
+  export QT_REEXEC_PULLED=1 QT_SELF_COPY="$_new_copy"
+  exec bash "$_new_copy" "$@"
 fi
 
 # ------------------------------- install ------------------------------------
