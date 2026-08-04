@@ -83,7 +83,12 @@ export class ReconciliationJob {
   private async reconcileLedgerCache(): Promise<void> {
     const mismatches = await this.ledger.findCacheMismatches();
     if (mismatches.length === 0) {
-      this.logger.log("reconciliation clean");
+      // Scoped deliberately. This is 1 of the 3 sub-checks in run(); an unscoped
+      // "reconciliation clean" reads as a cycle-wide all-clear and was doing so
+      // while checkOnChainReserves() returned early on an unset WALLET_HOT_ADDRESS
+      // — 7ms apart in the same cycle, so the log said clean and the on-chain half
+      // had never run.
+      this.logger.log("ledger cache reconciliation clean");
       return;
     }
 
